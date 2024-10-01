@@ -1,0 +1,17 @@
+#nm-main-map {
+    border: 1px solid #ccc;
+}
+
+#nm-custom-form-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+#nm-user-form .nm-form-field {
+    margin-bottom: 15px;
+}
+
+#nm-map-canvas {
+    height: 400px;
+}

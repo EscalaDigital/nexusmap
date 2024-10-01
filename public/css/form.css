@@ -1,0 +1,70 @@
+
+#nm-custom-form-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#nm-user-form .nm-form-field {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#nm-user-form .nm-form-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+#nm-user-form .nm-form-field input[type="text"],
+#nm-user-form .nm-form-field input[type="date"],
+#nm-user-form .nm-form-field input[type="file"],
+#nm-user-form .nm-form-field textarea,
+#nm-user-form .nm-form-field select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+    color: #333;
+}
+
+#nm-user-form .nm-form-field input[type="radio"],
+#nm-user-form .nm-form-field input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+#nm-user-form .nm-form-field .field-label,
+#nm-user-form .nm-form-field .field-name {
+    margin-top: 10px;
+    width: calc(50% - 10px);
+    display: inline-block;
+}
+
+#nm-user-form .nm-form-field .field-label {
+    margin-right: 20px;
+}
+
+#nm-user-form .nm-form-field .nm-remove-field {
+    display: inline-block;
+    margin-top: 10px;
+    color: red;
+    cursor: pointer;
+}
+
+#nm-map-canvas {
+    height: 400px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}

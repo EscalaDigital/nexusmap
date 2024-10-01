@@ -1,0 +1,68 @@
+#nm-form-builder {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+#nm-form-elements {
+    width: 30%;
+    max-width: 300px;
+}
+
+#nm-form-elements h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#nm-form-elements ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#nm-form-elements li {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: grab;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+#nm-form-elements li:hover {
+    transform: scale(1.05);
+}
+
+#nm-form-elements li:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+}
+
+#nm-form-preview {
+    width: 65%;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+#nm-custom-form .nm-form-field {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+.nm-remove-field {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: red;
+    cursor: pointer;
+}
