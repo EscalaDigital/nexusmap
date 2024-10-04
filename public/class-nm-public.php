@@ -135,31 +135,70 @@ class NM_Public {
     
     
     
-
-    /**
-     * Handle form submission via AJAX
-     */
     public function submit_form() {
         check_ajax_referer( 'nm_public_nonce', 'nonce' );
     
         // Recoger y sanitizar los datos del formulario
         $entry_data = array();
-        foreach ( $_POST['form_data'] as $key => $value ) {
-            $entry_data[ sanitize_text_field( $key ) ] = sanitize_text_field( $value );
+        if ( isset( $_POST['form_data'] ) && is_array( $_POST['form_data'] ) ) {
+            foreach ( $_POST['form_data'] as $key => $value ) {
+                // Manejar arrays (e.g., checkboxes)
+                if ( is_array( $value ) ) {
+                    $sanitized_value = array_map( 'sanitize_text_field', $value );
+                    $entry_data[ sanitize_text_field( $key ) ] = $sanitized_value;
+                } else {
+                    $entry_data[ sanitize_text_field( $key ) ] = sanitize_text_field( $value );
+                }
+            }
         }
     
         // Manejar archivos si es necesario
         if ( ! empty( $_FILES ) ) {
-            // Procesar archivos y agregar a $entry_data
+            foreach ( $_FILES as $file_key => $file_array ) {
+                // Verificar si el archivo se ha cargado sin errores
+                if ( $file_array['error'] === UPLOAD_ERR_OK ) {
+                    // Opcional: especificar tipos de archivo permitidos
+                    $allowed_types = array(
+                        'jpg|jpeg|jpe' => 'image/jpeg',
+                        'png'          => 'image/png',
+                        'gif'          => 'image/gif',
+                        'pdf'          => 'application/pdf',
+                        // Añade otros tipos de archivo si es necesario
+                    );
+    
+                    // Manejar la carga del archivo
+                    $uploaded_file = wp_handle_upload( $file_array, array(
+                        'test_form' => false,
+                        'mimes'     => $allowed_types,
+                    ) );
+    
+                    if ( $uploaded_file && ! isset( $uploaded_file['error'] ) ) {
+                        // La carga fue exitosa, obtener la URL del archivo
+                        $file_url = $uploaded_file['url'];
+                        // Agregar la URL del archivo a $entry_data
+                        $entry_data[ sanitize_text_field( $file_key ) ] = esc_url_raw( $file_url );
+                    } else {
+                        // Manejar el error en la carga
+                        wp_send_json_error( 'Error al cargar el archivo: ' . $uploaded_file['error'] );
+                        wp_die();
+                    }
+                } elseif ( $file_array['error'] !== UPLOAD_ERR_NO_FILE ) {
+                    // Manejar otros errores de carga
+                    wp_send_json_error( 'Código de error al cargar el archivo: ' . $file_array['error'] );
+                    wp_die();
+                }
+                // Si UPLOAD_ERR_NO_FILE, no se subió ningún archivo para este campo; puedes omitirlo
+            }
         }
     
         $user_id = get_current_user_id();
         $this->model->save_entry( $entry_data, $user_id );
     
         // Enviar notificación al administrador
-        wp_mail( get_option( 'admin_email' ), 'New Form Submission', 'A new form has been submitted and is pending approval.' );
+        wp_mail( get_option( 'admin_email' ), 'Nueva presentación de formulario', 'Se ha enviado un nuevo formulario y está pendiente de aprobación.' );
     
-        wp_send_json_success( 'Form submitted successfully.' );
+        wp_send_json_success( 'Formulario enviado exitosamente.' );
     }
+    
     
 }

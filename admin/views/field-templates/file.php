@@ -1,7 +1,6 @@
 <div class="nm-form-field" data-type="file">
     <label>File Upload</label>
-    <input type="file" name="file_field[]">
-    <input type="text" class="field-label" placeholder="Field Label">
-    <input type="text" class="field-name" placeholder="Field Name">
-    <span class="nm-remove-field">Remove</span>
+    <input type="text" class="field-label" placeholder="Field Label" value="<?php echo esc_attr( $field_label ); ?>">
+    <input type="text" class="field-name" placeholder="Field Name" value="<?php echo esc_attr( $field_name ); ?>">
+    <span class="nm-remove-field">Remove Field</span>
 </div>

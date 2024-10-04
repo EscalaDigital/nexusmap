@@ -1,5 +1,4 @@
-<div class="nm-form-field">
-    <label>Title</label>
-    <input type="text" name="header[]" placeholder="Enter header text">
-    <span class="nm-remove-field">Remove</span>
+<div class="nm-form-field" data-type="header">
+    <input type="text" class="field-label" placeholder="Header Text" value="<?php echo esc_attr( $field_label ); ?>">
+    <span class="nm-remove-field">Remove Field</span>
 </div>

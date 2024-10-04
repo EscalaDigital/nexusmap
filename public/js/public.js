@@ -57,46 +57,57 @@ jQuery(document).ready(function ($) {
             drawnItems.addLayer(e.layer);
         });
 
-        // Handle form submission
         $('#nm-user-form').submit(function (e) {
             e.preventDefault();
-
+        
             var formData = new FormData(this);
-
+        
             // Agregar el parámetro 'action' requerido por WordPress
             formData.append('action', 'nm_submit_form');
-
+        
             // Agregar el nonce para la verificación de seguridad
             formData.append('nonce', nmPublic.nonce);
-
+        
             // Obtener los datos de los campos dibujados en el mapa
             var shapes = [];
             var otherFields = $(this).serializeArray();
-
+        
             drawnItems.eachLayer(function (layer) {
                 var geoJson = layer.toGeoJSON();
-
+        
                 // Crear un nuevo objeto GeoJSON con 'geometry' antes que 'properties'
                 var orderedGeoJson = {
                     type: geoJson.type,
                     geometry: geoJson.geometry,
                     properties: {}
                 };
-
-                // Añadir otros campos personalizados al GeoJSON en el orden natural
+        
+                // Procesar los campos del formulario y agrupar valores por nombre de campo
+                var formFields = {};
+        
                 for (var i = 0; i < otherFields.length; i++) {
                     var field = otherFields[i];
-                    orderedGeoJson.properties['nm_' + field.name] = field.value;
+                    if (formFields[field.name]) {
+                        if (Array.isArray(formFields[field.name])) {
+                            formFields[field.name].push(field.value);
+                        } else {
+                            formFields[field.name] = [formFields[field.name], field.value];
+                        }
+                    } else {
+                        formFields[field.name] = field.value;
+                    }
                 }
-
+        
+                // Añadir los campos del formulario a orderedGeoJson.properties
+                for (var fieldName in formFields) {
+                    orderedGeoJson.properties['nm_' + fieldName] = formFields[fieldName];
+                }
+        
                 shapes.push(orderedGeoJson);
             });
-
+        
             formData.append('form_data[map_data]', JSON.stringify(shapes));
-
-
-
-
+        
             console.log(formData);
             $.ajax({
                 url: nmPublic.ajax_url,
@@ -105,7 +116,7 @@ jQuery(document).ready(function ($) {
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    alert('Form submitted successfully.' + JSON.stringify(formData));
+                    alert('Form submitted successfully.');
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     alert('Error submitting form: ' + textStatus);
@@ -113,5 +124,7 @@ jQuery(document).ready(function ($) {
                 }
             });
         });
+        
+
     }
 });
