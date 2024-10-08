@@ -127,4 +127,38 @@ jQuery(document).ready(function ($) {
         
 
     }
+
+    // Manejar el botón de descarga
+    if (nmMapData.enable_geojson_download) {
+        $('#nm-download-geojson').on('click', function() {
+            $.ajax({
+                url: nmMapData.ajax_url,
+                method: 'POST',
+                data: {
+                    action: 'nm_download_geojson',
+                    nonce: nmMapData.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Crear un enlace de descarga
+                        var blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'nexusmap_data.geojson';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    } else {
+                        alert('Error downloading GeoJSON: ' + response.data);
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while downloading GeoJSON.');
+                }
+            });
+        });
+    }
+
 });

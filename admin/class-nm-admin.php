@@ -10,6 +10,7 @@ class NM_Admin {
         $this->model = new NM_Model();
 
         $this->loader->add_action( 'admin_menu', $this, 'add_plugin_admin_menu' );
+        $this->loader->add_action( 'admin_init', $this, 'register_map_settings' ); // Agregar el hook para registrar las opciones del mapa
         $this->loader->add_action( 'admin_enqueue_scripts', $this, 'enqueue_admin_assets' );
         $this->loader->add_action( 'wp_ajax_nm_save_form', $this, 'save_form' );
         $this->loader->add_action( 'wp_ajax_nm_get_field_template', $this, 'get_field_template' );
@@ -36,6 +37,16 @@ class NM_Admin {
             'nm-entries',
             array( $this, 'display_entries_page' )
         );
+
+          // Agregar el nuevo submenú para las configuraciones del mapa
+    add_submenu_page(
+        'nm',
+        'Map Settings',
+        'Map Settings',
+        'manage_options',
+        'nm-map-settings',
+        array( $this, 'display_map_settings_page' )
+    );
     }
 
     public function display_plugin_setup_page() {
@@ -46,6 +57,10 @@ class NM_Admin {
     public function display_entries_page() {
         $entries = $this->model->get_entries();
         include_once 'views/entries-list.php';
+    }
+
+    public function display_map_settings_page() {
+        include_once 'views/map-settings.php';
     }
 
     public function enqueue_admin_assets() {
@@ -88,4 +103,36 @@ class NM_Admin {
         $this->model->update_entry_status( $entry_id, $status );
         wp_send_json_success( 'Entry status updated' );
     }
+
+
+    public function register_map_settings() {
+        register_setting( 'nm_map_settings_group', 'nm_enable_geojson_download' );
+    
+        add_settings_section(
+            'nm_map_settings_section',
+            __( 'Map Options', 'nexusmap' ),
+            null,
+            'nm_map_settings'
+        );
+    
+        add_settings_field(
+            'nm_enable_geojson_download',
+            __( 'Enable GeoJSON Download', 'nexusmap' ),
+            array( $this, 'render_geojson_download_field' ),
+            'nm_map_settings',
+            'nm_map_settings_section'
+        );
+    }
+    
+    public function render_geojson_download_field() {
+        $option = get_option( 'nm_enable_geojson_download', false );
+        ?>
+        <input type="checkbox" name="nm_enable_geojson_download" value="1" <?php checked( 1, $option ); ?> />
+        <label for="nm_enable_geojson_download"><?php esc_html_e( 'Enable the option to download map data as GeoJSON.', 'nexusmap' ); ?></label>
+        <?php
+    }
+    
+
+
+
 }

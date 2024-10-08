@@ -21,6 +21,11 @@ class NM_Public {
         $this->loader->add_action( 'wp_ajax_nm_get_map_points', $this, 'get_map_points' );
         $this->loader->add_action( 'wp_ajax_nopriv_nm_get_map_points', $this, 'get_map_points' );
         $this->loader->add_action( 'wp_ajax_nm_submit_form', $this, 'submit_form' );
+
+        // Registrar la acción AJAX para descargar el GeoJSON
+        $this->loader->add_action( 'wp_ajax_nm_download_geojson', $this, 'download_geojson' );
+        $this->loader->add_action( 'wp_ajax_nopriv_nm_download_geojson', $this, 'download_geojson' );
+
     }
 
     /**
@@ -199,6 +204,37 @@ class NM_Public {
     
         wp_send_json_success( 'Formulario enviado exitosamente.' );
     }
+
+    public function download_geojson() {
+        check_ajax_referer( 'nm_public_nonce', 'nonce' );
+    
+        $entries = $this->model->get_entries( 'approved' );
+        $features = array();
+    
+        foreach ( $entries as $entry ) {
+            $entry_data = maybe_unserialize( $entry->entry_data );
+            if ( isset( $entry_data['map_data'] ) ) {
+                $map_data = json_decode( stripslashes( $entry_data['map_data'] ), true );
+                if ( json_last_error() === JSON_ERROR_NONE && is_array( $map_data ) ) {
+                    foreach ( $map_data as $feature ) {
+                        // Agregar información adicional si es necesario
+                        $feature['properties']['title'] = isset( $entry_data['title'] ) ? esc_html( $entry_data['title'] ) : 'Sin título';
+                        $features[] = $feature;
+                    }
+                } else {
+                    error_log( 'Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg() );
+                }
+            }
+        }
+    
+        $geojson = array(
+            'type'     => 'FeatureCollection',
+            'features' => $features
+        );
+    
+        wp_send_json_success( $geojson );
+    }
+    
     
     
 }
