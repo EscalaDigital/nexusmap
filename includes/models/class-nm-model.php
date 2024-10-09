@@ -87,6 +87,14 @@ class NM_Model {
         return $results;
     }
 
+    public function get_entry_by_id( $entry_id ) {
+        global $wpdb;
+        $table = $this->entries_table;
+        $result = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $entry_id ) );
+        return $result;
+    }
+    
+
     public function update_entry_status( $entry_id, $status ) {
         global $wpdb;
         $wpdb->update(
