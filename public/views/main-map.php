@@ -1,5 +1,6 @@
 <?php
 $enable_geojson_download = get_option( 'nm_enable_geojson_download', false );
+$enable_search = get_option( 'nm_enable_search', false );
 ?>
 
 <div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"></div>
@@ -21,6 +22,7 @@ $enable_geojson_download = get_option( 'nm_enable_geojson_download', false );
         zoom: <?php echo esc_js( $atts['zoom'] ); ?>,
         ajax_url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
         nonce: '<?php echo wp_create_nonce( 'nm_public_nonce' ); ?>',
-        enable_geojson_download: <?php echo $enable_geojson_download ? 'true' : 'false'; ?>
+        enable_geojson_download: <?php echo $enable_geojson_download ? 'true' : 'false'; ?>, // opción para habilitar la descarga de GeoJSON
+        enable_search: <?php echo $enable_search ? 'true' : 'false'; ?> // opción para habilitar la búsqueda
     };
 </script>

@@ -84,63 +84,69 @@ class NM_Public
     {
         wp_enqueue_style('nm-public-css', NM_PLUGIN_URL . 'public/css/public.css', array(), NM_VERSION);
         wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/form.css', array(), NM_VERSION);
-
+    
         // Enqueue Leaflet CSS
         wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
-
+    
         // Enqueue Leaflet JS
         wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);
-
+    
         // Enqueue Leaflet Draw CSS
         wp_enqueue_style('nm-leaflet-draw-css', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css', array('nm-leaflet-css'), '1.0.4');
-
+    
         // Enqueue Leaflet Draw JS
         wp_enqueue_script('nm-leaflet-draw-js', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js', array('nm-leaflet-js'), '1.0.4', true);
-
+    
+        // Incluir Leaflet Control Geocoder
+        wp_enqueue_style('leaflet-geocoder-css', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css', array(), '1.13.0');
+        wp_enqueue_script('leaflet-geocoder-js', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js', array('nm-leaflet-js'), '1.13.0', true);
+    
         // Enqueue the plugin's public JS
-        wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);
-
+        wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js', 'leaflet-geocoder-js'), NM_VERSION, true);
+    
         // Localize script
         wp_localize_script('nm-public-js', 'nmPublic', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('nm_public_nonce')
         ));
     }
+    
 
     /**
      * Get map points via AJAX
      */
-    public function get_map_points() {
-        check_ajax_referer( 'nm_public_nonce', 'nonce' );
-        $entries = $this->model->get_entries( 'approved' );
+    public function get_map_points()
+    {
+        check_ajax_referer('nm_public_nonce', 'nonce');
+        $entries = $this->model->get_entries('approved');
         $features = array();
-    
-        foreach ( $entries as $entry ) {
-            $entry_data = maybe_unserialize( $entry->entry_data );
-            if ( isset( $entry_data['map_data'] ) ) {
-                $map_data = json_decode( stripslashes( $entry_data['map_data'] ), true );
-                if ( json_last_error() === JSON_ERROR_NONE && is_array( $map_data ) ) {
-                    foreach ( $map_data as $feature ) {
+
+        foreach ($entries as $entry) {
+            $entry_data = maybe_unserialize($entry->entry_data);
+            if (isset($entry_data['map_data'])) {
+                $map_data = json_decode(stripslashes($entry_data['map_data']), true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
+                    foreach ($map_data as $feature) {
                         // Agregar todas las propiedades del entry_data al properties
-                        foreach ( $entry_data as $key => $value ) {
-                            if ( $key !== 'map_data' ) { // Excluir 'map_data' si está
-                                $feature['properties'][$key] = esc_html( $value );
+                        foreach ($entry_data as $key => $value) {
+                            if ($key !== 'map_data') { // Excluir 'map_data' si está
+                                $feature['properties'][$key] = esc_html($value);
                             }
                         }
                         // Agregar el entry_id
                         $feature['properties']['entry_id'] = $entry->id;
-    
+
                         $features[] = $feature;
                     }
                 } else {
-                    error_log( 'Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg() );
+                    error_log('Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg());
                 }
             }
         }
-    
-        wp_send_json( $features );
+
+        wp_send_json($features);
     }
-    
+
 
 
     // Método para obtener detalles de la entrada

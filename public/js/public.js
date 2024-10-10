@@ -6,6 +6,19 @@ jQuery(document).ready(function ($) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+       
+          // Agregar el control de búsqueda si está habilitado
+          if (nmMapData.enable_search) {
+            console.log('Enable Seawewewerch:', nmMapData.enable_search);
+            L.Control.geocoder({
+                position: 'bottomright', // 'topleft', 'topright', 'bottomleft', 'bottomright'
+                defaultMarkGeocode: false
+            })
+            .on('markgeocode', function(e) {
+                var latlng = e.geocode.center;
+                map.setView(latlng, 18); // Ajusta el nivel de zoom según prefieras
+            }).addTo(map);
+        }
 
         // Load points via AJAX
         $.post(nmMapData.ajax_url, {
