@@ -21,6 +21,9 @@ require_once NM_PLUGIN_DIR . 'includes/models/class-nm-model.php';
 require_once NM_PLUGIN_DIR . 'includes/class-nm-activator.php';
 require_once NM_PLUGIN_DIR . 'includes/class-nm-deactivator.php';
 
+// Incluir el archivo de funciones utilitarias
+include_once plugin_dir_path(__FILE__) . 'nm-utils.php';
+
 // Registrar los hooks de activación y desactivación
 register_activation_hook( __FILE__, array( 'NM_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'NM_Deactivator', 'deactivate' ) );

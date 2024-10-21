@@ -220,7 +220,7 @@ class NM_Public
                         // La carga fue exitosa, obtener la URL del archivo
                         $file_url = $uploaded_file['url'];
                         // Agregar la URL del archivo a $entry_data
-                        $entry_data[sanitize_text_field($file_key)] = esc_url_raw($file_url);
+                        $entry_data[sanitize_text_field($file_key)] = nm_sanitize_tile_url($file_url);
                     } else {
                         // Manejar el error en la carga
                         wp_send_json_error('Error al cargar el archivo: ' . $uploaded_file['error']);

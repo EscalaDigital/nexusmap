@@ -1,11 +1,68 @@
 jQuery(document).ready(function ($) {
     if ($('#nm-main-map').length) {
-
+      
         var map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+         // Crear objetos para las capas base y overlays
+         var baseLayers = {};
+         var overlays = {};
+ 
+               // Agregar las capas base
+        if (Array.isArray(nmMapData.base_layers) && nmMapData.base_layers.length > 0) {
+            console.log('nmMapData.base_layers:', nmMapData.base_layers);
+            nmMapData.base_layers.forEach(function (layer) {
+                var tileLayer = L.tileLayer(layer.url, {
+                    attribution: layer.attribution || ''
+                    // Puedes agregar más opciones aquí
+                });
+                baseLayers[layer.name] = tileLayer;
+                console.log('url:', layer.url);
+                console.log('attribution:', layer.attribution);
+                console.log('tileLayer:', tileLayer);
+            });
+        
+            // Agregar la primera capa base al mapa por defecto
+            var firstBaseLayer = baseLayers[Object.keys(baseLayers)[0]];
+            console.log('firstBaseLayer:', firstBaseLayer);
+            L.tileLayer(firstBaseLayer._url, {
+                attribution: firstBaseLayer.options.attribution
+            }).addTo(map);
+        
+        } else {
+            // Si no hay capas base definidas, usar una por defecto
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+        }
+    
+         // Agregar las capas overlay
+         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
+             nmMapData.overlay_layers.forEach(function (layer) {
+                 var overlay;
+                 if (layer.type === 'geojson') {
+                     // Cargar la capa GeoJSON
+                     overlay = L.geoJSON(null); // Inicialmente vacía
+                     // Cargar los datos GeoJSON desde la URL
+                     $.getJSON(layer.url, function (data) {
+                         overlay.addData(data);
+                     });
+                 } else if (layer.type === 'wms') {
+                     // Agregar capa WMS
+                     overlay = L.tileLayer.wms(layer.url, {
+                         layers: layer.wms_layer_name, // Nombre de la capa WMS especificada
+                         format: 'image/png',
+                         transparent: true,
+                         attribution: layer.attribution || ''
+                         // Puedes agregar más opciones aquí
+                     });
+                 }
+                 overlays[layer.name] = overlay;
+                 console.log('nmMapData:', overlays);
+             });
+         }
+ 
+         // Agregar controles de capas
+         L.control.layers(baseLayers, overlays).addTo(map);
        
           // Agregar el control de búsqueda si está habilitado
           if (nmMapData.enable_search) {
