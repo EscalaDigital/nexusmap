@@ -13,9 +13,13 @@ $overlay_layers = get_option( 'nm_overlay_layers', array() );
         <div id="nm-modal-body"></div>
     </div>
 </div>
-<?php if ( $enable_geojson_download ) : ?>
-    <button id="nm-download-geojson" style="position: absolute; top: 10px; right: 10px; z-index: 1000;"><?php esc_html_e( 'Download GeoJSON', 'nexusmap' ); ?></button>
-<?php endif; ?>
+
+<div id="nm-top-controls" class="nm-top-controls">
+        <!-- Los botones se agregarán aquí -->
+    </div>
+
+    
+
 
 <script type="text/javascript">
     

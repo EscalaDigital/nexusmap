@@ -1,81 +1,125 @@
+var map;
+
 jQuery(document).ready(function ($) {
     if ($('#nm-main-map').length) {
-      
-        var map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
-         // Crear objetos para las capas base y overlays
-         var baseLayers = {};
-         var overlays = {};
- 
-               // Agregar las capas base
+        map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
+
+        // Crear objetos para las capas base y overlays
+        var baseLayers = {};
+        var overlays = {};
+
+        // Crear el contenedor de controles si aún no existe
+        if ($('#nm-top-controls').length === 0) {
+            $('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
+        }
+
+        // Referencia al contenedor de controles
+        var $topControls = $('#nm-top-controls');
+
+        // Botón de descarga de GeoJSON
+        if (nmMapData.enable_geojson_download) {
+            var $downloadButton = $('<button>', {
+                class: 'nm-control-button',
+                title: 'Descargar GeoJSON',
+                html: '<i class="fa fa-download"></i>'
+            });
+            $downloadButton.on('click', function (e) {
+                e.stopPropagation(); // Evita que el evento se propague al mapa
+                downloadGeoJson();
+            });
+            $topControls.append($downloadButton);
+        }
+      // Botón de búsqueda y campo de entrada
+      if (nmMapData.enable_search) {
+        var $searchContainer = $('<div>', { class: 'nm-search-container' });
+        var $searchButton = $('<button>', {
+            class: 'nm-control-button',
+            title: 'Buscar',
+            html: '<i class="fa fa-search"></i>'
+        });
+        $searchButton.on('click', function (e) {
+            e.stopPropagation();
+            toggleSearchInput();
+        });
+        $searchContainer.append($searchButton);
+
+        var $searchInput = $('<input>', {
+            type: 'text',
+            class: 'nm-search-input',
+            placeholder: 'Buscar ubicación...'
+        }).hide();
+
+        $searchInput.on('keypress', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                performSearch($searchInput.val());
+            }
+        });
+
+        $searchContainer.append($searchInput);
+
+        $topControls.append($searchContainer);
+    }
+        // Asegurarse de que el contenedor del mapa tiene posición relativa
+        $('#nm-main-map').css('position', 'relative');
+
+        // Agregar las capas base
         if (Array.isArray(nmMapData.base_layers) && nmMapData.base_layers.length > 0) {
-            console.log('nmMapData.base_layers:', nmMapData.base_layers);
+
             nmMapData.base_layers.forEach(function (layer) {
                 var tileLayer = L.tileLayer(layer.url, {
                     attribution: layer.attribution || ''
                     // Puedes agregar más opciones aquí
                 });
                 baseLayers[layer.name] = tileLayer;
-                console.log('url:', layer.url);
-                console.log('attribution:', layer.attribution);
-                console.log('tileLayer:', tileLayer);
+
             });
-        
+
             // Agregar la primera capa base al mapa por defecto
             var firstBaseLayer = baseLayers[Object.keys(baseLayers)[0]];
-            console.log('firstBaseLayer:', firstBaseLayer);
+
             L.tileLayer(firstBaseLayer._url, {
                 attribution: firstBaseLayer.options.attribution
             }).addTo(map);
-        
+
         } else {
             // Si no hay capas base definidas, usar una por defecto
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
         }
-    
-         // Agregar las capas overlay
-         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
-             nmMapData.overlay_layers.forEach(function (layer) {
-                 var overlay;
-                 if (layer.type === 'geojson') {
-                     // Cargar la capa GeoJSON
-                     overlay = L.geoJSON(null); // Inicialmente vacía
-                     // Cargar los datos GeoJSON desde la URL
-                     $.getJSON(layer.url, function (data) {
-                         overlay.addData(data);
-                     });
-                 } else if (layer.type === 'wms') {
-                     // Agregar capa WMS
-                     overlay = L.tileLayer.wms(layer.url, {
-                         layers: layer.wms_layer_name, // Nombre de la capa WMS especificada
-                         format: 'image/png',
-                         transparent: true,
-                         attribution: layer.attribution || ''
-                         // Puedes agregar más opciones aquí
-                     });
-                 }
-                 overlays[layer.name] = overlay;
-                 console.log('nmMapData:', overlays);
-             });
-         }
- 
-         // Agregar controles de capas
-         L.control.layers(baseLayers, overlays).addTo(map);
-       
-          // Agregar el control de búsqueda si está habilitado
-          if (nmMapData.enable_search) {
-            console.log('Enable Seawewewerch:', nmMapData.enable_search);
-            L.Control.geocoder({
-                position: 'bottomright', // 'topleft', 'topright', 'bottomleft', 'bottomright'
-                defaultMarkGeocode: false
-            })
-            .on('markgeocode', function(e) {
-                var latlng = e.geocode.center;
-                map.setView(latlng, 18); // Ajusta el nivel de zoom según prefieras
-            }).addTo(map);
+
+        // Agregar las capas overlay
+        if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
+            nmMapData.overlay_layers.forEach(function (layer) {
+                var overlay;
+                if (layer.type === 'geojson') {
+                    // Cargar la capa GeoJSON
+                    overlay = L.geoJSON(null); // Inicialmente vacía
+                    // Cargar los datos GeoJSON desde la URL
+                    $.getJSON(layer.url, function (data) {
+                        overlay.addData(data);
+                    });
+                } else if (layer.type === 'wms') {
+                    // Agregar capa WMS
+                    overlay = L.tileLayer.wms(layer.url, {
+                        layers: layer.wms_layer_name, // Nombre de la capa WMS especificada
+                        format: 'image/png',
+                        transparent: true,
+                        attribution: layer.attribution || ''
+                        // Puedes agregar más opciones aquí
+                    });
+                }
+                overlays[layer.name] = overlay;
+
+            });
         }
+
+        // Agregar controles de capas
+        L.control.layers(baseLayers, overlays).addTo(map);
+
+
 
         // Load points via AJAX
         $.post(nmMapData.ajax_url, {
@@ -92,15 +136,15 @@ jQuery(document).ready(function ($) {
                         layer.on('click', function () {
                             // Obtener las propiedades del feature
                             var properties = feature.properties;
-                    
+
                             // Clonar el objeto properties para no modificar el original
                             var propertiesToShow = Object.assign({}, properties);
-                    
+
                             // Remover el entry_id de las propiedades a mostrar
                             delete propertiesToShow.entry_id;
-                    
-                            console.log('Properties:', propertiesToShow);
-                    
+
+
+
                             // Mostrar el modal con las propiedades
                             showModal(propertiesToShow);
                         });
@@ -189,7 +233,7 @@ jQuery(document).ready(function ($) {
 
             formData.append('form_data[map_data]', JSON.stringify(shapes));
 
-            console.log(formData);
+
             $.ajax({
                 url: nmPublic.ajax_url,
                 method: 'POST',
@@ -209,40 +253,68 @@ jQuery(document).ready(function ($) {
 
     }
 
-    // Manejar el botón de descarga
-    if (nmMapData.enable_geojson_download) {
-        $('#nm-download-geojson').on('click', function () {
-            $.ajax({
-                url: nmMapData.ajax_url,
-                method: 'POST',
-                data: {
-                    action: 'nm_download_geojson',
-                    nonce: nmMapData.nonce
-                },
-                success: function (response) {
-                    if (response.success) {
-                        // Crear un enlace de descarga
-                        var blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
-                        var url = URL.createObjectURL(blob);
-                        var a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'nexusmap_data.geojson';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    } else {
-                        alert('Error downloading GeoJSON: ' + response.data);
-                    }
-                },
-                error: function () {
-                    alert('An error occurred while downloading GeoJSON.');
-                }
-            });
-        });
-    }
 
 });
+
+//funcion para descargar datos en formato geojson
+// Manejar el botón de descarga
+function downloadGeoJson() {
+    $.ajax({
+        url: nmMapData.ajax_url,
+        method: 'POST',
+        data: {
+            action: 'nm_download_geojson',
+            nonce: nmMapData.nonce
+        },
+        success: function (response) {
+            if (response.success) {
+                // Crear un enlace de descarga
+                var blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'nexusmap_data.geojson';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                alert('Error downloading GeoJSON: ' + response.data);
+            }
+        },
+        error: function () {
+            alert('An error occurred while downloading GeoJSON.');
+        }
+    });
+}
+
+//funcion para abrir el control de busqueda
+function toggleSearchInput() {
+    var $searchInput = $('.nm-search-input');
+    $searchInput.toggle();
+    if ($searchInput.is(':visible')) {
+        $searchInput.focus();
+    }
+}
+
+function performSearch(query) {
+    if (!query) {
+        alert('Por favor, ingrese una ubicación para buscar.');
+        return;
+    }
+
+    // Usar el geocodificador para obtener las coordenadas
+    var geocoder = L.Control.Geocoder.nominatim(); // O el geocodificador que estés utilizando
+    geocoder.geocode(query, function(results) {
+        if (results && results.length > 0) {
+            var result = results[0];
+            map.setView(result.center, 18); // Ajusta el nivel de zoom según sea necesario
+        } else {
+            alert('No se encontraron resultados para: ' + query);
+        }
+    });
+}
+
 
 //funciones para mostrar datos de elementos puntuales
 // Función para mostrar un modal con las propiedades de un elemento
@@ -295,11 +367,11 @@ function showModal(properties) {
     $('#nm-modal').css('display', 'block');
 
     // Manejar el cierre del modal
-    $('#nm-modal-close').on('click', function() {
+    $('#nm-modal-close').on('click', function () {
         $('#nm-modal').css('display', 'none');
     });
 
-    $(window).on('click', function(event) {
+    $(window).on('click', function (event) {
         if ($(event.target).is('#nm-modal')) {
             $('#nm-modal').css('display', 'none');
         }

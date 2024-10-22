@@ -16,6 +16,77 @@
     height: 400px;
 }
 
+/*estilos para el control de capas*/
+/* Estilo general para la sección principal */
+.leaflet-control-layers-list {
+    font-family: Arial, sans-serif; /* Fuente básica */
+    background-color: #f9f9f9; /* Fondo claro */
+    border: 1px solid #ccc; /* Borde gris claro */
+    border-radius: 8px; /* Esquinas redondeadas */
+    padding: 10px; /* Espaciado interno */
+    max-width: 300px; /* Ancho máximo */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    overflow: auto; /* Scroll automático si el contenido excede el tamaño */
+  }
+  
+  /* Div que contiene las capas base */
+  .leaflet-control-layers-base {
+    margin-bottom: 10px; /* Margen inferior */
+  }
+  
+  /* Estilo para el separador */
+  .leaflet-control-layers-separator {
+    height: 1px; /* Línea separadora */
+    background-color: #e0e0e0; /* Color de fondo del separador */
+    margin: 10px 0; /* Margen superior e inferior */
+  }
+  
+  /* Div que contiene las superposiciones */
+  .leaflet-control-layers-overlays {
+    margin-top: 10px; /* Margen superior */
+  }
+  
+  /* Estilo para el label que contiene el checkbox y el texto */
+  .leaflet-control-layers-overlays label {
+    display: block; /* Forzar el label a ocupar toda la línea */
+    padding: 5px; /* Espaciado interno */
+    cursor: pointer; /* Cambiar el cursor al pasar por encima */
+    transition: background-color 0.3s ease; /* Transición suave para hover */
+  }
+  
+  /* Estilo para el checkbox */
+  .leaflet-control-layers-selector {
+    margin-right: 8px; /* Separación entre el checkbox y el texto */
+    vertical-align: middle; /* Alinear el checkbox con el texto */
+  }
+  
+  /* Estilo del texto junto al checkbox */
+  .leaflet-control-layers-overlays label span {
+    font-size: 14px; /* Tamaño de fuente */
+    color: #333; /* Color del texto */
+  }
+  
+  /* Efecto hover para el label */
+  .leaflet-control-layers-overlays label:hover {
+    background-color: #e6e6e6; /* Fondo gris claro al pasar el cursor */
+  }
+  
+  /* Efecto para cuando el checkbox está activo */
+  .leaflet-control-layers-selector:checked + span {
+    font-weight: bold; /* Negrita para el texto cuando está seleccionado */
+  }
+  
+  /* Ajustes para pantallas pequeñas */
+  @media (max-width: 600px) {
+    .leaflet-control-layers-list {
+      max-width: 100%; /* Hacer que la sección ocupe todo el ancho disponible */
+      font-size: 12px; /* Reducir el tamaño de la fuente en pantallas pequeñas */
+    }
+  }
+  
+
+
+
 /* Estilos para el modal */
 .nm-modal {
     display: none; /* Oculto por defecto */
@@ -51,3 +122,64 @@
     text-decoration: none;
     cursor: pointer;
 }
+
+/* Contenedor de los controles superiores */
+
+#nm-top-controls {
+    position: absolute;
+    top: 10px; /* Ajusta según sea necesario */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+/* Estilos para los botones */
+.nm-control-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 5px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+}
+
+.nm-control-button:hover {
+    background-color: #f0f0f0;
+}
+
+.nm-control-button i {
+    font-size: 18px;
+    color: #333;
+}
+
+/* Estilos para el buscador */
+
+.nm-search-container {
+    display: flex;
+    align-items: center;
+}
+
+.nm-search-input {
+    position: absolute;
+    top: 50px; /* Ajusta según sea necesario */
+    left: 40%;
+    margin-left: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 150px; /* Ajusta el ancho según tus necesidades */
+}
+
+.nm-search-input:focus {
+    outline: none;
+    border-color: #aaa;
+}
+
+
