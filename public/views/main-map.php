@@ -1,6 +1,7 @@
 <?php
 $enable_geojson_download = get_option( 'nm_enable_geojson_download', false );
 $enable_search = get_option( 'nm_enable_search', false );
+$enable_user_wms = get_option('nm_enable_user_wms', false);
 $base_layers = get_option( 'nm_base_layers', array() );
 $overlay_layers = get_option( 'nm_overlay_layers', array() );
 ?>
@@ -31,7 +32,9 @@ $overlay_layers = get_option( 'nm_overlay_layers', array() );
         nonce: '<?php echo wp_create_nonce( 'nm_public_nonce' ); ?>',
         enable_geojson_download: <?php echo $enable_geojson_download ? 'true' : 'false'; ?>, // opción para habilitar la descarga de GeoJSON
         enable_search: <?php echo $enable_search ? 'true' : 'false'; ?>, // opción para habilitar la búsqueda
+        enable_user_wms: <?php echo json_encode((bool) $enable_user_wms); ?>, // Opción para habilitar que el usuario pueda agregar WMS
         base_layers: <?php echo json_encode( $base_layers ); ?>,
-        overlay_layers: <?php echo json_encode( $overlay_layers ); ?>
+        overlay_layers: <?php echo json_encode( $overlay_layers ); ?>,
+        plugin_url: <?php echo json_encode(NM_PLUGIN_URL); ?>
     };
 </script>

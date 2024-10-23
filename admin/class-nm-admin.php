@@ -261,6 +261,7 @@ class NM_Admin
     {
         register_setting('nm_map_settings_group', 'nm_enable_geojson_download'); // opción para habilitar la descarga de GeoJSON
         register_setting('nm_map_settings_group', 'nm_enable_search'); // opción para habilitar la búsqueda
+        register_setting('nm_map_settings_group', 'nm_enable_user_wms'); // Opción para habilitar que el usuario pueda agregar WMS
 
         add_settings_section(
             'nm_map_settings_section',
@@ -281,6 +282,14 @@ class NM_Admin
             'nm_enable_search',
             __('Enable Map Search', 'nexusmap'),
             array($this, 'render_map_search_field'),
+            'nm_map_settings',
+            'nm_map_settings_section'
+        );
+        // Agregar el campo add user wms
+        add_settings_field(
+            'nm_enable_user_wms',
+            __('Enable User WMS Layers', 'nexusmap'),
+            array($this, 'render_user_wms_field'),
             'nm_map_settings',
             'nm_map_settings_section'
         );
@@ -305,4 +314,14 @@ class NM_Admin
         <label for="nm_enable_search"><?php esc_html_e('Enable the search functionality on the map.', 'nexusmap'); ?></label>
 <?php
     }
+
+    public function render_user_wms_field()
+{
+    $option = get_option('nm_enable_user_wms', false);
+    ?>
+    <input type="checkbox" name="nm_enable_user_wms" value="1" <?php checked(1, $option); ?> />
+    <label for="nm_enable_user_wms"><?php esc_html_e('Allow users to add WMS layers to the map.', 'nexusmap'); ?></label>
+    <?php
+}
+
 }

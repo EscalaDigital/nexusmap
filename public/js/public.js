@@ -1,4 +1,5 @@
 var map;
+var overlay;
 
 jQuery(document).ready(function ($) {
     if ($('#nm-main-map').length) {
@@ -30,37 +31,52 @@ jQuery(document).ready(function ($) {
             });
             $topControls.append($downloadButton);
         }
-      // Botón de búsqueda y campo de entrada
-      if (nmMapData.enable_search) {
-        var $searchContainer = $('<div>', { class: 'nm-search-container' });
-        var $searchButton = $('<button>', {
-            class: 'nm-control-button',
-            title: 'Buscar',
-            html: '<i class="fa fa-search"></i>'
-        });
-        $searchButton.on('click', function (e) {
-            e.stopPropagation();
-            toggleSearchInput();
-        });
-        $searchContainer.append($searchButton);
+        // Botón de búsqueda y campo de entrada
+        if (nmMapData.enable_search) {
+            var $searchContainer = $('<div>', { class: 'nm-search-container' });
+            var $searchButton = $('<button>', {
+                class: 'nm-control-button',
+                title: 'Buscar',
+                html: '<i class="fa fa-search"></i>'
+            });
+            $searchButton.on('click', function (e) {
+                e.stopPropagation();
+                toggleSearchInput();
+            });
+            $searchContainer.append($searchButton);
 
-        var $searchInput = $('<input>', {
-            type: 'text',
-            class: 'nm-search-input',
-            placeholder: 'Buscar ubicación...'
-        }).hide();
+            var $searchInput = $('<input>', {
+                type: 'text',
+                class: 'nm-search-input',
+                placeholder: 'Buscar ubicación...'
+            }).hide();
 
-        $searchInput.on('keypress', function (e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                performSearch($searchInput.val());
-            }
-        });
+            $searchInput.on('keypress', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    performSearch($searchInput.val());
+                }
+            });
 
-        $searchContainer.append($searchInput);
+            $searchContainer.append($searchInput);
 
-        $topControls.append($searchContainer);
-    }
+            $topControls.append($searchContainer);
+        }
+
+        // Botón para añadir capas WMS
+        if (nmMapData.enable_user_wms) {
+            var $addWmsButton = $('<button>', {
+                class: 'nm-control-button',
+                title: 'Añadir capa WMS',
+                html: '<i class="fa fa-plus"></i>'
+            });
+            $addWmsButton.on('click', function (e) {
+                e.stopPropagation(); // Evita que el evento se propague al mapa
+                showAddWmsForm();
+            });
+            $topControls.append($addWmsButton);
+        }
+
         // Asegurarse de que el contenedor del mapa tiene posición relativa
         $('#nm-main-map').css('position', 'relative');
 
@@ -93,7 +109,7 @@ jQuery(document).ready(function ($) {
         // Agregar las capas overlay
         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
             nmMapData.overlay_layers.forEach(function (layer) {
-                var overlay;
+         
                 if (layer.type === 'geojson') {
                     // Cargar la capa GeoJSON
                     overlay = L.geoJSON(null); // Inicialmente vacía
@@ -297,6 +313,7 @@ function toggleSearchInput() {
     }
 }
 
+
 function performSearch(query) {
     if (!query) {
         alert('Por favor, ingrese una ubicación para buscar.');
@@ -305,7 +322,7 @@ function performSearch(query) {
 
     // Usar el geocodificador para obtener las coordenadas
     var geocoder = L.Control.Geocoder.nominatim(); // O el geocodificador que estés utilizando
-    geocoder.geocode(query, function(results) {
+    geocoder.geocode(query, function (results) {
         if (results && results.length > 0) {
             var result = results[0];
             map.setView(result.center, 18); // Ajusta el nivel de zoom según sea necesario
@@ -314,7 +331,6 @@ function performSearch(query) {
         }
     });
 }
-
 
 //funciones para mostrar datos de elementos puntuales
 // Función para mostrar un modal con las propiedades de un elemento
@@ -367,16 +383,135 @@ function showModal(properties) {
     $('#nm-modal').css('display', 'block');
 
     // Manejar el cierre del modal
-    $('#nm-modal-close').on('click', function () {
+    $('#nm-modal-close').on('click', function() {
         $('#nm-modal').css('display', 'none');
     });
 
-    $(window).on('click', function (event) {
+    $(window).on('click', function(event) {
         if ($(event.target).is('#nm-modal')) {
             $('#nm-modal').css('display', 'none');
         }
     });
 }
+
+
+/// Función para mostrar el formulario de añadir WMS
+function showAddWmsForm() {
+    if ($('#nm-wms-form').length === 0) {
+        var $wmsForm = $('<div>', { id: 'nm-wms-form', class: 'nm-modal' });
+        var $wmsFormContent = $('<div>', { class: 'nm-modal-content' });
+
+        var $formTitle = $('<h3>').text('Añadir capa WMS');
+        var $labelUrl = $('<label>', { for: 'nm-wms-url' }).text('URL del servicio WMS:');
+        var $inputUrl = $('<input>', { type: 'text', id: 'nm-wms-url', name: 'nm-wms-url' });
+
+        var $labelLayerName = $('<label>', { for: 'nm-wms-layer-name' }).text('Nombre de la capa WMS:');
+        var $inputLayerName = $('<input>', { type: 'text', id: 'nm-wms-layer-name', name: 'nm-wms-layer-name' });
+
+        var $addButton = $('<button>', { id: 'nm-wms-add-button' }).text('Agregar capa');
+        var $cancelButton = $('<button>', { id: 'nm-wms-cancel-button' }).text('Cancelar');
+
+               // Icono de carga oculto inicialmente
+        var $loadingIcon = $('<div>', { id: 'nm-wms-loading', style: 'display:none;' }).html('<img src="' + nmMapData.plugin_url + '/includes/img/Loading_icon.gif" alt="Cargando...">');
+
+        $wmsFormContent.append($formTitle, $labelUrl, $inputUrl, $labelLayerName, $inputLayerName, $addButton, $cancelButton, $loadingIcon);
+        $wmsForm.append($wmsFormContent);
+
+        $('#nm-main-map').append($wmsForm);
+
+        $wmsForm.css({
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            'background-color': 'rgba(0,0,0,0.5)',
+            'z-index': '1000',
+            display: 'flex',
+            'align-items': 'center',
+            'justify-content': 'center'
+        });
+
+        $wmsFormContent.css({
+            'background-color': '#fff',
+            padding: '20px',
+            'border-radius': '5px',
+            width: '300px'
+        });
+
+        $wmsForm.hide();
+
+        $addButton.on('click', function () {
+            var wmsUrl = $inputUrl.val();
+            var wmsLayerName = $inputLayerName.val();
+
+            if (wmsUrl && wmsLayerName) {
+                if (!/^https?:\/\//i.test(wmsUrl)) {
+                    alert('Por favor, ingrese una URL válida que comience con http:// o https://');
+                    return;
+                }
+
+                if (/[^a-zA-Z0-9_:,.-]/.test(wmsLayerName)) {
+                    alert('El nombre de la capa contiene caracteres no permitidos.');
+                    return;
+                }
+
+                // Ocultar botón de agregar y mostrar el icono de carga
+                $addButton.hide();
+                $loadingIcon.show();
+
+                // Agregar la capa WMS al mapa
+                var userWmsLayer = L.tileLayer.wms(wmsUrl, {
+                    layers: wmsLayerName,
+                    format: 'image/png',
+                    transparent: true,
+                    attribution: ''
+                });
+
+                // Variable para asegurarse de que la alerta se muestre solo una vez
+        var alertShown = false;
+
+                userWmsLayer.on('tileload', function () {
+                    if (!alertShown) {
+                        alertShown = true; // Evitar que la alerta se muestre de nuevo
+                        alert('Capa WMS cargada con éxito');
+                        $loadingIcon.hide();
+                        $addButton.show();
+                        $wmsForm.hide();
+                        $inputUrl.val('');
+                        $inputLayerName.val('');
+                    }
+                });
+
+                userWmsLayer.on('tileerror', function (error, tile) {
+                    alert('Error al cargar la capa WMS. Por favor, verifique la URL y el nombre de la capa.');
+                       // Ocultar el icono de carga y mostrar el botón de agregar nuevamente
+                       $loadingIcon.hide();
+                       $addButton.show();
+                    map.removeLayer(userWmsLayer);
+                    controlLayers.removeLayer(userWmsLayer);
+                 
+                });
+
+                userWmsLayer.addTo(map);
+
+                overlays[wmsLayerName] = userWmsLayer;
+                controlLayers.addOverlay(userWmsLayer, wmsLayerName);
+            } else {
+                alert('Por favor, complete todos los campos.');
+            }
+        });
+
+        $cancelButton.on('click', function () {
+            $wmsForm.hide();
+            $inputUrl.val('');
+            $inputLayerName.val('');
+        });
+    }
+
+    $('#nm-wms-form').show();
+}
+
 
 
 // Función para validar si una cadena es una URL

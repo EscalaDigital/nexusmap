@@ -123,6 +123,25 @@
     cursor: pointer;
 }
 
+.nm-modal-content h3 {
+  margin-top: 0;
+}
+
+.nm-modal-content label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.nm-modal-content input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.nm-modal-content button {
+  margin-right: 5px;
+}
+
 /* Contenedor de los controles superiores */
 
 #nm-top-controls {
