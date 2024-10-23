@@ -1,14 +1,16 @@
 var map;
 var overlay;
+  // Crear objetos para las capas base y overlays
+  var baseLayers = {};
+  var overlays = {};
+  var controlLayers ;
 
 jQuery(document).ready(function ($) {
     if ($('#nm-main-map').length) {
 
         map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
-        // Crear objetos para las capas base y overlays
-        var baseLayers = {};
-        var overlays = {};
+      
 
         // Crear el contenedor de controles si aún no existe
         if ($('#nm-top-controls').length === 0) {
@@ -133,7 +135,7 @@ jQuery(document).ready(function ($) {
         }
 
         // Agregar controles de capas
-        L.control.layers(baseLayers, overlays).addTo(map);
+        controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
 
 
 
