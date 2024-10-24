@@ -213,7 +213,16 @@ class NM_Admin
     public function enqueue_admin_assets()
     {
         wp_enqueue_style('nm-admin-css', NM_PLUGIN_URL . 'admin/css/admin.css', array(), NM_VERSION);
+        wp_enqueue_style('nm-entries-css', NM_PLUGIN_URL . 'admin/css/entries.css', array(), NM_VERSION);
+
+        // Encolar CSS y JS de Leaflet
+        wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), null);
+        wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), null, true);
+
+
+
         wp_enqueue_script('nm-admin-js', NM_PLUGIN_URL . 'admin/js/admin.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), NM_VERSION, true);
+        wp_enqueue_script('nm-entries-js', NM_PLUGIN_URL . 'admin/js/entries.js', array('jquery', 'leaflet-js'), NM_VERSION, true);
         wp_localize_script('nm-admin-js', 'nmAdmin', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('nm_admin_nonce')
@@ -312,16 +321,15 @@ class NM_Admin
     ?>
         <input type="checkbox" name="nm_enable_search" value="1" <?php checked(1, $option); ?> />
         <label for="nm_enable_search"><?php esc_html_e('Enable the search functionality on the map.', 'nexusmap'); ?></label>
-<?php
+    <?php
     }
 
     public function render_user_wms_field()
-{
-    $option = get_option('nm_enable_user_wms', false);
+    {
+        $option = get_option('nm_enable_user_wms', false);
     ?>
-    <input type="checkbox" name="nm_enable_user_wms" value="1" <?php checked(1, $option); ?> />
-    <label for="nm_enable_user_wms"><?php esc_html_e('Allow users to add WMS layers to the map.', 'nexusmap'); ?></label>
-    <?php
-}
-
+        <input type="checkbox" name="nm_enable_user_wms" value="1" <?php checked(1, $option); ?> />
+        <label for="nm_enable_user_wms"><?php esc_html_e('Allow users to add WMS layers to the map.', 'nexusmap'); ?></label>
+<?php
+    }
 }

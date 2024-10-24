@@ -12,19 +12,34 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ( $entries as $entry ): ?>
+            <?php foreach ($entries as $entry): ?>
                 <tr>
-                    <td><?php echo esc_html( $entry->id ); ?></td>
-                    <td><?php echo esc_html( get_userdata( $entry->user_id )->display_name ); ?></td>
-                    <td><?php echo esc_html( print_r( maybe_unserialize( $entry->entry_data ), true ) ); ?></td>
-                    <td><?php echo esc_html( $entry->status ); ?></td>
-                    <td><?php echo esc_html( $entry->date_submitted ); ?></td>
+                    <td><?php echo esc_html($entry->id); ?></td>
+                    <td><?php echo esc_html(get_userdata($entry->user_id)->display_name); ?></td>
+                
                     <td>
-                        <button class="button approve-entry" data-id="<?php echo esc_attr( $entry->id ); ?>">Approve</button>
-                        <button class="button reject-entry" data-id="<?php echo esc_attr( $entry->id ); ?>">Reject</button>
+                        <button class="button view-data"
+                            data-id="<?php echo esc_attr($entry->id); ?>"
+                            data-json='<?php echo wp_json_encode(maybe_unserialize($entry->entry_data)); ?>'>
+                            View data
+                        </button>
+                    </td>
+                    <td><?php echo esc_html($entry->status); ?></td>
+                    <td><?php echo esc_html($entry->date_submitted); ?></td>
+                    <td>
+                        <button class="button approve-entry" data-id="<?php echo esc_attr($entry->id); ?>">Approve</button>
+                        <button class="button reject-entry" data-id="<?php echo esc_attr($entry->id); ?>">Reject</button>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
+</div>
+
+<div id="dataModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="map" style="height: 400px;"></div>
+        <pre id="jsonData"></pre>
+    </div>
 </div>
