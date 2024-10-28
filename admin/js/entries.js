@@ -1,10 +1,12 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     var map;  // Definir el mapa como una variable global
 
     // Función para comprobar si una cadena es una URL
     function isUrl(string) {
+
         try {
             new URL(string);
+
             return true;
         } catch (_) {
             return false;
@@ -23,12 +25,12 @@ jQuery(document).ready(function($) {
     }
 
     // Cuando se hace clic en el botón "Ver Datos"
-    $('.view-data').on('click', function() {
+    $('.view-data').on('click', function () {
         var jsonData = $(this).data('json');  // Obtiene el JSON deserializado desde PHP
-        console.log(jsonData);  // Verifica que estás recibiendo el JSON correcto
+
 
         // Aquí accedemos a los datos específicos del objeto JSON
-        var mapData = jsonData.map_data;  // Asumiendo que tienes un campo "map_data"
+        var mapData = jsonData.map_data;  // Obtiene la cadena JSON escapada de la base de datos
 
         // Decodifica la cadena JSON escapada antes de parsearla
         var decodedMapData = decodeEscapedJsonString(mapData);
@@ -41,7 +43,7 @@ jQuery(document).ready(function($) {
             return;
         }
 
-        var coordinates = feature.geometry.coordinates;  // Extrae las coordenadas del punto
+        var geometry = feature.geometry;  // Extrae la geometría del feature
         var properties = feature.properties;  // Extrae las propiedades del feature
 
         // Muestra el modal
@@ -53,28 +55,78 @@ jQuery(document).ready(function($) {
         }
 
         // Cargar el mapa de Leaflet dentro del modal
-        setTimeout(function() {  // Usar un timeout para asegurarnos de que el modal se haya mostrado
-            map = L.map('map').setView([coordinates[1], coordinates[0]], 13);  // Inicializa el mapa en las coordenadas (lat, lng)
+        setTimeout(function () {  // Usar un timeout para asegurarnos de que el modal se haya mostrado
+            map = L.map('map').setView([0, 0], 2);  // Inicializa el mapa con una vista global
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
+                maxZoom: 18,
             }).addTo(map);
 
-            // Agrega un marcador en las coordenadas
-            L.marker([coordinates[1], coordinates[0]]).addTo(map)
-                .bindPopup('Coordenadas: ' + coordinates[1] + ', ' + coordinates[0])
-                .openPopup();
-
+         
+                  function addGeometryToMap(geometry) {
+                console.log('Processing geometry type:', geometry.type);
+                var type = geometry.type.toLowerCase();
+                
+                if (type === 'point') {
+                    var latLng = [geometry.coordinates[1], geometry.coordinates[0]];
+                    console.log('Adding Point:', latLng);
+                    L.marker(latLng).addTo(map);
+                    bounds.extend(latLng);
+                } else if (type === 'polygon' || type === 'multipolygon') {
+                    console.log('Adding Polygon:', geometry.coordinates);
+                    var latLngs;
+                
+                    if (type === 'polygon') {
+                        latLngs = geometry.coordinates[0].map(function (coord) {
+                            return [coord[1], coord[0]];
+                        });
+                    } else if (type === 'multipolygon') {
+                        latLngs = geometry.coordinates.map(function (polygon) {
+                            return polygon[0].map(function (coord) {
+                                return [coord[1], coord[0]];
+                            });
+                        }).flat();
+                    }
+                
+                    console.log('Polygon LatLngs:', latLngs);
+                    L.polygon(latLngs, {
+                        color: '#237CC9',
+                        fillColor: '#237CC9',
+                        fillOpacity: 0.5
+                    }).addTo(map);
+                    latLngs.forEach(function(latLng) {
+                        bounds.extend(latLng);
+                    });
+                } else if (geometry.type === 'GeometryCollection') {
+                    console.log('Adding GeometryCollection:', geometry.geometries);
+                    geometry.geometries.forEach(function (geom) {
+                        addGeometryToMap(geom);
+                    });
+                } else {
+                    console.log('Unknown geometry type:', geometry.type);
+                }
+            }
+            
+            var bounds = L.latLngBounds();
+            
+            addGeometryToMap(geometry);
+            
+            if (bounds.isValid()) {
+                map.fitBounds(bounds);
+            }
+            
             // Refresca el tamaño del mapa después de abrir el modal
             map.invalidateSize();
+        
         }, 250);  // Retraso breve para asegurarse de que el modal esté visible
 
         // Mostrar el resto de las propiedades formateadas en el modal
         var propertyHtml = '';
-        $.each(properties, function(key, value) {
+
+        $.each(properties, function (key, value) {
             var cleanKey = key.replace('nm_', '');  // Elimina "nm_" del inicio del key
             var content = value;
-        
+         
             if (isUrl(content)) {
                 var fileType = getFileType(content);
                 if (fileType === 'image') {
@@ -85,7 +137,7 @@ jQuery(document).ready(function($) {
                     content = '<a href="' + content + '" target="_blank">' + content + '</a>';
                 }
             }
-        
+
             // Construye la fila con el título en negrita y el contenido a la derecha
             propertyHtml += '<div class="property-item">';
             propertyHtml += '<strong>' + cleanKey + ':</strong>';
@@ -98,7 +150,7 @@ jQuery(document).ready(function($) {
     });
 
     // Cerrar el modal cuando se hace clic en el botón de cerrar
-    $('.close').on('click', function() {
+    $('.close').on('click', function () {
         $('#dataModal').hide();
     });
 });

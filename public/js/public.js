@@ -1,16 +1,16 @@
 var map;
 var overlay;
-  // Crear objetos para las capas base y overlays
-  var baseLayers = {};
-  var overlays = {};
-  var controlLayers ;
+// Crear objetos para las capas base y overlays
+var baseLayers = {};
+var overlays = {};
+var controlLayers;
 
 jQuery(document).ready(function ($) {
     if ($('#nm-main-map').length) {
 
         map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
-      
+
 
         // Crear el contenedor de controles si aún no existe
         if ($('#nm-top-controls').length === 0) {
@@ -111,7 +111,7 @@ jQuery(document).ready(function ($) {
         // Agregar las capas overlay
         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
             nmMapData.overlay_layers.forEach(function (layer) {
-         
+
                 if (layer.type === 'geojson') {
                     // Cargar la capa GeoJSON
                     overlay = L.geoJSON(null); // Inicialmente vacía
@@ -202,56 +202,72 @@ jQuery(document).ready(function ($) {
 
         $('#nm-user-form').submit(function (e) {
             e.preventDefault();
-
+        
             var formData = new FormData(this);
-
-            // Agregar el parámetro 'action' requerido por WordPress
+        
+            // Add the required 'action' parameter for WordPress
             formData.append('action', 'nm_submit_form');
-
-            // Agregar el nonce para la verificación de seguridad
+        
+            // Add the nonce for security verification
             formData.append('nonce', nmPublic.nonce);
-
-            // Obtener los datos de los campos dibujados en el mapa
-            var shapes = [];
-            var otherFields = $(this).serializeArray();
-
+        
+            // Collect geometries
+            var geometries = [];
             drawnItems.eachLayer(function (layer) {
                 var geoJson = layer.toGeoJSON();
-
-                // Crear un nuevo objeto GeoJSON con 'geometry' antes que 'properties'
-                var orderedGeoJson = {
-                    type: geoJson.type,
-                    geometry: geoJson.geometry,
-                    properties: {}
-                };
-
-                // Procesar los campos del formulario y agrupar valores por nombre de campo
-                var formFields = {};
-
-                for (var i = 0; i < otherFields.length; i++) {
-                    var field = otherFields[i];
-                    if (formFields[field.name]) {
-                        if (Array.isArray(formFields[field.name])) {
-                            formFields[field.name].push(field.value);
-                        } else {
-                            formFields[field.name] = [formFields[field.name], field.value];
-                        }
-                    } else {
-                        formFields[field.name] = field.value;
-                    }
-                }
-
-                // Añadir los campos del formulario a orderedGeoJson.properties
-                for (var fieldName in formFields) {
-                    orderedGeoJson.properties['nm_' + fieldName] = formFields[fieldName];
-                }
-
-                shapes.push(orderedGeoJson);
+                geometries.push(geoJson.geometry);
             });
-
-            formData.append('form_data[map_data]', JSON.stringify(shapes));
-
-
+        
+            // Determine if there's a single geometry or multiple geometries
+            var geometry;
+            if (geometries.length === 1) {
+                // Single geometry
+                geometry = geometries[0];
+            } else if (geometries.length > 1) {
+                // Multiple geometries: create a GeometryCollection
+                geometry = {
+                    type: 'GeometryCollection',
+                    geometries: geometries
+                };
+            } else {
+                // No geometries drawn
+                alert('Por favor, dibuje al menos una geometría en el mapa.');
+                return;
+            }
+        
+            // Collect form fields into an object
+            var formFields = {};
+            $('#nm-user-form').serializeArray().forEach(function (field) {
+                // Handle multiple values for checkboxes
+                if (formFields['nm_' + field.name]) {
+                    if (Array.isArray(formFields['nm_' + field.name])) {
+                        formFields['nm_' + field.name].push(field.value);
+                    } else {
+                        formFields['nm_' + field.name] = [formFields['nm_' + field.name], field.value];
+                    }
+                } else {
+                    formFields['nm_' + field.name] = field.value;
+                }
+            });
+        
+            // Create a single Feature with geometry and properties
+            var feature = {
+                type: 'Feature',
+                geometry: geometry,
+                properties: formFields
+            };
+        
+            // Ensure 'geometry' comes before 'properties' in the JSON
+            var orderedFeature = {
+                type: feature.type,
+                geometry: feature.geometry,
+                properties: feature.properties
+            };
+        
+            // Append map data to form data
+            formData.append('map_data', JSON.stringify(orderedFeature));
+        
+            // Send the AJAX request
             $.ajax({
                 url: nmPublic.ajax_url,
                 method: 'POST',
@@ -259,14 +275,15 @@ jQuery(document).ready(function ($) {
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    alert('Form submitted successfully.');
+                    alert('Formulario enviado exitosamente.');
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    alert('Error submitting form: ' + textStatus);
+                    alert('Error al enviar el formulario: ' + textStatus);
                     console.error('AJAX Error:', textStatus, errorThrown);
                 }
             });
         });
+        
 
 
     }
@@ -385,11 +402,11 @@ function showModal(properties) {
     $('#nm-modal').css('display', 'block');
 
     // Manejar el cierre del modal
-    $('#nm-modal-close').on('click', function() {
+    $('#nm-modal-close').on('click', function () {
         $('#nm-modal').css('display', 'none');
     });
 
-    $(window).on('click', function(event) {
+    $(window).on('click', function (event) {
         if ($(event.target).is('#nm-modal')) {
             $('#nm-modal').css('display', 'none');
         }
@@ -413,7 +430,7 @@ function showAddWmsForm() {
         var $addButton = $('<button>', { id: 'nm-wms-add-button' }).text('Agregar capa');
         var $cancelButton = $('<button>', { id: 'nm-wms-cancel-button' }).text('Cancelar');
 
-               // Icono de carga oculto inicialmente
+        // Icono de carga oculto inicialmente
         var $loadingIcon = $('<div>', { id: 'nm-wms-loading', style: 'display:none;' }).html('<img src="' + nmMapData.plugin_url + '/includes/img/Loading_icon.gif" alt="Cargando...">');
 
         $wmsFormContent.append($formTitle, $labelUrl, $inputUrl, $labelLayerName, $inputLayerName, $addButton, $cancelButton, $loadingIcon);
@@ -471,7 +488,7 @@ function showAddWmsForm() {
                 });
 
                 // Variable para asegurarse de que la alerta se muestre solo una vez
-        var alertShown = false;
+                var alertShown = false;
 
                 userWmsLayer.on('tileload', function () {
                     if (!alertShown) {
@@ -487,12 +504,12 @@ function showAddWmsForm() {
 
                 userWmsLayer.on('tileerror', function (error, tile) {
                     alert('Error al cargar la capa WMS. Por favor, verifique la URL y el nombre de la capa.');
-                       // Ocultar el icono de carga y mostrar el botón de agregar nuevamente
-                       $loadingIcon.hide();
-                       $addButton.show();
+                    // Ocultar el icono de carga y mostrar el botón de agregar nuevamente
+                    $loadingIcon.hide();
+                    $addButton.show();
                     map.removeLayer(userWmsLayer);
                     controlLayers.removeLayer(userWmsLayer);
-                 
+
                 });
 
                 userWmsLayer.addTo(map);

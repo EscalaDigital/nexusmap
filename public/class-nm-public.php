@@ -84,36 +84,36 @@ class NM_Public
     {
         wp_enqueue_style('nm-public-css', NM_PLUGIN_URL . 'public/css/public.css', array(), NM_VERSION);
         wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/form.css', array(), NM_VERSION);
-    
+
         // Enqueue Leaflet CSS
         wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
 
-         // Incluir Font Awesome
-    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-    
+        // Incluir Font Awesome
+        wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
         // Enqueue Leaflet JS
         wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);
-    
+
         // Enqueue Leaflet Draw CSS
         wp_enqueue_style('nm-leaflet-draw-css', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css', array('nm-leaflet-css'), '1.0.4');
-    
+
         // Enqueue Leaflet Draw JS
         wp_enqueue_script('nm-leaflet-draw-js', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js', array('nm-leaflet-js'), '1.0.4', true);
-    
+
         // Incluir Leaflet Control Geocoder
         wp_enqueue_style('leaflet-geocoder-css', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css', array(), '1.13.0');
         wp_enqueue_script('leaflet-geocoder-js', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js', array('nm-leaflet-js'), '1.13.0', true);
-    
+
         // Enqueue the plugin's public JS
         wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js', 'leaflet-geocoder-js'), NM_VERSION, true);
-    
+
         // Localize script
         wp_localize_script('nm-public-js', 'nmPublic', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('nm_public_nonce')
         ));
     }
-    
+
 
     /**
      * Get map points via AJAX
@@ -180,72 +180,113 @@ class NM_Public
         }
     }
 
-
     public function submit_form()
     {
+        // Verify nonce for security
         check_ajax_referer('nm_public_nonce', 'nonce');
 
-        // Recoger y sanitizar los datos del formulario
-        $entry_data = array();
-        if (isset($_POST['form_data']) && is_array($_POST['form_data'])) {
-            foreach ($_POST['form_data'] as $key => $value) {
-                // Manejar arrays (e.g., checkboxes)
-                if (is_array($value)) {
-                    $sanitized_value = array_map('sanitize_text_field', $value);
-                    $entry_data[sanitize_text_field($key)] = $sanitized_value;
-                } else {
-                    $entry_data[sanitize_text_field($key)] = sanitize_text_field($value);
-                }
+        // Collect form fields (excluding 'action', 'nonce', 'map_data')
+        $form_fields = array();
+        foreach ($_POST as $key => $value) {
+            if (in_array($key, array('action', 'nonce', 'map_data'))) {
+                continue;
+            }
+            if (is_array($value)) {
+                $sanitized_value = array_map('sanitize_text_field', $value);
+                $form_fields['nm_' . $key] = $sanitized_value;
+            } else {
+                $form_fields['nm_' . $key] = sanitize_text_field($value);
             }
         }
 
-        // Manejar archivos si es necesario
-        if (! empty($_FILES)) {
+        // Handle file uploads
+        if (!empty($_FILES)) {
             foreach ($_FILES as $file_key => $file_array) {
-                // Verificar si el archivo se ha cargado sin errores
+                // Verify if the file was uploaded without errors
                 if ($file_array['error'] === UPLOAD_ERR_OK) {
-                    // Opcional: especificar tipos de archivo permitidos
+                    // Specify allowed file types
                     $allowed_types = array(
                         'jpg|jpeg|jpe' => 'image/jpeg',
                         'png'          => 'image/png',
                         'gif'          => 'image/gif',
                         'pdf'          => 'application/pdf',
-                        // Añade otros tipos de archivo si es necesario
+                        // Add other file types if necessary
                     );
 
-                    // Manejar la carga del archivo
+                    // Handle file upload
                     $uploaded_file = wp_handle_upload($file_array, array(
                         'test_form' => false,
                         'mimes'     => $allowed_types,
                     ));
 
-                    if ($uploaded_file && ! isset($uploaded_file['error'])) {
-                        // La carga fue exitosa, obtener la URL del archivo
+                    if ($uploaded_file && !isset($uploaded_file['error'])) {
+                        // Upload was successful, get the file URL
                         $file_url = $uploaded_file['url'];
-                        // Agregar la URL del archivo a $entry_data
-                        $entry_data[sanitize_text_field($file_key)] = nm_sanitize_tile_url($file_url);
+                        // Add the file URL to $form_fields
+                        $form_fields['nm_' . $file_key] = esc_url_raw($file_url);
                     } else {
-                        // Manejar el error en la carga
-                        wp_send_json_error('Error al cargar el archivo: ' . $uploaded_file['error']);
+                        // Handle upload error
+                        wp_send_json_error('Error al subir el archivo: ' . $uploaded_file['error']);
                         wp_die();
                     }
                 } elseif ($file_array['error'] !== UPLOAD_ERR_NO_FILE) {
-                    // Manejar otros errores de carga
-                    wp_send_json_error('Código de error al cargar el archivo: ' . $file_array['error']);
+                    // Handle other upload errors
+                    wp_send_json_error('Código de error al subir el archivo: ' . $file_array['error']);
                     wp_die();
                 }
-                // Si UPLOAD_ERR_NO_FILE, no se subió ningún archivo para este campo; puedes omitirlo
+                // If UPLOAD_ERR_NO_FILE, no file was uploaded for this field; you can skip it
             }
         }
 
+        // Get 'map_data' from $_POST
+        if (isset($_POST['map_data'])) {
+            $map_data_json = stripslashes($_POST['map_data']);
+            $map_data = json_decode($map_data_json, true);
+            if ($map_data === null && json_last_error() !== JSON_ERROR_NONE) {
+                wp_send_json_error('Datos JSON inválidos para map_data.');
+                wp_die();
+            }
+        } else {
+            wp_send_json_error('No se proporcionó map_data.');
+            wp_die();
+        }
+
+        // Assign the form_fields to the 'properties' of the Feature
+        $map_data['properties'] = $form_fields;
+
+        // Ensure 'geometry' comes before 'properties' in the JSON
+        $ordered_map_data = array(
+            'type' => $map_data['type'],
+            'geometry' => $map_data['geometry'],
+            'properties' => $map_data['properties']
+        );
+
+        // Re-encode the JSON without escaping unicode and slashes
+        $final_map_data_json = json_encode([$ordered_map_data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        // Escape the JSON string
+        $final_map_data_json_escaped = addslashes($final_map_data_json);
+
+        // Prepare the data to be saved
+        $entry_data = array();
+        $entry_data['map_data'] = $final_map_data_json_escaped;
+
+
+        // Save the data using your model's save_entry method
         $user_id = get_current_user_id();
         $this->model->save_entry($entry_data, $user_id);
 
-        // Enviar notificación al administrador
+        // Send notification to the administrator
         wp_mail(get_option('admin_email'), 'Nueva presentación de formulario', 'Se ha enviado un nuevo formulario y está pendiente de aprobación.');
 
+        // Send success response
         wp_send_json_success('Formulario enviado exitosamente.');
     }
+
+
+
+
+
 
     public function download_geojson()
     {
