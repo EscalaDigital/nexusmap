@@ -18,7 +18,7 @@ class NM_Ajax_Handlers
     }
 
     // Función para guardar el formulario
-    public function save_form()
+    public function gitignore ()
     {
         check_ajax_referer('nm_admin_nonce', 'nonce');
         
