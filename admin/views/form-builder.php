@@ -187,33 +187,7 @@
             </div>
         </div>
 
-        <!-- JavaScript to handle tab switching -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Get the tab links and content divs
-                const tabs = document.querySelectorAll('.nav-tab-wrapper a');
-                const tabContents = document.querySelectorAll('.tab-content');
-
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', function(e) {
-                        e.preventDefault();
-
-                        // Remove active class from all tabs
-                        tabs.forEach(t => t.classList.remove('nav-tab-active'));
-
-                        // Hide all tab contents
-                        tabContents.forEach(content => content.style.display = 'none');
-
-                        // Add active class to the clicked tab
-                        this.classList.add('nav-tab-active');
-
-                        // Show the corresponding tab content
-                        const target = this.getAttribute('href');
-                        document.querySelector(target).style.display = 'block';
-                    });
-                });
-            });
-        </script>
+       
 
     </div>
 

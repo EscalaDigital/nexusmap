@@ -1,33 +1,33 @@
 jQuery(document).ready(function ($) {
     // Toggle visibility of A/B options when checkbox is changed
-$('#nm-ab-option').change(function() {
-    if($(this).is(':checked')) {
-        $('#tabsforms').show();
-        $('#formunique').hide();
-        // Initialize tabs if not already initialized
-        if (!$('#tabsforms').hasClass('ui-tabs')) {
-            $('#tabsforms').tabs();
+    $('#nm-ab-option').change(function () {
+        if ($(this).is(':checked')) {
+            $('#tabsforms').show();
+            $('#formunique').hide();
+            // Initialize tabs if not already initialized
+            if (!$('#tabsforms').hasClass('ui-tabs')) {
+                $('#tabsforms').tabs();
+            }
+        } else {
+            $('#tabsforms').hide();
+            $('#formunique').show();
+            // Destroy tabs if initialized
+            if ($('#tabsforms').hasClass('ui-tabs')) {
+                $('#tabsforms').tabs('destroy');
+            }
         }
-    } else {
-        $('#tabsforms').hide();
-        $('#formunique').show();
-        // Destroy tabs if initialized
-        if($('#tabsforms').hasClass('ui-tabs')) {
-            $('#tabsforms').tabs('destroy');
-        }
-    }
 
-    // Save the A/B option setting via AJAX
-    $.post(nmAdmin.ajax_url, {
-        action: 'nm_save_ab_option',
-        ab_option: $(this).is(':checked') ? 1 : 0,
-        nonce: nmAdmin.nonce
-    }, function(response) {
-        if(!response.success) {
-            alert('Error al guardar la opción A/B.');
-        }
+        // Save the A/B option setting via AJAX
+        $.post(nmAdmin.ajax_url, {
+            action: 'nm_save_ab_option',
+            ab_option: $(this).is(':checked') ? 1 : 0,
+            nonce: nmAdmin.nonce
+        }, function (response) {
+            if (!response.success) {
+                alert('Error al guardar la opción A/B.');
+            }
+        });
     });
-});
 
     // Handle click on the save option texts button
     $('#nm-save-option-texts').on('click', function (e) {
@@ -183,21 +183,59 @@ $('#nm-ab-option').change(function() {
         });
     }
 
+    // Function to validate if all fields are filled
+    function validateForm(formId) {
+        let isValid = true;
+        $(`${formId} .nm-form-field input, ${formId} .nm-form-field select, ${formId} .nm-form-field textarea`).each(function () {
+            if ($(this).val() === "") {
+                isValid = false;
+                $(this).css('border', '1px solid red'); // Highlight empty fields
+            } else {
+                $(this).css('border', ''); // Reset field style if filled
+            }
+        });
+
+        if (!isValid) {
+            alert("Por favor, completa todos los campos antes de guardar.");
+        }
+        return isValid;
+    }
+
+    // Function to save form after validation
+    function saveForm(formId, formType) {
+        // Only proceed if validation is successful
+        if (validateForm(formId)) {
+            // Logic to save the form based on formType
+            // Use formType to differentiate between Form A, Form B, and Unique Form
+            $.ajax({
+                url: 'save_form.php', // URL del script para guardar
+                method: 'POST',
+                data: $(formId).serialize() + '&form_type=' + formType,
+                success: function (response) {
+                    alert("Formulario guardado correctamente.");
+                    console.log(response); // Opcional: Mostrar la respuesta en la consola para depuración
+                },
+                error: function () {
+                    alert("Error al guardar el formulario.");
+                }
+            });
+        }
+    }
+
+    // Event listeners to save each form
     // Save Form A
     $('#nm-save-form-a').click(function () {
         saveForm('#nm-custom-form-a', 1);
     });
-
     // Save Form B
     $('#nm-save-form-b').click(function () {
         saveForm('#nm-custom-form-b', 2);
     });
-
-    // Save Unique Form
+    //  Save Unique Form
     $('#nm-save-form').click(function () {
         saveForm('#nm-custom-form', 0);
     });
-    
+
     // Entries Page Actions
     $('.approve-entry').click(function () {
         var entryId = $(this).data('id');
