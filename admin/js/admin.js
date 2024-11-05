@@ -202,38 +202,25 @@ jQuery(document).ready(function ($) {
     }
 
     // Function to save form after validation
-    function saveForm(formId, formType) {
+    function compruebaysalva(formId, formType) {
         // Only proceed if validation is successful
         if (validateForm(formId)) {
-            // Logic to save the form based on formType
-            // Use formType to differentiate between Form A, Form B, and Unique Form
-            $.ajax({
-                url: 'save_form.php', // URL del script para guardar
-                method: 'POST',
-                data: $(formId).serialize() + '&form_type=' + formType,
-                success: function (response) {
-                    alert("Formulario guardado correctamente.");
-                    console.log(response); // Opcional: Mostrar la respuesta en la consola para depuración
-                },
-                error: function () {
-                    alert("Error al guardar el formulario.");
-                }
-            });
+            saveForm(formId, formType);
         }
     }
 
     // Event listeners to save each form
     // Save Form A
     $('#nm-save-form-a').click(function () {
-        saveForm('#nm-custom-form-a', 1);
+        compruebaysalva('#nm-custom-form-a', 1);
     });
     // Save Form B
     $('#nm-save-form-b').click(function () {
-        saveForm('#nm-custom-form-b', 2);
+        compruebaysalva('#nm-custom-form-b', 2);
     });
     //  Save Unique Form
     $('#nm-save-form').click(function () {
-        saveForm('#nm-custom-form', 0);
+        compruebaysalva('#nm-custom-form', 0);
     });
 
     // Entries Page Actions
