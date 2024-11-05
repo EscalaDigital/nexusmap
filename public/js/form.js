@@ -10,14 +10,27 @@ if ($('#nm-user-form').length) {
     var drawnItems = new L.FeatureGroup();
     drawMap.addLayer(drawnItems);
 
-    var drawControl = new L.Control.Draw({
-        edit: {
-            featureGroup: drawnItems
-        }
-    });
+
+
+    // Configuración de Leaflet Draw
+var drawControl = new L.Control.Draw({
+    draw: {
+        polyline: false,    // Deshabilita líneas
+        polygon: false,     // Deshabilita polígonos
+        rectangle: false,   // Deshabilita rectángulos
+        circle: false,      // Deshabilita círculos
+        circlemarker: false,// Deshabilita marcadores de círculo
+        marker: true        // Solo habilita el marcador
+    },
+    edit: {
+        featureGroup: drawnItems // Añadir el grupo de características editables
+    }
+});
     drawMap.addControl(drawControl);
 
     drawMap.on(L.Draw.Event.CREATED, function (e) {
+        //vaciar drswnItems
+        drawnItems.clearLayers();
         drawnItems.addLayer(e.layer);
     });
 
