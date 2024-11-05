@@ -68,3 +68,48 @@
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
+
+.selection-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+.selection-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.selection-options {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+
+.selection-button {
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #767676;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    min-width: 150px;
+    text-align: center;
+}
+
+.selection-button:hover {
+    background-color: #005bb5;
+}
+
+.selection-button:active {
+    background-color: #003f7d;
+}

@@ -59,6 +59,20 @@
     position: relative;
 }
 
+#nm-custom-form-a .nm-form-field {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+#nm-custom-form-b .nm-form-field {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    position: relative;
+}
+
 .nm-remove-field {
     position: absolute;
     top: 5px;
@@ -165,7 +179,7 @@
 }
 
 /* Estilo para el área donde se arrastran y sueltan los campos */
-#nm-custom-form {
+#nm-custom-form, #tab-a , #tab-b {
     min-height: 200px;
     border: 2px dashed #0073aa;
     padding: 10px;
@@ -188,3 +202,56 @@
     background-color: #dfe3e7;
 }
 
+/* Contenedor de tabs */
+   /* Estilo para la navegación de las pestañas */
+   #tabsforms .tab-navigation {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+#tabsforms .tab-navigation li {
+    flex: 1;
+}
+
+#tabsforms .tab-navigation li a {
+    display: block;
+    padding: 15px;
+    text-align: center;
+    text-decoration: none;
+    color: #555;
+    font-weight: bold;
+    background-color: #e0e0e0;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#tabsforms .tab-navigation li a:hover {
+    background-color: #d5d5d5;
+    color: #000;
+}
+
+#tabsforms .tab-navigation li.ui-tabs-active a {
+    background-color: #fff;
+    color: #000;
+    cursor: default;
+}
+
+/* Estilo para el contenido de las pestañas */
+#tabsforms .ui-tabs-panel {
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+}
+
+/* Transición suave entre pestañas */
+#tabsforms .ui-tabs-panel {
+    display: none;
+}
+
+#tabsforms .ui-tabs-panel.ui-tabs-active {
+    display: block;
+}

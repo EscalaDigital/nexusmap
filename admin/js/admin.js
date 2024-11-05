@@ -1,14 +1,69 @@
 jQuery(document).ready(function ($) {
+    // Toggle visibility of A/B options when checkbox is changed
+$('#nm-ab-option').change(function() {
+    if($(this).is(':checked')) {
+        $('#tabsforms').show();
+        $('#formunique').hide();
+        // Initialize tabs if not already initialized
+        if (!$('#tabsforms').hasClass('ui-tabs')) {
+            $('#tabsforms').tabs();
+        }
+    } else {
+        $('#tabsforms').hide();
+        $('#formunique').show();
+        // Destroy tabs if initialized
+        if($('#tabsforms').hasClass('ui-tabs')) {
+            $('#tabsforms').tabs('destroy');
+        }
+    }
+
+    // Save the A/B option setting via AJAX
+    $.post(nmAdmin.ajax_url, {
+        action: 'nm_save_ab_option',
+        ab_option: $(this).is(':checked') ? 1 : 0,
+        nonce: nmAdmin.nonce
+    }, function(response) {
+        if(!response.success) {
+            alert('Error al guardar la opción A/B.');
+        }
+    });
+});
+
+    // Handle click on the save option texts button
+    $('#nm-save-option-texts').on('click', function (e) {
+        e.preventDefault();
+        var optionAText = $('#nm-option-a-text').val();
+        var optionBText = $('#nm-option-b-text').val();
+
+        // Send AJAX request to save the option texts
+        $.post(nmAdmin.ajax_url, {
+            action: 'nm_save_option_texts',
+            option_a_text: optionAText,
+            option_b_text: optionBText,
+            nonce: nmAdmin.nonce
+        }, function (response) {
+            if (response.success) {
+                alert('Option texts saved successfully.');
+                // Update the tab labels if necessary
+                $('#tabsforms ul li a[href="#tab-a"]').text(optionAText);
+                $('#tabsforms ul li a[href="#tab-b"]').text(optionBText);
+            } else {
+                alert('Error saving option texts.');
+            }
+        });
+    });
+
     // Drag and Drop Fields
     $('#nm-form-elements li').draggable({
         helper: 'clone',
         revert: 'invalid'
     });
 
-    $('#nm-custom-form').droppable({
+    $('.nm-form-droppable').droppable({
         accept: '#nm-form-elements li',
         drop: function (event, ui) {
             var fieldType = ui.draggable.data('type');
+            var $thisForm = $(this);
             // AJAX call to get field template
             $.post(nmAdmin.ajax_url, {
                 action: 'nm_get_field_template',
@@ -16,7 +71,7 @@ jQuery(document).ready(function ($) {
                 nonce: nmAdmin.nonce
             }, function (response) {
                 if (response.success) {
-                    $('#nm-custom-form').append(response.data);
+                    $thisForm.append(response.data);
                 } else {
                     alert('Error loading field template.');
                 }
@@ -25,7 +80,7 @@ jQuery(document).ready(function ($) {
     });
 
     // Make form fields sortable
-    $('#nm-custom-form').sortable();
+    $('.nm-form-droppable').sortable();
 
     // Remove Field
     $(document).on('click', '.nm-remove-field', function () {
@@ -81,9 +136,10 @@ jQuery(document).ready(function ($) {
     });
 
     // Modificar la función de guardar formulario para incluir checkboxes
-    $('#nm-save-form').click(function () {
+    // Function to collect form fields and send to server
+    function saveForm(formSelector, formType) {
         var formFields = [];
-        $('#nm-custom-form .nm-form-field').each(function () {
+        $(formSelector + ' .nm-form-field').each(function () {
             var fieldType = $(this).data('type');
             var fieldLabel = $(this).find('.field-label').val() || '';
             var fieldName = $(this).find('.field-name').val() || '';
@@ -115,6 +171,7 @@ jQuery(document).ready(function ($) {
         // Send formFields to the server via AJAX
         $.post(nmAdmin.ajax_url, {
             action: 'nm_save_form',
+            form_type: formType,
             form_data: { fields: formFields },
             nonce: nmAdmin.nonce
         }, function (response) {
@@ -124,7 +181,23 @@ jQuery(document).ready(function ($) {
                 alert('Error saving form.');
             }
         });
+    }
+
+    // Save Form A
+    $('#nm-save-form-a').click(function () {
+        saveForm('#nm-custom-form-a', 1);
     });
+
+    // Save Form B
+    $('#nm-save-form-b').click(function () {
+        saveForm('#nm-custom-form-b', 2);
+    });
+
+    // Save Unique Form
+    $('#nm-save-form').click(function () {
+        saveForm('#nm-custom-form', 0);
+    });
+    
     // Entries Page Actions
     $('.approve-entry').click(function () {
         var entryId = $(this).data('id');

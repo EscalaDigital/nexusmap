@@ -61,22 +61,83 @@ class NM_Public
         return ob_get_clean();
     }
 
-    /**
-     * Display the custom form shortcode
-     */
     public function display_custom_form()
     {
-        if (! is_user_logged_in()) {
+        if (!is_user_logged_in()) {
             return 'You must be logged in to view this form.';
         }
-
-        $form_data = $this->model->get_form();
-
-        ob_start();
-        include NM_PLUGIN_DIR . 'public/views/form-display.php';
-        return ob_get_clean();
+    
+        // Check if the form is submitted
+        if (isset($_POST['nm_submit_form'])) {
+            // Verify the nonce for security
+            if (!isset($_POST['nm_form_nonce']) || !wp_verify_nonce($_POST['nm_form_nonce'], 'nm_form_submit')) {
+                return 'Security check failed.';
+            }
+    
+            // Process the form submission
+            $form_type = intval($_POST['nm_form_type']);
+            $form_data = array();
+    
+            // Sanitize and collect form data
+            foreach ($_POST as $key => $value) {
+                if ($key === 'nm_submit_form' || $key === 'nm_form_type' || $key === 'nm_form_nonce') {
+                    continue;
+                }
+                // Check if the field allows multiple values (e.g., checkboxes)
+                if (is_array($value)) {
+                    $form_data[$key] = array_map('sanitize_text_field', $value);
+                } else {
+                    $form_data[$key] = sanitize_text_field($value);
+                }
+            }
+    
+            // Handle file uploads
+            if (!empty($_FILES)) {
+                foreach ($_FILES as $key => $file) {
+                    if ($file['error'] === UPLOAD_ERR_OK) {
+                        $upload = wp_handle_upload($file, array('test_form' => false));
+                        if ($upload && !isset($upload['error'])) {
+                            $form_data[$key] = $upload['url']; // Save the URL of the uploaded file
+                        } else {
+                            // Handle upload error
+                            $form_data[$key] = $upload['error'];
+                        }
+                    }
+                }
+            }
+    
+            // Save the form data, associated with the form_type
+            $this->model->save_form_submission($form_data, $form_type);
+    
+            // Redirect or show a success message
+            return 'Form submitted successfully!';
+        }
+    
+        // Check if the A/B option is enabled
+        $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
+    
+        if ($ab_option_enabled) {
+            // If A/B option is enabled, retrieve forms A and B
+            $form_data_a = $this->model->get_form(1); // form_type = 1
+            $form_data_b = $this->model->get_form(2); // form_type = 2
+    
+            // Include the view that allows the user to choose between two options
+            ob_start();
+            include NM_PLUGIN_DIR . 'public/views/form-display-ab.php';
+            return ob_get_clean();
+    
+        } else {
+            // If A/B option is not enabled, retrieve the single form
+            $form_data = $this->model->get_form(0); // form_type = 0
+    
+            // Include the single form view
+            ob_start();
+            include NM_PLUGIN_DIR . 'public/views/form-display.php';
+            return ob_get_clean();
+        }
     }
-
+    
+    
     /**
      * Enqueue public assets
      */

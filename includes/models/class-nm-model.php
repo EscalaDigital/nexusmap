@@ -16,10 +16,12 @@ class NM_Model {
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $this->forms_table (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            form_data longtext NOT NULL,
-            PRIMARY KEY  (id)
-        ) $charset_collate;";
+                    id mediumint(9) NOT NULL AUTO_INCREMENT,
+                    form_data longtext NOT NULL,
+                    form_type int(11) NOT NULL DEFAULT 0,
+                    PRIMARY KEY  (id)
+                ) $charset_collate;";
+
 
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
         dbDelta( $sql );
@@ -43,25 +45,38 @@ class NM_Model {
     }
 
     // Methods to handle form data
-    public function save_form( $form_data ) {
+ 
+    public function save_form($form_data, $form_type) {
         global $wpdb;
+    
         $wpdb->insert(
             $this->forms_table,
-            array( 'form_data' => maybe_serialize( $form_data ) ),
-            array( '%s' )
+            array(
+                'form_data' => maybe_serialize($form_data),
+                'form_type' => $form_type,
+            ),
+            array(
+                '%s',
+                '%d',
+            )
         );
     }
 
-    public function get_form() {
+    public function get_form($form_type = 0) {
         global $wpdb;
-        $result = $wpdb->get_row("SELECT * FROM $this->forms_table ORDER BY id DESC LIMIT 1");
+        $result = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM $this->forms_table WHERE form_type = %d ORDER BY id DESC LIMIT 1",
+                $form_type
+            )
+        );
     
         if ($result !== null) {
             return maybe_unserialize($result->form_data);
         } else {
-            // Manejar el caso nulo, por ejemplo, devolver un valor por defecto o lanzar una excepción
-            error_log("Warning: No form data found.");
-            return null; // o un valor por defecto si aplica
+            // Handle the null case, e.g., return a default value or throw an exception
+            error_log("Warning: No form data found for form_type $form_type.");
+            return null; // or a default value if applicable
         }
     }
     // Methods to handle entries

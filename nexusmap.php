@@ -28,6 +28,8 @@ include_once plugin_dir_path(__FILE__) . 'nm-utils.php';
 register_activation_hook( __FILE__, array( 'NM_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'NM_Deactivator', 'deactivate' ) );
 
+
+
 function console_log($message) {
     echo '<script type="text/javascript">';
     echo 'console.log(' . json_encode($message) . ');';
