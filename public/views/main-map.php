@@ -6,7 +6,10 @@ $base_layers = get_option( 'nm_base_layers', array() );
 $overlay_layers = get_option( 'nm_overlay_layers', array() );
 ?>
 
-<div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"></div>
+<div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"><div id="nm-top-controls" class="nm-top-controls">
+        <!-- Los botones se agregarán aquí -->
+    </div>
+</div>
 <!-- Modal -->
 <div id="nm-modal" class="nm-modal">
     <div class="nm-modal-content">
@@ -15,9 +18,6 @@ $overlay_layers = get_option( 'nm_overlay_layers', array() );
     </div>
 </div>
 
-<div id="nm-top-controls" class="nm-top-controls">
-        <!-- Los botones se agregarán aquí -->
-    </div>
 
     
 

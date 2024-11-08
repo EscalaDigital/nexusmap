@@ -64,31 +64,31 @@
                     <?php
                         break;
 
-                        case 'select':
-                            ?>
-                            <div class="nm-form-field" data-type="select">
-                                <label><?php echo esc_html( $field['label'] ); ?></label>
-                                <?php if ( isset( $field['options'] ) && is_array( $field['options'] ) ) { ?>
-                                    <select name="<?php echo esc_attr( $field['name'] ); ?>">
-                                        <?php foreach ( $field['options'] as $option ) { ?>
-                                            <option value="<?php echo esc_attr( $option ); ?>"><?php echo esc_html( $option ); ?></option>
-                                        <?php } ?>
-                                    </select>
-                                <?php } else { ?>
-                                    <p>No options available for this field.</p>
-                                <?php } ?>
-                            </div>
-                            <?php
-                            break;
-                      
-                        case 'file':
-                            ?>
-                            <div class="nm-form-field" data-type="file">
-                                <label><?php echo esc_html( $field['label'] ); ?></label>
-                                <input type="file" name="<?php echo esc_attr( $field['name'] ); ?>">
-                            </div>
-                            <?php
-                            break;
+                    case 'select':
+                    ?>
+                        <div class="nm-form-field" data-type="select">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <?php if (isset($field['options']) && is_array($field['options'])) { ?>
+                                <select name="<?php echo esc_attr($field['name']); ?>">
+                                    <?php foreach ($field['options'] as $option) { ?>
+                                        <option value="<?php echo esc_attr($option); ?>"><?php echo esc_html($option); ?></option>
+                                    <?php } ?>
+                                </select>
+                            <?php } else { ?>
+                                <p>No options available for this field.</p>
+                            <?php } ?>
+                        </div>
+                    <?php
+                        break;
+
+                    case 'file':
+                    ?>
+                        <div class="nm-form-field" data-type="file">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <input type="file" name="<?php echo esc_attr($field['name']); ?>">
+                        </div>
+                    <?php
+                        break;
                     case 'map':
                     ?>
                         <div class="nm-form-field" data-type="map">
@@ -113,22 +113,22 @@
                         break;
 
 
-                        case 'date':
-                            ?>
-                            <div class="nm-form-field" data-type="date">
-                                <label><?php echo esc_html( $field['label'] ); ?></label>
-                                <input type="date" name="<?php echo esc_attr( $field['name'] ); ?>">
-                            </div>
-                            <?php
-                            break;
-                            case 'url':
-                                ?>
-                                <div class="nm-form-field" data-type="url">
-                                    <label><?php echo esc_html( $field['label'] ); ?></label>
-                                    <input type="url" name="<?php echo esc_attr( $field['name'] ); ?>">
-                                </div>
-                                <?php
-                                break;
+                    case 'date':
+                    ?>
+                        <div class="nm-form-field" data-type="date">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <input type="date" name="<?php echo esc_attr($field['name']); ?>">
+                        </div>
+                    <?php
+                        break;
+                    case 'url':
+                    ?>
+                        <div class="nm-form-field" data-type="url">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <input type="url" name="<?php echo esc_attr($field['name']); ?>">
+                        </div>
+                    <?php
+                        break;
                     case 'range':
                     ?>
                         <div class="nm-form-field" data-type="range">
@@ -144,6 +144,8 @@
             }
         }
         ?>
-        <button type="submit" class="button">Submit</button>
+        <input type="hidden" name="nm_form_type" value="0">
+        <?php wp_nonce_field('nm_form_submit', 'nm_form_nonce'); ?>
+        <button type="submit" name="nm_submit_form" class="button">Submit</button>
     </form>
 </div>

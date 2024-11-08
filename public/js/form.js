@@ -1,5 +1,5 @@
 jQuery(document).ready(function ($) {
-if ($('#nm-user-form').length) {
+if (jQuery('#nm-user-form').length) {
     // Initialize map drawing
     var drawMap = L.map('nm-map-canvas').setView([0, 0], 2);
 
@@ -34,7 +34,7 @@ var drawControl = new L.Control.Draw({
         drawnItems.addLayer(e.layer);
     });
 
-    $('#nm-user-form').submit(function (e) {
+    jQuery('#nm-user-form').submit(function (e) {
         e.preventDefault();
     
         var formData = new FormData(this);
@@ -71,7 +71,7 @@ var drawControl = new L.Control.Draw({
     
         // Collect form fields into an object
         var formFields = {};
-        $('#nm-user-form').serializeArray().forEach(function (field) {
+        jQuery('#nm-user-form').serializeArray().forEach(function (field) {
             // Handle multiple values for checkboxes
             if (formFields['nm_' + field.name]) {
                 if (Array.isArray(formFields['nm_' + field.name])) {
@@ -102,7 +102,7 @@ var drawControl = new L.Control.Draw({
         formData.append('map_data', JSON.stringify(orderedFeature));
     
         // Send the AJAX request
-        $.ajax({
+        jQuery.ajax({
             url: nmPublic.ajax_url,
             method: 'POST',
             data: formData,

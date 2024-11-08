@@ -6,23 +6,23 @@ var overlays = {};
 var controlLayers;
 
 jQuery(document).ready(function ($) {
-    if ($('#nm-main-map').length) {
+    if (jQuery('#nm-main-map').length) {
 
         map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
 
 
         // Crear el contenedor de controles si aún no existe
-        if ($('#nm-top-controls').length === 0) {
-            $('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
+        if (jQuery('#nm-top-controls').length === 0) {
+            jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
         }
 
         // Referencia al contenedor de controles
-        var $topControls = $('#nm-top-controls');
+        var $topControls = jQuery('#nm-top-controls');
 
         // Botón de descarga de GeoJSON
         if (nmMapData.enable_geojson_download) {
-            var $downloadButton = $('<button>', {
+            var $downloadButton = jQuery('<button>', {
                 class: 'nm-control-button',
                 title: 'Descargar GeoJSON',
                 html: '<i class="fa fa-download"></i>'
@@ -35,8 +35,8 @@ jQuery(document).ready(function ($) {
         }
         // Botón de búsqueda y campo de entrada
         if (nmMapData.enable_search) {
-            var $searchContainer = $('<div>', { class: 'nm-search-container' });
-            var $searchButton = $('<button>', {
+            var $searchContainer = jQuery('<div>', { class: 'nm-search-container' });
+            var $searchButton = jQuery('<button>', {
                 class: 'nm-control-button',
                 title: 'Buscar',
                 html: '<i class="fa fa-search"></i>'
@@ -47,7 +47,7 @@ jQuery(document).ready(function ($) {
             });
             $searchContainer.append($searchButton);
 
-            var $searchInput = $('<input>', {
+            var $searchInput = jQuery('<input>', {
                 type: 'text',
                 class: 'nm-search-input',
                 placeholder: 'Buscar ubicación...'
@@ -67,7 +67,7 @@ jQuery(document).ready(function ($) {
 
         // Botón para añadir capas WMS
         if (nmMapData.enable_user_wms) {
-            var $addWmsButton = $('<button>', {
+            var $addWmsButton = jQuery('<button>', {
                 class: 'nm-control-button',
                 title: 'Añadir capa WMS',
                 html: '<i class="fa fa-plus"></i>'
@@ -80,7 +80,7 @@ jQuery(document).ready(function ($) {
         }
 
         // Asegurarse de que el contenedor del mapa tiene posición relativa
-        $('#nm-main-map').css('position', 'relative');
+        jQuery('#nm-main-map').css('position', 'relative');
 
         // Agregar las capas base
         if (Array.isArray(nmMapData.base_layers) && nmMapData.base_layers.length > 0) {

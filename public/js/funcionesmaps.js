@@ -1,7 +1,9 @@
+
+
 //funcion para descargar datos en formato geojson
 // Manejar el botón de descarga
 function downloadGeoJson() {
-    $.ajax({
+    jQuery.ajax({
         url: nmMapData.ajax_url,
         method: 'POST',
         data: {
@@ -32,7 +34,7 @@ function downloadGeoJson() {
 
 //funcion para abrir el control de busqueda
 function toggleSearchInput() {
-    var $searchInput = $('.nm-search-input');
+    var $searchInput = jQuery('.nm-search-input');
     $searchInput.toggle();
     if ($searchInput.is(':visible')) {
         $searchInput.focus();
@@ -104,19 +106,19 @@ function showModal(properties) {
     modalContent += '</div>';
 
     // Insertar el contenido en el cuerpo del modal
-    $('#nm-modal-body').html(modalContent);
+    jQuery('#nm-modal-body').html(modalContent);
 
     // Mostrar el modal
-    $('#nm-modal').css('display', 'block');
+    jQuery('#nm-modal').css('display', 'block');
 
     // Manejar el cierre del modal
-    $('#nm-modal-close').on('click', function () {
-        $('#nm-modal').css('display', 'none');
+    jQuery('#nm-modal-close').on('click', function () {
+        jQuery('#nm-modal').css('display', 'none');
     });
 
-    $(window).on('click', function (event) {
-        if ($(event.target).is('#nm-modal')) {
-            $('#nm-modal').css('display', 'none');
+    jQuery(window).on('click', function (event) {
+        if (jQuery(event.target).is('#nm-modal')) {
+            jQuery('#nm-modal').css('display', 'none');
         }
     });
 }
@@ -124,27 +126,27 @@ function showModal(properties) {
 
 /// Función para mostrar el formulario de añadir WMS
 function showAddWmsForm() {
-    if ($('#nm-wms-form').length === 0) {
-        var $wmsForm = $('<div>', { id: 'nm-wms-form', class: 'nm-modal' });
-        var $wmsFormContent = $('<div>', { class: 'nm-modal-content' });
+    if (jQuery('#nm-wms-form').length === 0) {
+        var $wmsForm = jQuery('<div>', { id: 'nm-wms-form', class: 'nm-modal' });
+        var $wmsFormContent = jQuery('<div>', { class: 'nm-modal-content' });
 
-        var $formTitle = $('<h3>').text('Añadir capa WMS');
-        var $labelUrl = $('<label>', { for: 'nm-wms-url' }).text('URL del servicio WMS:');
-        var $inputUrl = $('<input>', { type: 'text', id: 'nm-wms-url', name: 'nm-wms-url' });
+        var $formTitle = jQuery('<h3>').text('Añadir capa WMS');
+        var $labelUrl = jQuery('<label>', { for: 'nm-wms-url' }).text('URL del servicio WMS:');
+        var $inputUrl = jQuery('<input>', { type: 'text', id: 'nm-wms-url', name: 'nm-wms-url' });
 
-        var $labelLayerName = $('<label>', { for: 'nm-wms-layer-name' }).text('Nombre de la capa WMS:');
-        var $inputLayerName = $('<input>', { type: 'text', id: 'nm-wms-layer-name', name: 'nm-wms-layer-name' });
+        var $labelLayerName = jQuery('<label>', { for: 'nm-wms-layer-name' }).text('Nombre de la capa WMS:');
+        var $inputLayerName = jQuery('<input>', { type: 'text', id: 'nm-wms-layer-name', name: 'nm-wms-layer-name' });
 
-        var $addButton = $('<button>', { id: 'nm-wms-add-button' }).text('Agregar capa');
-        var $cancelButton = $('<button>', { id: 'nm-wms-cancel-button' }).text('Cancelar');
+        var $addButton = jQuery('<button>', { id: 'nm-wms-add-button' }).text('Agregar capa');
+        var $cancelButton = jQuery('<button>', { id: 'nm-wms-cancel-button' }).text('Cancelar');
 
         // Icono de carga oculto inicialmente
-        var $loadingIcon = $('<div>', { id: 'nm-wms-loading', style: 'display:none;' }).html('<img src="' + nmMapData.plugin_url + '/includes/img/Loading_icon.gif" alt="Cargando...">');
+        var $loadingIcon = jQuery('<div>', { id: 'nm-wms-loading', style: 'display:none;' }).html('<img src="' + nmMapData.plugin_url + '/includes/img/Loading_icon.gif" alt="Cargando...">');
 
         $wmsFormContent.append($formTitle, $labelUrl, $inputUrl, $labelLayerName, $inputLayerName, $addButton, $cancelButton, $loadingIcon);
         $wmsForm.append($wmsFormContent);
 
-        $('#nm-main-map').append($wmsForm);
+        jQuery('#nm-main-map').append($wmsForm);
 
         $wmsForm.css({
             position: 'absolute',
@@ -236,7 +238,7 @@ function showAddWmsForm() {
         });
     }
 
-    $('#nm-wms-form').show();
+    jQuery('#nm-wms-form').show();
 }
 
 

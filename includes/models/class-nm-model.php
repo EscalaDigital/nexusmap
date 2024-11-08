@@ -35,6 +35,7 @@ class NM_Model {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             user_id bigint(20) NOT NULL,
             entry_data longtext NOT NULL,
+            form_type tinyint(1) NOT NULL DEFAULT '0',
             status varchar(20) NOT NULL DEFAULT 'pending',
             date_submitted datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id)
@@ -87,10 +88,11 @@ class NM_Model {
             array(
                 'user_id'     => $user_id,
                 'entry_data'  => maybe_serialize( $entry_data ),
+                'form_type' => $entry_data['form_type'],
                 'status'      => 'pending',
             ),
             
-            array( '%d', '%s', '%s' )
+            array( '%d', '%s', '%d', '%s' )
         );
     }
     

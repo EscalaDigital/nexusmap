@@ -1,26 +1,26 @@
 jQuery(document).ready(function ($) {
     // Toggle visibility of A/B options when checkbox is changed
-    $('#nm-ab-option').change(function () {
-        if ($(this).is(':checked')) {
-            $('#tabsforms').show();
-            $('#formunique').hide();
+    jQuery('#nm-ab-option').change(function () {
+        if (jQuery(this).is(':checked')) {
+            jQuery('#tabsforms').show();
+            jQuery('#formunique').hide();
             // Initialize tabs if not already initialized
-            if (!$('#tabsforms').hasClass('ui-tabs')) {
-                $('#tabsforms').tabs();
+            if (!jQuery('#tabsforms').hasClass('ui-tabs')) {
+                jQuery('#tabsforms').tabs();
             }
         } else {
-            $('#tabsforms').hide();
-            $('#formunique').show();
+            jQuery('#tabsforms').hide();
+            jQuery('#formunique').show();
             // Destroy tabs if initialized
-            if ($('#tabsforms').hasClass('ui-tabs')) {
-                $('#tabsforms').tabs('destroy');
+            if (jQuery('#tabsforms').hasClass('ui-tabs')) {
+                jQuery('#tabsforms').tabs('destroy');
             }
         }
 
         // Save the A/B option setting via AJAX
         $.post(nmAdmin.ajax_url, {
             action: 'nm_save_ab_option',
-            ab_option: $(this).is(':checked') ? 1 : 0,
+            ab_option: jQuery(this).is(':checked') ? 1 : 0,
             nonce: nmAdmin.nonce
         }, function (response) {
             if (!response.success) {
@@ -30,10 +30,10 @@ jQuery(document).ready(function ($) {
     });
 
     // Handle click on the save option texts button
-    $('#nm-save-option-texts').on('click', function (e) {
+    jQuery('#nm-save-option-texts').on('click', function (e) {
         e.preventDefault();
-        var optionAText = $('#nm-option-a-text').val();
-        var optionBText = $('#nm-option-b-text').val();
+        var optionAText = jQuery('#nm-option-a-text').val();
+        var optionBText = jQuery('#nm-option-b-text').val();
 
         // Send AJAX request to save the option texts
         $.post(nmAdmin.ajax_url, {
@@ -45,8 +45,8 @@ jQuery(document).ready(function ($) {
             if (response.success) {
                 alert('Option texts saved successfully.');
                 // Update the tab labels if necessary
-                $('#tabsforms ul li a[href="#tab-a"]').text(optionAText);
-                $('#tabsforms ul li a[href="#tab-b"]').text(optionBText);
+                jQuery('#tabsforms ul li a[href="#tab-a"]').text(optionAText);
+                jQuery('#tabsforms ul li a[href="#tab-b"]').text(optionBText);
             } else {
                 alert('Error saving option texts.');
             }
@@ -54,16 +54,16 @@ jQuery(document).ready(function ($) {
     });
 
     // Drag and Drop Fields
-    $('#nm-form-elements li').draggable({
+    jQuery('#nm-form-elements li').draggable({
         helper: 'clone',
         revert: 'invalid'
     });
 
-    $('.nm-form-droppable').droppable({
+    jQuery('.nm-form-droppable').droppable({
         accept: '#nm-form-elements li',
         drop: function (event, ui) {
             var fieldType = ui.draggable.data('type');
-            var $thisForm = $(this);
+            var $thisForm = jQuery(this);
             // AJAX call to get field template
             $.post(nmAdmin.ajax_url, {
                 action: 'nm_get_field_template',
@@ -80,16 +80,16 @@ jQuery(document).ready(function ($) {
     });
 
     // Make form fields sortable
-    $('.nm-form-droppable').sortable();
+    jQuery('.nm-form-droppable').sortable();
 
     // Remove Field
-    $(document).on('click', '.nm-remove-field', function () {
-        $(this).closest('.nm-form-field').remove();
+    jQuery(document).on('click', '.nm-remove-field', function () {
+        jQuery(this).closest('.nm-form-field').remove();
     });
 
     // Añadir nueva opción de radio
-    $(document).on('click', '.add-radio-option', function () {
-        var $field = $(this).closest('.nm-form-field');
+    jQuery(document).on('click', '.add-radio-option', function () {
+        var $field = jQuery(this).closest('.nm-form-field');
         var $optionsContainer = $field.find('.radio-options');
         var newOption = '<div class="radio-option">' +
             '<input type="text" class="option-value field-option" placeholder="Option Value">' +
@@ -99,8 +99,8 @@ jQuery(document).ready(function ($) {
     });
 
     // Añadir nueva opción de checkbox
-    $(document).on('click', '.add-checkbox-option', function () {
-        var $field = $(this).closest('.nm-form-field');
+    jQuery(document).on('click', '.add-checkbox-option', function () {
+        var $field = jQuery(this).closest('.nm-form-field');
         var $optionsContainer = $field.find('.checkbox-options');
         var newOption = '<div class="checkbox-option">' +
             '<input type="text" class="option-value field-option" placeholder="Option Value">' +
@@ -110,8 +110,8 @@ jQuery(document).ready(function ($) {
     });
 
     // Añadir nueva opción de select
-    $(document).on('click', '.add-select-option', function () {
-        var $field = $(this).closest('.nm-form-field');
+    jQuery(document).on('click', '.add-select-option', function () {
+        var $field = jQuery(this).closest('.nm-form-field');
         var $optionsContainer = $field.find('.select-options');
         var newOption = '<div class="select-option">' +
             '<input type="text" class="option-value field-option" placeholder="Option Value">' +
@@ -121,34 +121,34 @@ jQuery(document).ready(function ($) {
     });
 
     // Eliminar opción de radio
-    $(document).on('click', '.remove-option', function () {
-        $(this).closest('.radio-option').remove();
+    jQuery(document).on('click', '.remove-option', function () {
+        jQuery(this).closest('.radio-option').remove();
     });
 
     // Eliminar opción de checkbox
-    $(document).on('click', '.remove-option', function () {
-        $(this).closest('.checkbox-option').remove();
+    jQuery(document).on('click', '.remove-option', function () {
+        jQuery(this).closest('.checkbox-option').remove();
     });
 
     // Eliminar opción de select
-    $(document).on('click', '.remove-option', function () {
-        $(this).closest('.select-option').remove();
+    jQuery(document).on('click', '.remove-option', function () {
+        jQuery(this).closest('.select-option').remove();
     });
 
     // Modificar la función de guardar formulario para incluir checkboxes
     // Function to collect form fields and send to server
     function saveForm(formSelector, formType) {
         var formFields = [];
-        $(formSelector + ' .nm-form-field').each(function () {
-            var fieldType = $(this).data('type');
-            var fieldLabel = $(this).find('.field-label').val() || '';
-            var fieldName = $(this).find('.field-name').val() || '';
+        jQuery(formSelector + ' .nm-form-field').each(function () {
+            var fieldType = jQuery(this).data('type');
+            var fieldLabel = jQuery(this).find('.field-label').val() || '';
+            var fieldName = jQuery(this).find('.field-name').val() || '';
             var fieldOptions = [];
 
             // Collect options if the field has them
             if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
-                $(this).find('.field-option').each(function () {
-                    var optionValue = $(this).val();
+                jQuery(this).find('.field-option').each(function () {
+                    var optionValue = jQuery(this).val();
                     if (optionValue) {
                         fieldOptions.push(optionValue);
                     }
@@ -186,12 +186,12 @@ jQuery(document).ready(function ($) {
     // Function to validate if all fields are filled
     function validateForm(formId) {
         let isValid = true;
-        $(`${formId} .nm-form-field input, ${formId} .nm-form-field select, ${formId} .nm-form-field textarea`).each(function () {
-            if ($(this).val() === "") {
+        jQuery(`${formId} .nm-form-field input, ${formId} .nm-form-field select, ${formId} .nm-form-field textarea`).each(function () {
+            if (jQuery(this).val() === "") {
                 isValid = false;
-                $(this).css('border', '1px solid red'); // Highlight empty fields
+                jQuery(this).css('border', '1px solid red'); // Highlight empty fields
             } else {
-                $(this).css('border', ''); // Reset field style if filled
+                jQuery(this).css('border', ''); // Reset field style if filled
             }
         });
 
@@ -211,26 +211,26 @@ jQuery(document).ready(function ($) {
 
     // Event listeners to save each form
     // Save Form A
-    $('#nm-save-form-a').click(function () {
+    jQuery('#nm-save-form-a').click(function () {
         compruebaysalva('#nm-custom-form-a', 1);
     });
     // Save Form B
-    $('#nm-save-form-b').click(function () {
+    jQuery('#nm-save-form-b').click(function () {
         compruebaysalva('#nm-custom-form-b', 2);
     });
     //  Save Unique Form
-    $('#nm-save-form').click(function () {
+    jQuery('#nm-save-form').click(function () {
         compruebaysalva('#nm-custom-form', 0);
     });
 
     // Entries Page Actions
-    $('.approve-entry').click(function () {
-        var entryId = $(this).data('id');
+    jQuery('.approve-entry').click(function () {
+        var entryId = jQuery(this).data('id');
         updateEntryStatus(entryId, 'approved');
     });
 
-    $('.reject-entry').click(function () {
-        var entryId = $(this).data('id');
+    jQuery('.reject-entry').click(function () {
+        var entryId = jQuery(this).data('id');
         updateEntryStatus(entryId, 'rejected');
     });
 

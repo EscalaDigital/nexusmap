@@ -25,8 +25,8 @@ jQuery(document).ready(function ($) {
     }
 
     // Cuando se hace clic en el botón "Ver Datos"
-    $('.view-data').on('click', function () {
-        var jsonData = $(this).data('json');  // Obtiene el JSON deserializado desde PHP
+    jQuery('.view-data').on('click', function () {
+        var jsonData = jQuery(this).data('json');  // Obtiene el JSON deserializado desde PHP
 
 
         // Aquí accedemos a los datos específicos del objeto JSON
@@ -47,7 +47,7 @@ jQuery(document).ready(function ($) {
         var properties = feature.properties;  // Extrae las propiedades del feature
 
         // Muestra el modal
-        $('#dataModal').show();
+        jQuery('#dataModal').show();
 
         // Si el mapa ya ha sido inicializado, eliminamos el mapa anterior
         if (map) {
@@ -146,12 +146,12 @@ jQuery(document).ready(function ($) {
         });
 
         // Inserta el contenido en el modal
-        $('#jsonData').html(propertyHtml);
+        jQuery('#jsonData').html(propertyHtml);
     });
 
     // Cerrar el modal cuando se hace clic en el botón de cerrar
-    $('.close').on('click', function () {
-        $('#dataModal').hide();
+    jQuery('.close').on('click', function () {
+        jQuery('#dataModal').hide();
     });
 });
 

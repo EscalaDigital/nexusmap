@@ -43,7 +43,7 @@ class NM_Public
     }
 
 
-      /**
+    /**
      * Enqueue public assets
      */
     public function enqueue_public_assets()
@@ -82,7 +82,7 @@ class NM_Public
 
             // Enqueue styles and scripts for the form
             wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/form.css', array(), NM_VERSION);
-            // Enqueue funcionesmaps.js
+
             wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);
 
             // Localize script for AJAX handling
@@ -117,18 +117,18 @@ class NM_Public
         if (!is_user_logged_in()) {
             return 'You must be logged in to view this form.';
         }
-    
-        // Check if the form is submitted
+
+        /*  // Check if the form is submitted
         if (isset($_POST['nm_submit_form'])) {
             // Verify the nonce for security
             if (!isset($_POST['nm_form_nonce']) || !wp_verify_nonce($_POST['nm_form_nonce'], 'nm_form_submit')) {
                 return 'Security check failed.';
             }
-    
+
             // Process the form submission
             $form_type = intval($_POST['nm_form_type']);
             $form_data = array();
-    
+
             // Sanitize and collect form data
             foreach ($_POST as $key => $value) {
                 if ($key === 'nm_submit_form' || $key === 'nm_form_type' || $key === 'nm_form_nonce') {
@@ -141,7 +141,7 @@ class NM_Public
                     $form_data[$key] = sanitize_text_field($value);
                 }
             }
-    
+
             // Handle file uploads
             if (!empty($_FILES)) {
                 foreach ($_FILES as $key => $file) {
@@ -156,44 +156,43 @@ class NM_Public
                     }
                 }
             }
-    
+
             // Save the form data, associated with the form_type
             $this->model->save_form_submission($form_data, $form_type);
-    
+
             // Redirect or show a success message
             return 'Form submitted successfully!';
-        }
-    
+        }*/
+
         // Check if the A/B option is enabled
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
-    
+
         if ($ab_option_enabled) {
             // If A/B option is enabled, retrieve forms A and B
             $form_data_a = $this->model->get_form(1); // form_type = 1
             $form_data_b = $this->model->get_form(2); // form_type = 2
-    
+
             // Include the view that allows the user to choose between two options
             ob_start();
             include NM_PLUGIN_DIR . 'public/views/form-display-ab.php';
             return ob_get_clean();
-    
         } else {
             // If A/B option is not enabled, retrieve the single form
             $form_data = $this->model->get_form(0); // form_type = 0
-    
+
             // Include the single form view
             ob_start();
             include NM_PLUGIN_DIR . 'public/views/form-display.php';
             return ob_get_clean();
         }
     }
-    
+
 
     /**
      * Get map geometries via AJAX
      */
 
-     /* codigo antiguo que obtiene todas las geometrias independientemente de su tipo (no usado ahora)
+    /* codigo antiguo que obtiene todas las geometrias independientemente de su tipo (no usado ahora)
     public function get_map_points()
     {
         check_ajax_referer('nm_public_nonce', 'nonce');
@@ -227,43 +226,43 @@ class NM_Public
     }
 */
 
-/**
- * Get map points via AJAX
- */
-public function get_map_points()
-{
-    check_ajax_referer('nm_public_nonce', 'nonce');
-    $entries = $this->model->get_entries('approved');
-    $features = array();
+    /**
+     * Get map points via AJAX
+     */
+    public function get_map_points()
+    {
+        check_ajax_referer('nm_public_nonce', 'nonce');
+        $entries = $this->model->get_entries('approved');
+        $features = array();
 
-    foreach ($entries as $entry) {
-        $entry_data = maybe_unserialize($entry->entry_data);
-        if (isset($entry_data['map_data'])) {
-            $map_data = json_decode(stripslashes($entry_data['map_data']), true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
-                foreach ($map_data as $feature) {
-                    // Verificar si la geometría es de tipo "Point"
-                    if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
-                        // Agregar todas las propiedades del entry_data al properties
-                        foreach ($entry_data as $key => $value) {
-                            if ($key !== 'map_data') { // Excluir 'map_data' si está
-                                $feature['properties'][$key] = esc_html($value);
+        foreach ($entries as $entry) {
+            $entry_data = maybe_unserialize($entry->entry_data);
+            if (isset($entry_data['map_data'])) {
+                $map_data = json_decode(stripslashes($entry_data['map_data']), true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
+                    foreach ($map_data as $feature) {
+                        // Verificar si la geometría es de tipo "Point"
+                        if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
+                            // Agregar todas las propiedades del entry_data al properties
+                            foreach ($entry_data as $key => $value) {
+                                if ($key !== 'map_data') { // Excluir 'map_data' si está
+                                    $feature['properties'][$key] = esc_html($value);
+                                }
                             }
-                        }
-                        // Agregar el entry_id
-                        $feature['properties']['entry_id'] = $entry->id;
+                            // Agregar el entry_id
+                            $feature['properties']['entry_id'] = $entry->id;
 
-                        $features[] = $feature;
+                            $features[] = $feature;
+                        }
                     }
+                } else {
+                    error_log('Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg());
                 }
-            } else {
-                error_log('Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg());
             }
         }
-    }
 
-    wp_send_json($features);
-}
+        wp_send_json($features);
+    }
 
 
 
@@ -302,10 +301,13 @@ public function get_map_points()
 
         // Collect form fields (excluding 'action', 'nonce', 'map_data')
         $form_fields = array();
+        $form_type = isset($_POST['nm_form_type']) ? intval($_POST['nm_form_type']) : 0;
         foreach ($_POST as $key => $value) {
-            if (in_array($key, array('action', 'nonce', 'map_data'))) {
+     
+            if (in_array($key, array('action', 'nonce', 'map_data', 'nm_form_nonce', '_wp_http_referer', 'nm_submit_form', 'nm_form_type'))) {
                 continue;
             }
+       
             if (is_array($value)) {
                 $sanitized_value = array_map('sanitize_text_field', $value);
                 $form_fields['nm_' . $key] = $sanitized_value;
@@ -385,6 +387,7 @@ public function get_map_points()
         // Prepare the data to be saved
         $entry_data = array();
         $entry_data['map_data'] = $final_map_data_json_escaped;
+        $entry_data['form_type'] = isset($form_type) ? $form_type : 0;
 
 
         // Save the data using your model's save_entry method

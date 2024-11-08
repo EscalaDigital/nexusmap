@@ -32,6 +32,10 @@
                 <!-- Add the Save Button Here -->
                 <button id="nm-save-option-texts" class="button button-primary">Guardar Nombres de Opciones</button>
             </div>
+            <div id="nm-ab-message" style="display: none; color: red;">
+    ¡Atención! Al activar esta opción se activan 2 formularios y el usuario final rellenara uno u otro. Si su Wordpress tiene un plugin de caché, es posible que tarde en mostrarse el formulario doble en el frontal de su web.
+</div>
+
         </div>
 
         <?php
@@ -226,18 +230,19 @@
 
         // Toggle visibility of A/B options when checkbox is changed
         $('#nm-ab-option').change(function() {
-            if ($(this).is(':checked')) {
-                $('#tabsforms').show();
-                // Initialize tabs
-                $('#formunique').hide();
-                initializeTabs();
-            } else {
-                $('#tabsforms').hide();
-                // Destroy tabs and show only Form A
-                $('#formunique').show();
-            }
-
-
-        });
+        var message = $('#nm-ab-message');
+        if ($(this).is(':checked')) {
+            $('#tabsforms').show();
+            // Initialize tabs
+            $('#formunique').hide();
+            initializeTabs();
+            message.show();
+        } else {
+            $('#tabsforms').hide();
+            // Destroy tabs and show only Form A
+            $('#formunique').show();
+            message.hide();
+        }
+    });
     });
 </script>

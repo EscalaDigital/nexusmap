@@ -17,9 +17,11 @@ if ($form_type === 1) {
     $form_label = $option_b_text;
 }
 
-if ($form_type === null) {
-    // No form type selected yet, show the options
+if ($form_type === null || !in_array($form_type, [1, 2])) {
+    // Mostrar opciones para seleccionar
     ?>
+
+
    <div class="selection-container">
     <h2 class="selection-title">Please select an option:</h2>
  

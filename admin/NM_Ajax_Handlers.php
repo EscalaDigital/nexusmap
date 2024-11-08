@@ -25,6 +25,7 @@ class NM_Ajax_Handlers
         check_ajax_referer('nm_admin_nonce', 'nonce');
         $ab_option = isset($_POST['ab_option']) && $_POST['ab_option'] == 1 ? 1 : 0;
         update_option('nm_ab_option_enabled', $ab_option);
+    
         wp_send_json_success();
     }
     // with this snippet from admin/NM_Ajax_Handlers.php:
