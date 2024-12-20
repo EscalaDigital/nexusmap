@@ -118,51 +118,7 @@ class NM_Public
             return 'You must be logged in to view this form.';
         }
 
-        /*  // Check if the form is submitted
-        if (isset($_POST['nm_submit_form'])) {
-            // Verify the nonce for security
-            if (!isset($_POST['nm_form_nonce']) || !wp_verify_nonce($_POST['nm_form_nonce'], 'nm_form_submit')) {
-                return 'Security check failed.';
-            }
-
-            // Process the form submission
-            $form_type = intval($_POST['nm_form_type']);
-            $form_data = array();
-
-            // Sanitize and collect form data
-            foreach ($_POST as $key => $value) {
-                if ($key === 'nm_submit_form' || $key === 'nm_form_type' || $key === 'nm_form_nonce') {
-                    continue;
-                }
-                // Check if the field allows multiple values (e.g., checkboxes)
-                if (is_array($value)) {
-                    $form_data[$key] = array_map('sanitize_text_field', $value);
-                } else {
-                    $form_data[$key] = sanitize_text_field($value);
-                }
-            }
-
-            // Handle file uploads
-            if (!empty($_FILES)) {
-                foreach ($_FILES as $key => $file) {
-                    if ($file['error'] === UPLOAD_ERR_OK) {
-                        $upload = wp_handle_upload($file, array('test_form' => false));
-                        if ($upload && !isset($upload['error'])) {
-                            $form_data[$key] = $upload['url']; // Save the URL of the uploaded file
-                        } else {
-                            // Handle upload error
-                            $form_data[$key] = $upload['error'];
-                        }
-                    }
-                }
-            }
-
-            // Save the form data, associated with the form_type
-            $this->model->save_form_submission($form_data, $form_type);
-
-            // Redirect or show a success message
-            return 'Form submitted successfully!';
-        }*/
+     
 
         // Check if the A/B option is enabled
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
@@ -192,39 +148,7 @@ class NM_Public
      * Get map geometries via AJAX
      */
 
-    /* codigo antiguo que obtiene todas las geometrias independientemente de su tipo (no usado ahora)
-    public function get_map_points()
-    {
-        check_ajax_referer('nm_public_nonce', 'nonce');
-        $entries = $this->model->get_entries('approved');
-        $features = array();
-
-        foreach ($entries as $entry) {
-            $entry_data = maybe_unserialize($entry->entry_data);
-            if (isset($entry_data['map_data'])) {
-                $map_data = json_decode(stripslashes($entry_data['map_data']), true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
-                    foreach ($map_data as $feature) {
-                        // Agregar todas las propiedades del entry_data al properties
-                        foreach ($entry_data as $key => $value) {
-                            if ($key !== 'map_data') { // Excluir 'map_data' si está
-                                $feature['properties'][$key] = esc_html($value);
-                            }
-                        }
-                        // Agregar el entry_id
-                        $feature['properties']['entry_id'] = $entry->id;
-
-                        $features[] = $feature;
-                    }
-                } else {
-                    error_log('Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg());
-                }
-            }
-        }
-
-        wp_send_json($features);
-    }
-*/
+ 
 
     /**
      * Get map points via AJAX
