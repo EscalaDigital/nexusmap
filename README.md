@@ -32,7 +32,7 @@ Un plugin de WordPress para crear mapas colaborativos utilizando Leaflet.js. Per
 #### Insertar mapa
 
 ```php
-[nexusmap lat="0" lng="0" zoom="2" width="100%" height="400px"]
+[nm_map lat="0" lng="0" zoom="2" width="100%" height="400px"]
 ```
 
 #### Insertar formulario
