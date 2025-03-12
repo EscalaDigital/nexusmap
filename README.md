@@ -21,7 +21,7 @@ Un plugin de WordPress para crear mapas colaborativos utilizando Leaflet.js. Per
 
 ## Instalación
 
-1. Descargue el plugin desde el [repositorio de GitHub](https://github.com/usuario/nexusmap).
+1. Descargue el plugin desde el [repositorio de GitHub](https://github.com/EscalaDigital/nexusmap).
 2. Suba la carpeta `nexusmap` comprimida en .zip al directorio `/wp-content/plugins/`.
 3. Active el plugin desde el panel de WordPress.
 
@@ -32,7 +32,7 @@ Un plugin de WordPress para crear mapas colaborativos utilizando Leaflet.js. Per
 #### Insertar mapa
 
 ```php
-[nexusmap lat="0" lng="0" zoom="2" width="100%" height="400px"]
+[nm_map lat="0" lng="0" zoom="2" width="100%" height="400px"]
 ```
 
 #### Insertar formulario
