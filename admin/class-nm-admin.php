@@ -5,6 +5,7 @@ require_once 'NM_Entries.php';
 require_once 'NM_Map_Settings.php';
 require_once 'NM_Manage_Layers.php';
 require_once 'NM_Ajax_Handlers.php';
+require_once 'NM_Form_To_Map.php';
 
 class NM_Admin
 {
@@ -22,6 +23,7 @@ class NM_Admin
         new NM_Map_Settings($this->loader);
         new NM_Manage_Layers($this->loader);
         new NM_Ajax_Handlers($this->loader, $this->model);
+        new NM_Form_To_Map($this->loader); 
 
         // Cargar estilos y scripts en las páginas específicas del plugin
         $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_admin_assets');
@@ -30,7 +32,7 @@ class NM_Admin
     public function enqueue_admin_assets($hook_suffix)
     {
         // Verificar que solo se carguen en las páginas de NexusMap
-        $plugin_pages = ['toplevel_page_nm', 'nexusmap_page_nm-entries', 'nexusmap_page_nm_map_settings', 'nexusmap_page_nm_manage_layers'];
+        $plugin_pages = ['toplevel_page_nm', 'nexusmap_page_nm-entries', 'nexusmap_page_nm_map_settings', 'nexusmap_page_nm_manage_layers', 'nexusmap_page_nm-form-to-map'];
 
         if (in_array($hook_suffix, $plugin_pages)) {
             // Cargar CSS

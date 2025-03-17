@@ -248,4 +248,31 @@ jQuery(document).ready(function ($) {
             }
         });
     }
+
+    $('#nm-layer-settings').on('submit', function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: nmAdmin.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'nm_save_layer_settings',
+                nonce: nmAdmin.nonce,
+                settings: $(this).serialize()
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Configuración guardada correctamente');
+                } else {
+                    alert('Error al guardar la configuración');
+                }
+            },
+            error: function() {
+                alert('Error en la comunicación con el servidor');
+            }
+        });
+    });
 });
+
+
+
