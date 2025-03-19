@@ -76,7 +76,18 @@ class NM_Form_To_Map
         $settings = isset($_POST['settings']) ? $_POST['settings'] : array();
         parse_str($settings, $layer_settings);
 
-        if (update_option('nm_layer_settings', $layer_settings['layers'])) {
+        $saved_settings = get_option('nm_layer_settings', array());
+
+        // Actualizar los valores
+        foreach ($layer_settings['layers'] as $key => $values) {
+            if (isset($values['active']) && $values['active'] === 'on') {
+                $saved_settings[$key] = $values;
+            } else {
+                unset($saved_settings[$key]); // Elimina las opciones desmarcadas
+            }
+        }
+
+        if (update_option('nm_layer_settings', $saved_settings)) {
             wp_send_json_success();
         } else {
             wp_send_json_error('Error al guardar la configuración');

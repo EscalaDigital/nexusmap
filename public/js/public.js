@@ -150,7 +150,7 @@ jQuery(document).ready(function ($) {
                 var firstLayer = true;
 
                 // Si hay configuración de capas
-                if (response.layer_settings && response.layer_settings.length > 0) {
+                if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
                     console.log('Layer settings found:', response.layer_settings); // Debug
 
                     // Crear un grupo de capa para cada campo configurado
