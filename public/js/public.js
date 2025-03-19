@@ -138,40 +138,85 @@ jQuery(document).ready(function ($) {
         controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
 
 
-
         // Load points via AJAX
         $.post(nmMapData.ajax_url, {
             action: 'nm_get_map_points',
             nonce: nmMapData.nonce
         }, function (response) {
-            if (Array.isArray(response)) {
-                L.geoJSON(response, {
-                    pointToLayer: function (feature, latlng) {
-                        return L.marker(latlng);
-                    },
-                    onEachFeature: function (feature, layer) {
-                        // Agregar un evento de clic al marcador
-                        layer.on('click', function () {
-                            // Obtener las propiedades del feature
-                            var properties = feature.properties;
+            console.log('Response received:', response); // Debug
 
-                            // Clonar el objeto properties para no modificar el original
-                            var propertiesToShow = Object.assign({}, properties);
+            if (response && response.features) {
+                var layerGroups = {};
+                var firstLayer = true;
 
-                            // Remover el entry_id de las propiedades a mostrar
-                            delete propertiesToShow.entry_id;
+                // Si hay configuración de capas
+                if (response.layer_settings && response.layer_settings.length > 0) {
+                    console.log('Layer settings found:', response.layer_settings); // Debug
 
+                    // Crear un grupo de capa para cada campo configurado
+                    response.layer_settings.forEach(function (layerConfig) {
+                        layerGroups[layerConfig.field] = L.layerGroup();
+                    });
 
+                    // Procesar cada feature
+                    response.features.forEach(function (feature) {
+                        console.log('Processing feature:', feature); // Debug
 
-                            // Mostrar el modal con las propiedades
-                            showModal(propertiesToShow);
-                        });
-                    }
-                }).addTo(map);
-            } else {
-                console.error('Invalid response from server:', response);
+                        if (feature.properties && feature.properties.layer_field) {
+                            var marker = L.circleMarker([
+                                feature.geometry.coordinates[1],
+                                feature.geometry.coordinates[0]
+                            ], {
+                                radius: 8,
+                                fillColor: feature.properties.layer_color || '#ff0000',
+                                color: "#000",
+                                weight: 1,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            });
+
+                            // Añadir popup al marcador
+                            marker.on('click', function () {
+                                showModal(feature.properties);
+                            });
+
+                            // Añadir el marcador al grupo de capa correspondiente
+                            if (layerGroups[feature.properties.layer_field]) {
+                                layerGroups[feature.properties.layer_field].addLayer(marker);
+                            }
+                        }
+                    });
+
+                    // Añadir grupos de capas al control y al mapa
+                    response.layer_settings.forEach(function (layerConfig) {
+                        if (firstLayer) {
+                            layerGroups[layerConfig.field].addTo(map);
+                            firstLayer = false;
+                        }
+                        overlays[layerConfig.label] = layerGroups[layerConfig.field];
+                    });
+
+                } else {
+                    // Si no hay configuración de capas, mostrar puntos normales
+                    L.geoJSON(response.features, {
+                        pointToLayer: function (feature, latlng) {
+                            return L.marker(latlng);
+                        },
+                        onEachFeature: function (feature, layer) {
+                            layer.on('click', function () {
+                                var propertiesToShow = Object.assign({}, feature.properties);
+                                delete propertiesToShow.entry_id;
+                                showModal(propertiesToShow);
+                            });
+                        }
+                    }).addTo(map);
+                }
+                // Actualizar el control de capas
+                if (controlLayers) {
+                    controlLayers.remove();
+                }
+                controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
             }
-
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);
         });

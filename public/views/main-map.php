@@ -4,6 +4,7 @@ $enable_search = get_option( 'nm_enable_search', false );
 $enable_user_wms = get_option('nm_enable_user_wms', false);
 $base_layers = get_option( 'nm_base_layers', array() );
 $overlay_layers = get_option( 'nm_overlay_layers', array() );
+$active_layers = get_option( 'nm_active_layers', array() );
 ?>
 
 <div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"><div id="nm-top-controls" class="nm-top-controls">
@@ -35,6 +36,7 @@ $overlay_layers = get_option( 'nm_overlay_layers', array() );
         enable_user_wms: <?php echo json_encode((bool) $enable_user_wms); ?>, // Opción para habilitar que el usuario pueda agregar WMS
         base_layers: <?php echo json_encode( $base_layers ); ?>,
         overlay_layers: <?php echo json_encode( $overlay_layers ); ?>,
-        plugin_url: <?php echo json_encode(NM_PLUGIN_URL); ?>
+        plugin_url: <?php echo json_encode(NM_PLUGIN_URL); ?>,
+        layer_settings: <?php echo json_encode($active_layers); ?>
     };
 </script>
