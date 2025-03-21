@@ -255,3 +255,32 @@
 #tabsforms .ui-tabs-panel.ui-tabs-active {
     display: block;
 }
+
+/* Estilo para ventana de filtros*/
+
+.filter-settings {
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+.filter-settings p {
+    margin: 5px 0;
+}
+
+.filter-settings label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.filter-settings input[type="text"],
+.filter-settings input[type="number"] {
+    width: 100%;
+    max-width: 200px;
+}
+
+.filter-config {
+    min-width: 300px;
+}
+

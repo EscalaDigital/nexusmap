@@ -5,6 +5,10 @@ var baseLayers = {};
 var overlays = {};
 var controlLayers;
 
+// contenedor de marcadores
+var markersLayer;
+var allMarkers = [];
+
 jQuery(document).ready(function ($) {
     if (jQuery('#nm-main-map').length) {
 
@@ -137,6 +141,158 @@ jQuery(document).ready(function ($) {
         // Agregar controles de capas
         controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
 
+        // Funciones de Filtros
+        function createFilterPanel() {
+            // Verificar si hay configuración de filtros
+            if (!nmMapData.filter_settings || nmMapData.filter_settings.length === 0) {
+                return;
+            }
+        
+            // Crear el control personalizado de Leaflet
+            const FilterControl = L.Control.extend({
+                options: {
+                
+                    position: 'topleft' // Cambiamos la posición del botón a topright
+                },
+            
+                onAdd: function (map) {
+                    const container = L.DomUtil.create('div', 'nm-filters-container');
+                    
+                    // Crear el botón de toggle
+                    const toggleButton = L.DomUtil.create('div', 'nm-filters-toggle', container);
+                    toggleButton.innerHTML = 'Filtros';
+            
+                    // Crear el panel de filtros con posición absoluta
+                    const filterPanel = L.DomUtil.create('div', 'nm-filters-panel collapsed', container);
+                
+            
+        
+                    // Crear el encabezado
+                    const header = `
+                        <div class="nm-filters-header">
+                            <h3 class="nm-filters-title">Filtros disponibles</h3>
+                            <button class="nm-close-filters">×</button>
+                        </div>
+                    `;
+        
+                    // Crear el contenido de filtros
+                    let filterContent = '';
+                    nmMapData.filter_settings.forEach(filter => {
+                        filterContent += `
+                            <div class="nm-filter-group" data-field="${filter.field}">
+                                <span class="nm-filter-label">${filter.button_text}</span>
+                                <div class="nm-filter-options">
+                                    ${filter.options.map(option => `
+                                        <button class="nm-filter-button" 
+                                                data-field="${filter.field}" 
+                                                data-value="${option}"
+                                                style="background-color: ${filter.style?.background || '#fff'}; 
+                                                       color: ${filter.style?.color || '#000'}">${option}</button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+        
+                    // Agregar contador
+                    filterContent += `
+                        <div class="nm-filter-count">
+                            Puntos mostrados: <span id="nm-points-count">0</span>
+                        </div>
+                    `;
+        
+                    filterPanel.innerHTML = header + filterContent;
+        
+                    // Prevenir que los clicks en el control se propaguen al mapa
+                    L.DomEvent.disableClickPropagation(container);
+                    L.DomEvent.disableScrollPropagation(container);
+        
+                    // Eventos
+                    toggleButton.addEventListener('click', () => {
+                        filterPanel.classList.toggle('collapsed');
+                    });
+        
+                    container.querySelector('.nm-close-filters').addEventListener('click', () => {
+                        filterPanel.classList.add('collapsed');
+                    });
+        
+                    // Manejar clicks en los filtros
+                    const activeFilters = {};
+                    container.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('nm-filter-button')) {
+                            const button = e.target;
+                            const field = button.dataset.field;
+                            const value = button.dataset.value;
+        
+                            button.classList.toggle('active');
+        
+                            if (!activeFilters[field]) {
+                                activeFilters[field] = new Set();
+                            }
+        
+                            if (button.classList.contains('active')) {
+                                activeFilters[field].add(value);
+                            } else {
+                                activeFilters[field].delete(value);
+                                if (activeFilters[field].size === 0) {
+                                    delete activeFilters[field];
+                                }
+                            }
+        
+                            updateVisiblePoints(activeFilters);
+                        }
+                    });
+        
+                    return container;
+                }
+            });
+        
+            // Añadir el control al mapa
+            map.addControl(new FilterControl());
+        }
+
+        
+        function updateVisiblePoints(activeFilters) {
+            let visibleCount = 0;
+
+            // Primero, limpiar todas las capas
+            markersLayer.clearLayers();
+
+            // Recorrer todos los marcadores guardados
+            allMarkers.forEach(function (marker) {
+                let visible = true;
+
+                // Debug para ver las propiedades del marcador
+                console.log('Marker properties:', marker.feature.properties);
+
+                for (const field in activeFilters) {
+                    if (activeFilters[field].size > 0) {
+                        // Añadir prefijo 'nm_' al campo
+                        const fieldName = 'nm_' + field;
+                        const fieldValue = marker.feature.properties[fieldName];
+
+                        console.log('Checking field:', fieldName, 'Value:', fieldValue, 'Active values:', Array.from(activeFilters[field]));
+
+                        if (!fieldValue || !activeFilters[field].has(fieldValue.toString())) {
+                            visible = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (visible) {
+                    markersLayer.addLayer(marker);
+                    visibleCount++;
+                }
+            });
+
+            console.log('Visible points:', visibleCount);
+            document.getElementById('nm-points-count').textContent = visibleCount;
+        }
+
+        // Llamar a la función después de inicializar el mapa
+        createFilterPanel();
+
 
         // Load points via AJAX
         $.post(nmMapData.ajax_url, {
@@ -148,6 +304,9 @@ jQuery(document).ready(function ($) {
             if (response && response.features) {
                 var layerGroups = {};
                 var firstLayer = true;
+
+                // Crear markersLayer como contenedor principal
+                markersLayer = L.featureGroup().addTo(map);
 
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
@@ -175,15 +334,20 @@ jQuery(document).ready(function ($) {
                                 fillOpacity: 0.8
                             });
 
+                            // Añadir los datos originales al marker para los filtros
+                            marker.feature = feature;
+
                             // Añadir popup al marcador
                             marker.on('click', function () {
                                 showModal(feature.properties);
                             });
 
-                            // Añadir el marcador al grupo de capa correspondiente
+                            // Añadir el marcador tanto al grupo de capa como al markersLayer
                             if (layerGroups[feature.properties.layer_field]) {
                                 layerGroups[feature.properties.layer_field].addLayer(marker);
                             }
+                            markersLayer.addLayer(marker);
+                            allMarkers.push(marker);
                         }
                     });
 
@@ -198,24 +362,34 @@ jQuery(document).ready(function ($) {
 
                 } else {
                     // Si no hay configuración de capas, mostrar puntos normales
-                    L.geoJSON(response.features, {
-                        pointToLayer: function (feature, latlng) {
-                            return L.marker(latlng);
-                        },
-                        onEachFeature: function (feature, layer) {
-                            layer.on('click', function () {
-                                var propertiesToShow = Object.assign({}, feature.properties);
-                                delete propertiesToShow.entry_id;
-                                showModal(propertiesToShow);
-                            });
-                        }
-                    }).addTo(map);
+                    response.features.forEach(function (feature) {
+                        var marker = L.marker([
+                            feature.geometry.coordinates[1],
+                            feature.geometry.coordinates[0]
+                        ]);
+
+                        // Añadir los datos originales al marker para los filtros
+                        marker.feature = feature;
+
+                        marker.on('click', function () {
+                            var propertiesToShow = Object.assign({}, feature.properties);
+                            delete propertiesToShow.entry_id;
+                            showModal(propertiesToShow);
+                        });
+
+                        markersLayer.addLayer(marker);
+                        allMarkers.push(marker);
+                    });
                 }
+
                 // Actualizar el control de capas
                 if (controlLayers) {
                     controlLayers.remove();
                 }
                 controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
+
+                // Inicializar el contador de puntos
+                document.getElementById('nm-points-count').textContent = response.features.length;
             }
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);

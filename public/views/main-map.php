@@ -5,6 +5,7 @@ $enable_user_wms = get_option('nm_enable_user_wms', false);
 $base_layers = get_option( 'nm_base_layers', array() );
 $overlay_layers = get_option( 'nm_overlay_layers', array() );
 $active_layers = get_option( 'nm_active_layers', array() );
+$filter_settings = $this->get_filter_settings();
 ?>
 
 <div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"><div id="nm-top-controls" class="nm-top-controls">
@@ -37,6 +38,7 @@ $active_layers = get_option( 'nm_active_layers', array() );
         base_layers: <?php echo json_encode( $base_layers ); ?>,
         overlay_layers: <?php echo json_encode( $overlay_layers ); ?>,
         plugin_url: <?php echo json_encode(NM_PLUGIN_URL); ?>,
-        layer_settings: <?php echo json_encode($active_layers); ?>
+        layer_settings: <?php echo json_encode($active_layers); ?>,
+        filter_settings: <?php echo json_encode($filter_settings); ?>
     };
 </script>

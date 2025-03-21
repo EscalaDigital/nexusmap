@@ -6,6 +6,7 @@ require_once 'NM_Map_Settings.php';
 require_once 'NM_Manage_Layers.php';
 require_once 'NM_Ajax_Handlers.php';
 require_once 'NM_Form_To_Map.php';
+require_once 'NM_Form_Filters.php';
 
 class NM_Admin
 {
@@ -24,6 +25,7 @@ class NM_Admin
         new NM_Manage_Layers($this->loader);
         new NM_Ajax_Handlers($this->loader, $this->model);
         new NM_Form_To_Map($this->loader); 
+        new NM_Form_Filters($this->loader);
 
         // Cargar estilos y scripts en las páginas específicas del plugin
         $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_admin_assets');

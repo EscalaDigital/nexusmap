@@ -202,4 +202,96 @@
     border-color: #aaa;
 }
 
+/* Estilos para el panel de filtros flotante */
+/* Estilos para el panel de filtros */
+.nm-filters-container {
+  position: relative;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  z-index: 1000;
+}
 
+.nm-filters-toggle {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  cursor: pointer;
+  margin: 10px;
+  z-index: 998;
+}
+
+.nm-filters-panel {
+  position: absolute;
+  left: 50px; /* Distancia desde el borde izquierdo del mapa */
+  top: 10px; /* Distancia desde el borde superior del mapa */
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  width: 280px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  z-index: 999;
+}
+
+/* Asegurarnos de que el mapa tenga posición relativa */
+#nm-main-map {
+  position: relative !important;
+}
+
+.nm-filters-panel.collapsed {
+  display: none;
+}
+
+.nm-filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.nm-filters-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.nm-close-filters {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.nm-filter-group {
+  margin-bottom: 15px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.nm-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.nm-filter-button {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.nm-filter-button.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}

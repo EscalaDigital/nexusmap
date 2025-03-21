@@ -389,7 +389,33 @@ public function get_map_points()
     }
 
 
-
+    public function get_filter_settings() {
+        $filter_settings = get_option('nm_filter_settings', array());
+        $formatted_filters = array();
+        
+        if (!empty($filter_settings)) {
+            $form_data = $this->model->get_form(0);
+            
+            foreach ($filter_settings as $field_key => $settings) {
+                if ($settings['active']) {
+                    // Buscar el campo en el formulario para obtener sus opciones
+                    foreach ($form_data['fields'] as $field) {
+                        if ($field['name'] === $field_key && isset($field['options'])) {
+                            $formatted_filters[] = array(
+                                'field' => $field_key,
+                                'button_text' => $settings['button_text'],
+                                'options' => $field['options'],
+                                'style' => $settings['style']
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $formatted_filters;
+    }
 
 
 
