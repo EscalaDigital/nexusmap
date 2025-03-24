@@ -108,7 +108,7 @@ class NM_Public
         ), $atts, 'nm_map');
 
         // Obtener la configuración de capas
-    $layer_settings = get_option('nm_layer_settings', array());
+        $layer_settings = get_option('nm_layer_settings', array());
 
         ob_start();
         include NM_PLUGIN_DIR . 'public/views/main-map.php';
@@ -121,7 +121,7 @@ class NM_Public
             return 'You must be logged in to view this form.';
         }
 
-     
+
 
         // Check if the A/B option is enabled
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
@@ -151,108 +151,111 @@ class NM_Public
      * Get map geometries via AJAX
      */
 
- 
+
 
     /**
- * Get map points via AJAX
- */
-public function get_map_points()
-{
-    check_ajax_referer('nm_public_nonce', 'nonce');
-    $entries = $this->model->get_entries('approved');
-    $features = array();
+     * Get map points via AJAX
+     */
+    public function get_map_points()
+    {
+        check_ajax_referer('nm_public_nonce', 'nonce');
+        $entries = $this->model->get_entries('approved');
+        if (!isset($feature['properties']['layers'])) {
+            $feature['properties']['layers'] = array();  // Array vacio al principio
+        }
 
-    // Obtener configuración de capas
-    $layer_settings = get_option('nm_layer_settings', array());
-    $has_layers = !empty($layer_settings);
+        // Obtener configuración de capas
+        $layer_settings = get_option('nm_layer_settings', array());
+        $has_layers = !empty($layer_settings);
 
-    // Debug
-    error_log('Layer Settings: ' . print_r($layer_settings, true));
+        // Debug
+        error_log('Layer Settings: ' . print_r($layer_settings, true));
 
-    foreach ($entries as $entry) {
-        $entry_data = maybe_unserialize($entry->entry_data);
-        if (isset($entry_data['map_data'])) {
-            $map_data = json_decode(stripslashes($entry_data['map_data']), true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
-                foreach ($map_data as $feature) {
-                    if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
-                        // Debug - Mostrar datos del entry
-                        error_log('Processing entry data: ' . print_r($entry_data, true));
+        foreach ($entries as $entry) {
+            $entry_data = maybe_unserialize($entry->entry_data);
+            if (isset($entry_data['map_data'])) {
+                $map_data = json_decode(stripslashes($entry_data['map_data']), true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
+                    foreach ($map_data as $feature) {
+                        if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
+                            // Debug - Mostrar datos del entry
+                            error_log('Processing entry data: ' . print_r($entry_data, true));
 
-                        // Agregar todas las propiedades del entry_data al properties
-                        foreach ($entry_data as $key => $value) {
-                            if ($key !== 'map_data') {
-                                $feature['properties'][$key] = $value;
+                            // Agregar todas las propiedades del entry_data al properties
+                            foreach ($entry_data as $key => $value) {
+                                if ($key !== 'map_data') {
+                                    $feature['properties'][$key] = $value;
+                                }
                             }
-                        }
 
-                        // Agregar el entry_id
-                        $feature['properties']['entry_id'] = $entry->id;
-                        $feature['properties']['has_layer'] = false;
+                            // Agregar el entry_id
+                            $feature['properties']['entry_id'] = $entry->id;
+                            $feature['properties']['has_layer'] = false;
 
-                        // Si hay configuración de capas, buscar coincidencias
-                        if ($has_layers) {
-                            foreach ($layer_settings as $field_name => $layer_config) {
-                                $field_key = 'nm_' . $field_name;
+                            // Si hay configuración de capas, buscar coincidencias
+                            if ($has_layers) {
+                                foreach ($layer_settings as $field_name => $layer_config) {
+                                    $field_key = 'nm_' . $field_name;
 
-                                // Comprobar si existe la propiedad en feature properties
-                                if (isset($feature['properties'][$field_key])) {
-                                    // Si el valor es un array, tomar el primer elemento
-                                    $value = is_array($feature['properties'][$field_key]) 
-                                        ? $feature['properties'][$field_key][0] 
-                                        : $feature['properties'][$field_key];
+                                    // Comprobar si existe la propiedad en feature properties
+                                    if (isset($feature['properties'][$field_key])) {
+                                        // Si el valor es un array, tomar el primer elemento
+                                        $value = is_array($feature['properties'][$field_key])
+                                            ? $feature['properties'][$field_key][0]
+                                            : $feature['properties'][$field_key];
 
-                                    error_log("Checking value '{$value}' for field {$field_key}");
+                                        error_log("Checking value '{$value}' for field {$field_key}");
 
-                                    // Convertir índices numéricos a strings para la comparación
-                                    $colors = array_combine(
-                                        array_map('strval', array_keys($layer_config['colors'])),
-                                        $layer_config['colors']
-                                    );
-
-                                    if (isset($colors[$value])) {
-                                        $feature['properties']['layer_field'] = $field_name;
-                                        $feature['properties']['layer_value'] = $value;
-                                        $feature['properties']['layer_color'] = $colors[$value];
-                                        $feature['properties']['has_layer'] = true;
-
-                                        error_log("Match found! Color: {$colors[$value]} for value: {$value}");
-                                        break;
+                                        // Convertir índices numéricos a strings para la comparación
+                                        $colors = array_combine(
+                                            array_map('strval', array_keys($layer_config['colors'])),
+                                            $layer_config['colors']
+                                        );
+                                        if (isset($colors[$value])) {
+                                            // Añadir una nueva entrada al array 'layers' de este feature
+                                            $feature['properties']['layers'][] = array(
+                                                'layer_field' => $field_name,
+                                                'layer_value' => $value,
+                                                'layer_color' => $colors[$value],
+                                            );
+                                
+                                            // Con que al menos una capa coincida, marcamos has_layer a true
+                                            $feature['properties']['has_layer'] = true;
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // Añadir todas las features, independientemente de si tienen capa asignada
-                        $features[] = $feature;
-                        error_log("Feature added with or without layer: " . print_r($feature, true));
+                            // Añadir todas las features, independientemente de si tienen capa asignada
+                            $features[] = $feature;
+                            error_log("Feature added with or without layer: " . print_r($feature, true));
+                        }
                     }
                 }
             }
         }
-    }
 
-    // Preparar respuesta
-    $formatted_layer_settings = array();
-    foreach ($layer_settings as $field_name => $config) {
-        $formatted_layer_settings[] = array(
-            'field' => $field_name,
-            'label' => isset($config['label']) ? $config['label'] : $field_name,
-            'colors' => array_combine(
-                array_map('strval', array_keys($config['colors'])),
-                $config['colors']
-            )
+        // Preparar respuesta
+        $formatted_layer_settings = array();
+        foreach ($layer_settings as $field_name => $config) {
+            $formatted_layer_settings[] = array(
+                'field' => $field_name,
+                'label' => isset($config['label']) ? $config['label'] : $field_name,
+                'colors' => array_combine(
+                    array_map('strval', array_keys($config['colors'])),
+                    $config['colors']
+                )
+            );
+        }
+
+        $response = array(
+            'features' => $features,
+            'layer_settings' => $formatted_layer_settings
         );
+
+        error_log('Final response: ' . print_r($response, true));
+        wp_send_json($response);
     }
-
-    $response = array(
-        'features' => $features,
-        'layer_settings' => $formatted_layer_settings
-    );
-
-    error_log('Final response: ' . print_r($response, true));
-    wp_send_json($response);
-}
     // Método para obtener detalles de la entrada
     public function get_entry_details()
     {
@@ -290,11 +293,11 @@ public function get_map_points()
         $form_fields = array();
         $form_type = isset($_POST['nm_form_type']) ? intval($_POST['nm_form_type']) : 0;
         foreach ($_POST as $key => $value) {
-     
+
             if (in_array($key, array('action', 'nonce', 'map_data', 'nm_form_nonce', '_wp_http_referer', 'nm_submit_form', 'nm_form_type'))) {
                 continue;
             }
-       
+
             if (is_array($value)) {
                 $sanitized_value = array_map('sanitize_text_field', $value);
                 $form_fields['nm_' . $key] = $sanitized_value;
@@ -389,13 +392,14 @@ public function get_map_points()
     }
 
 
-    public function get_filter_settings() {
+    public function get_filter_settings()
+    {
         $filter_settings = get_option('nm_filter_settings', array());
         $formatted_filters = array();
-        
+
         if (!empty($filter_settings)) {
             $form_data = $this->model->get_form(0);
-            
+
             foreach ($filter_settings as $field_key => $settings) {
                 if ($settings['active']) {
                     // Buscar el campo en el formulario para obtener sus opciones
@@ -413,7 +417,7 @@ public function get_map_points()
                 }
             }
         }
-        
+
         return $formatted_filters;
     }
 

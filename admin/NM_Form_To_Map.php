@@ -66,31 +66,52 @@ class NM_Form_To_Map
     }
 
     public function save_layer_settings()
-    {
-        check_ajax_referer('nm_admin_nonce', 'nonce');
+{
+    check_ajax_referer('nm_admin_nonce', 'nonce');
 
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Permiso denegado');
-        }
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Permiso denegado');
+    }
 
-        $settings = isset($_POST['settings']) ? $_POST['settings'] : array();
-        parse_str($settings, $layer_settings);
+    $settings = isset($_POST['settings']) ? $_POST['settings'] : array();
+    parse_str($settings, $layer_settings);
 
-        $saved_settings = get_option('nm_layer_settings', array());
+    $saved_settings = get_option('nm_layer_settings', array());
 
-        // Actualizar los valores
-        foreach ($layer_settings['layers'] as $key => $values) {
-            if (isset($values['active']) && $values['active'] === 'on') {
-                $saved_settings[$key] = $values;
-            } else {
-                unset($saved_settings[$key]); // Elimina las opciones desmarcadas
+    // Actualizar los valores
+    foreach ($layer_settings['layers'] as $key => $values) {
+        if (isset($values['active']) && $values['active'] === 'on') {
+            $saved_settings[$key] = array(
+                'active' => 'on'
+            );
+
+            // Procesar colores y etiquetas
+            if (isset($values['colors']) && isset($values['labels'])) {
+                $colors = array();
+                $labels = $values['labels'];
+                
+                foreach ($values['colors'] as $index => $color) {
+                    if (isset($labels[$index])) {
+                        $label = sanitize_text_field($labels[$index]);
+                        $colors[$label] = sanitize_text_field($color);
+                    }
+                }
+                
+                if (!empty($colors)) {
+                    $saved_settings[$key]['colors'] = $colors;
+                }
             }
-        }
-
-        if (update_option('nm_layer_settings', $saved_settings)) {
-            wp_send_json_success();
         } else {
-            wp_send_json_error('Error al guardar la configuración');
+            unset($saved_settings[$key]);
         }
     }
+
+    if (update_option('nm_layer_settings', $saved_settings)) {
+        wp_send_json_success();
+    } else {
+        wp_send_json_error('Error al guardar la configuración');
+    }
+}
+
+    
 }

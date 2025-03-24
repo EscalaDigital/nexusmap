@@ -9,72 +9,59 @@
 
             ?>
             <table class="widefat">
-                <thead>
-                    <tr>
-                        <th>Campo</th>
-                        <th>Tipo</th>
-                        <th>Activar</th>
-                        <th>Colores para valores</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    foreach ($this->valid_fields as $field):
-                        $field_key = $field['name'];
-
-                        // Nueva forma de comprobar si está activo
-                        $is_active = false;
-                        if (isset($saved_settings[$field_key])) {
-                            if (isset($saved_settings[$field_key]['active'])) {
-                                $is_active = true;
-                            } else if (isset($saved_settings[$field_key]['colors']) && !empty($saved_settings[$field_key]['colors'])) {
-                                $is_active = true;
-                            }
-                        }
-
-
-                    ?>
-                        <tr>
-                            <td><?php echo esc_html($field['label']); ?></td>
-                            <td><?php echo esc_html($field['type']); ?></td>
-                            <td>
-                                <input type="hidden" name="layers[<?php echo esc_attr($field_key); ?>][active]" value="off">
-                                <input type="checkbox"
-                                    name="layers[<?php echo esc_attr($field_key); ?>][active]"
-                                    <?php echo $is_active ? 'checked="checked"' : ''; ?>
-                                    value="on">
-                            </td>
-                            <td class="color-settings">
-                                <?php
-                                if (isset($field['options']) && is_array($field['options'])):
-                                    foreach ($field['options'] as $value => $label):
-                                        // Asegurar que estamos obteniendo el color guardado correctamente
-                                        $current_color = '';
-                                        if (isset($saved_settings[$field_key]['colors'][$value])) {
-                                            $current_color = $saved_settings[$field_key]['colors'][$value];
-                                        } elseif (isset($saved_settings[$field_key]['colors'][(int)$value])) {
-                                            $current_color = $saved_settings[$field_key]['colors'][(int)$value];
-                                        } else {
-                                            $current_color = '#' . substr(md5($value), 0, 6);
-                                        }
-                                ?>
-                                        <div class="color-row">
-                                            <label>
-                                                <?php echo esc_html($label); ?>:
-                                                <input type="color"
-                                                    name="layers[<?php echo esc_attr($field_key); ?>][colors][<?php echo esc_attr($value); ?>]"
-                                                    value="<?php echo esc_attr($current_color); ?>">
-                                            </label>
-                                        </div>
-                                <?php
-                                    endforeach;
-                                endif;
-                                ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+    <thead>
+        <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Activar</th>
+            <th>Colores para valores</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($this->valid_fields as $field):
+            $field_key = $field['name'];
+            $is_active = isset($saved_settings[$field_key]['active']) && $saved_settings[$field_key]['active'] === 'on';
+        ?>
+            <tr>
+                <td><?php echo esc_html($field['label']); ?></td>
+                <td><?php echo esc_html($field['type']); ?></td>
+                <td>
+                    <input type="hidden" name="layers[<?php echo esc_attr($field_key); ?>][active]" value="off">
+                    <input type="checkbox"
+                           name="layers[<?php echo esc_attr($field_key); ?>][active]"
+                           <?php checked($is_active); ?>
+                           value="on">
+                </td>
+                <td class="color-settings">
+                    <?php if (isset($field['options']) && is_array($field['options'])): ?>
+                        <?php foreach ($field['options'] as $index => $option): ?>
+                            <?php
+                            $label = is_array($option) ? $option['label'] : $option;
+                            $value = is_array($option) ? $option['value'] : $index;
+                            
+                            // Obtener el color guardado o generar uno por defecto
+                            $saved_color = isset($saved_settings[$field_key]['colors'][$label]) 
+                                ? $saved_settings[$field_key]['colors'][$label] 
+                                : '#' . substr(md5($value), 0, 6);
+                            ?>
+                            <div class="color-row">
+                                <input type="hidden" 
+                                       name="layers[<?php echo esc_attr($field_key); ?>][labels][]" 
+                                       value="<?php echo esc_attr($label); ?>">
+                                <label>
+                                    <?php echo esc_html($label); ?>:
+                                    <input type="color"
+                                           name="layers[<?php echo esc_attr($field_key); ?>][colors][]"
+                                           value="<?php echo esc_attr($saved_color); ?>">
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
 
             <p class="submit">
                 <button type="submit" class="button button-primary" id="save-layer-settings">

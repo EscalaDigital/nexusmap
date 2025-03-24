@@ -307,6 +307,7 @@ jQuery(document).ready(function ($) {
 
                 // Crear markersLayer como contenedor principal
                 markersLayer = L.featureGroup().addTo(map);
+                
 
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
@@ -320,36 +321,43 @@ jQuery(document).ready(function ($) {
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
                         console.log('Processing feature:', feature); // Debug
+                     
 
-                        if (feature.properties && feature.properties.layer_field) {
-                            var marker = L.circleMarker([
-                                feature.geometry.coordinates[1],
-                                feature.geometry.coordinates[0]
-                            ], {
-                                radius: 8,
-                                fillColor: feature.properties.layer_color || '#ff0000',
-                                color: "#000",
-                                weight: 1,
-                                opacity: 1,
-                                fillOpacity: 0.8
+                        if (feature.properties && Array.isArray(feature.properties.layers) && feature.properties.layers.length > 0) {
+                            // El feature puede estar en una o varias capas
+                            feature.properties.layers.forEach(function (layerDef) {
+                                var marker = L.circleMarker([
+                                    feature.geometry.coordinates[1],
+                                    feature.geometry.coordinates[0]
+                                ], {
+                                    radius: 8,
+                                    fillColor: layerDef.layer_color || '#ff0000', 
+                                    color: "#000",
+                                    weight: 1,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                });
+                        
+                                // Añadir datos originales
+                                marker.feature = feature;
+                        
+                                // Popup / click
+                                marker.on('click', function () {
+                                    showModal(feature.properties);
+                                });
+                        
+                                // Añadir a la capa correspondiente
+                                if (layerGroups[layerDef.layer_field]) {
+                                    layerGroups[layerDef.layer_field].addLayer(marker);
+                                }
+                        
+                                // Además, lo agregas al featureGroup principal (si así lo deseas)
+                                markersLayer.addLayer(marker);
+                                allMarkers.push(marker);
                             });
-
-                            // Añadir los datos originales al marker para los filtros
-                            marker.feature = feature;
-
-                            // Añadir popup al marcador
-                            marker.on('click', function () {
-                                showModal(feature.properties);
-                            });
-
-                            // Añadir el marcador tanto al grupo de capa como al markersLayer
-                            if (layerGroups[feature.properties.layer_field]) {
-                                layerGroups[feature.properties.layer_field].addLayer(marker);
-                            }
-                            markersLayer.addLayer(marker);
-                            allMarkers.push(marker);
                         }
                     });
+                 
 
                     // Añadir grupos de capas al control y al mapa
                     response.layer_settings.forEach(function (layerConfig) {
