@@ -249,9 +249,9 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    $('#nm-layer-settings').on('submit', function(e) {
+    $('#nm-layer-settings').on('submit', function (e) {
         e.preventDefault();
-        
+
         $.ajax({
             url: nmAdmin.ajax_url,
             method: 'POST',
@@ -260,18 +260,65 @@ jQuery(document).ready(function ($) {
                 nonce: nmAdmin.nonce,
                 settings: $(this).serialize()
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     alert('Configuración guardada correctamente');
                 } else {
                     alert('Error al guardar la configuración');
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Error en la comunicación con el servidor');
             }
         });
     });
+
+    /****************************************************
+     * Chart Manager
+     ****************************************************/
+    var chartIndex = $('.chart-box').length;
+    
+    console.log(chartIndex);
+
+    // Al hacer clic en "Añadir Gráfico"
+    jQuery('#add-chart').on('click', function () {
+        alert('Añadir Gráfico');
+        var template = $('#chart-template').html();
+        template = template.replace(/{index}/g, chartIndex++);
+        jQuery('#chart-container').append(template);
+    });
+
+    // Al hacer clic en "Eliminar Gráfico"
+    $(document).on('click', '.remove-chart', function () {
+        $(this).closest('.chart-box').remove();
+    });
+
+    // Manejo del Submit
+    $('#nm-chart-settings').on('submit', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: nmAdmin.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'nm_save_chart_settings',
+                nonce: nmAdmin.nonce,
+                settings: $(this).serialize()
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert('¡Configuración de gráficos guardada correctamente!');
+                } else {
+                    alert('Error al guardar la configuración de gráficos');
+                }
+            },
+            error: function () {
+                alert('Error en la comunicación con el servidor');
+            }
+        });
+    });
+
+
 });
 
 
