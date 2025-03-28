@@ -69,6 +69,9 @@ class NM_Public
             // Enqueue functions related to the map
             wp_enqueue_script('nm-funcionesmaps-js', NM_PLUGIN_URL . 'public/js/funcionesmaps.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), NM_VERSION, true);
             wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);
+
+            // Para gráficos Chart.js
+            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
         }
 
         // Check if the [nm_form] shortcode is used in the content
@@ -109,6 +112,10 @@ class NM_Public
 
         // Obtener la configuración de capas
         $layer_settings = get_option('nm_layer_settings', array());
+
+        // Obtener configuración de gráficos
+    $chart_settings = get_option('nm_chart_settings', array());
+    
 
         ob_start();
         include NM_PLUGIN_DIR . 'public/views/main-map.php';
@@ -218,7 +225,7 @@ class NM_Public
                                                 'layer_value' => $value,
                                                 'layer_color' => $colors[$value],
                                             );
-                                
+
                                             // Con que al menos una capa coincida, marcamos has_layer a true
                                             $feature['properties']['has_layer'] = true;
                                         }

@@ -295,3 +295,21 @@
   color: white;
   border-color: #0056b3;
 }
+
+
+
+/* Estilos para el modal de gráficos */
+#nm-charts-modal .nm-modal-content {
+  width: 90%;
+  max-width: 1200px;
+  height: 80vh;
+  overflow-y: auto;
+}
+
+#nm-charts-container {
+  padding: 20px;
+}
+
+#nm-charts-container canvas {
+  margin-bottom: 30px;
+}

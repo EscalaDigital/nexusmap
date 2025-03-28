@@ -20,6 +20,14 @@ $filter_settings = $this->get_filter_settings();
     </div>
 </div>
 
+<!-- Modal para gráficos -->
+<div id="nm-charts-modal" class="nm-modal">
+    <div class="nm-modal-content">
+        <span class="nm-modal-close">&times;</span>
+        <div id="nm-charts-container"></div>
+    </div>
+</div>
+
 
     
 
@@ -39,6 +47,9 @@ $filter_settings = $this->get_filter_settings();
         overlay_layers: <?php echo json_encode( $overlay_layers ); ?>,
         plugin_url: <?php echo json_encode(NM_PLUGIN_URL); ?>,
         layer_settings: <?php echo json_encode($active_layers); ?>,
-        filter_settings: <?php echo json_encode($filter_settings); ?>
+        filter_settings: <?php echo json_encode($filter_settings); ?>,
+        charts_enabled: <?php echo !empty($chart_settings) ? 'true' : 'false'; ?>,
+        chart_settings: <?php echo json_encode($chart_settings); ?>
+    
     };
 </script>

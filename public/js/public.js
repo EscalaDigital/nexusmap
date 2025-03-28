@@ -147,26 +147,26 @@ jQuery(document).ready(function ($) {
             if (!nmMapData.filter_settings || nmMapData.filter_settings.length === 0) {
                 return;
             }
-        
+
             // Crear el control personalizado de Leaflet
             const FilterControl = L.Control.extend({
                 options: {
-                
+
                     position: 'topleft' // Cambiamos la posición del botón a topright
                 },
-            
+
                 onAdd: function (map) {
                     const container = L.DomUtil.create('div', 'nm-filters-container');
-                    
+
                     // Crear el botón de toggle
                     const toggleButton = L.DomUtil.create('div', 'nm-filters-toggle', container);
                     toggleButton.innerHTML = 'Filtros';
-            
+
                     // Crear el panel de filtros con posición absoluta
                     const filterPanel = L.DomUtil.create('div', 'nm-filters-panel collapsed', container);
-                
-            
-        
+
+
+
                     // Crear el encabezado
                     const header = `
                         <div class="nm-filters-header">
@@ -174,7 +174,7 @@ jQuery(document).ready(function ($) {
                             <button class="nm-close-filters">×</button>
                         </div>
                     `;
-        
+
                     // Crear el contenido de filtros
                     let filterContent = '';
                     nmMapData.filter_settings.forEach(filter => {
@@ -193,29 +193,29 @@ jQuery(document).ready(function ($) {
                             </div>
                         `;
                     });
-        
+
                     // Agregar contador
                     filterContent += `
                         <div class="nm-filter-count">
                             Puntos mostrados: <span id="nm-points-count">0</span>
                         </div>
                     `;
-        
+
                     filterPanel.innerHTML = header + filterContent;
-        
+
                     // Prevenir que los clicks en el control se propaguen al mapa
                     L.DomEvent.disableClickPropagation(container);
                     L.DomEvent.disableScrollPropagation(container);
-        
+
                     // Eventos
                     toggleButton.addEventListener('click', () => {
                         filterPanel.classList.toggle('collapsed');
                     });
-        
+
                     container.querySelector('.nm-close-filters').addEventListener('click', () => {
                         filterPanel.classList.add('collapsed');
                     });
-        
+
                     // Manejar clicks en los filtros
                     const activeFilters = {};
                     container.addEventListener('click', (e) => {
@@ -223,13 +223,13 @@ jQuery(document).ready(function ($) {
                             const button = e.target;
                             const field = button.dataset.field;
                             const value = button.dataset.value;
-        
+
                             button.classList.toggle('active');
-        
+
                             if (!activeFilters[field]) {
                                 activeFilters[field] = new Set();
                             }
-        
+
                             if (button.classList.contains('active')) {
                                 activeFilters[field].add(value);
                             } else {
@@ -238,20 +238,20 @@ jQuery(document).ready(function ($) {
                                     delete activeFilters[field];
                                 }
                             }
-        
+
                             updateVisiblePoints(activeFilters);
                         }
                     });
-        
+
                     return container;
                 }
             });
-        
+
             // Añadir el control al mapa
             map.addControl(new FilterControl());
         }
 
-        
+
         function updateVisiblePoints(activeFilters) {
             let visibleCount = 0;
 
@@ -307,7 +307,7 @@ jQuery(document).ready(function ($) {
 
                 // Crear markersLayer como contenedor principal
                 markersLayer = L.featureGroup().addTo(map);
-                
+
 
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
@@ -321,7 +321,7 @@ jQuery(document).ready(function ($) {
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
                         console.log('Processing feature:', feature); // Debug
-                     
+
 
                         if (feature.properties && Array.isArray(feature.properties.layers) && feature.properties.layers.length > 0) {
                             // El feature puede estar en una o varias capas
@@ -331,33 +331,33 @@ jQuery(document).ready(function ($) {
                                     feature.geometry.coordinates[0]
                                 ], {
                                     radius: 8,
-                                    fillColor: layerDef.layer_color || '#ff0000', 
+                                    fillColor: layerDef.layer_color || '#ff0000',
                                     color: "#000",
                                     weight: 1,
                                     opacity: 1,
                                     fillOpacity: 0.8
                                 });
-                        
+
                                 // Añadir datos originales
                                 marker.feature = feature;
-                        
+
                                 // Popup / click
                                 marker.on('click', function () {
                                     showModal(feature.properties);
                                 });
-                        
+
                                 // Añadir a la capa correspondiente
                                 if (layerGroups[layerDef.layer_field]) {
                                     layerGroups[layerDef.layer_field].addLayer(marker);
                                 }
-                        
+
                                 // Además, lo agregas al featureGroup principal (si así lo deseas)
                                 markersLayer.addLayer(marker);
                                 allMarkers.push(marker);
                             });
                         }
                     });
-                 
+
 
                     // Añadir grupos de capas al control y al mapa
                     response.layer_settings.forEach(function (layerConfig) {
@@ -398,11 +398,191 @@ jQuery(document).ready(function ($) {
 
                 // Inicializar el contador de puntos
                 document.getElementById('nm-points-count').textContent = response.features.length;
+
+
+                if (nmMapData.charts_enabled) {
+                    var $chartsButton = jQuery('<button>', {
+                        class: 'nm-control-button',
+                        title: 'Ver Gráficos',
+                        html: '<i class="fa fa-chart-bar"></i>'
+                    });
+                    $chartsButton.on('click', function (e) {
+                        e.stopPropagation();
+                        showChartsModal(response.features);
+                    });
+                    $topControls.append($chartsButton);
+                }
+        
             }
+
+
+            
+
+
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);
         });
 
+        // Botón para ver gráficos
+
+      
+
+
+
+
+    }
+
+    function showChartsModal(features) {
+        if (jQuery('#nm-charts-modal').length === 0) {
+            var modalHtml = `
+                <div id="nm-charts-modal" class="nm-modal">
+                    <div class="nm-modal-content">
+                        <span class="nm-modal-close">&times;</span>
+                        <div id="nm-charts-container"></div>
+                    </div>
+                </div>
+            `;
+            jQuery('body').append(modalHtml);
+        }
+
+        jQuery('#nm-charts-modal').show();
+        processCharts(features);
+
+        jQuery('#nm-charts-modal .nm-modal-close').on('click', function () {
+            jQuery('#nm-charts-modal').hide();
+        });
+    }
+
+    function processCharts(features) {
+        const chartsContainer = document.getElementById('nm-charts-container');
+        chartsContainer.innerHTML = '';
+
+        nmMapData.chart_settings.forEach((chartConfig, index) => {
+            const canvasWrapper = document.createElement('div');
+            canvasWrapper.style.marginBottom = '20px';
+            const canvas = document.createElement('canvas');
+            canvas.id = `chart-${index}`;
+            canvasWrapper.appendChild(canvas);
+            chartsContainer.appendChild(canvasWrapper);
+
+            const data = processChartData(chartConfig, features);
+            createChart(canvas, chartConfig, data);
+        });
+    }
+
+    function processChartData(chartConfig, features) {
+        console.log('Chart Config:', chartConfig);
+        console.log('Features:', features);
+        
+        const data = {
+            labels: [],
+            datasets: []
+        };
+    
+        // Agrupar datos por categoría
+        const groupedData = {};
+    
+        features.forEach(feature => {
+            // Buscar el campo de categoría con y sin prefijo nm_
+            const categoryFieldName = `nm_${chartConfig.category_field}`;
+            console.log('Buscando campo categoría:', categoryFieldName);
+            
+            // Obtener valor de categoría
+            const rawCategoryValue = feature.properties[categoryFieldName];
+            console.log('Valor categoría encontrado:', rawCategoryValue);
+            
+            if (!rawCategoryValue) return;
+    
+            const categoryValue = Array.isArray(rawCategoryValue) ? rawCategoryValue[0] : rawCategoryValue;
+            
+            if (!groupedData[categoryValue]) {
+                groupedData[categoryValue] = {
+                    numeric1: [],
+                    numeric2: []
+                };
+            }
+    
+            // Buscar campo numérico (reemplazar espacios por guiones bajos)
+            const numericFieldName = `nm_${chartConfig.numeric_field1.replace(/\s+/g, '_')}`;
+            console.log('Buscando campo numérico:', numericFieldName);
+            
+            const numeric1Value = parseFloat(feature.properties[numericFieldName]);
+            console.log('Valor numérico encontrado:', numeric1Value);
+            
+            if (!isNaN(numeric1Value)) {
+                groupedData[categoryValue].numeric1.push(numeric1Value);
+            }
+    
+            if (chartConfig.numeric_field2) {
+                const numeric2FieldName = `nm_${chartConfig.numeric_field2.replace(/\s+/g, '_')}`;
+                const numeric2Value = parseFloat(feature.properties[numeric2FieldName]);
+                if (!isNaN(numeric2Value)) {
+                    groupedData[categoryValue].numeric2.push(numeric2Value);
+                }
+            }
+        });
+    
+        console.log('Datos agrupados:', groupedData);
+    
+        // Procesar datos agrupados
+        data.labels = Object.keys(groupedData);
+    
+        // Dataset para numeric_field1
+        data.datasets.push({
+            label: chartConfig.numeric_field1,
+            data: data.labels.map(label => {
+                const values = groupedData[label].numeric1;
+                // Usar reduce para sumar todos los valores, o 0 si no hay valores
+                return values.length ? values.reduce((a, b) => a + b) : 0;
+            }),
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        });
+    
+        if (chartConfig.numeric_field2) {
+            data.datasets.push({
+                label: chartConfig.numeric_field2,
+                data: data.labels.map(label => {
+                    const values = groupedData[label].numeric2;
+                    // Usar reduce para sumar todos los valores, o 0 si no hay valores
+                    return values.length ? values.reduce((a, b) => a + b) : 0;
+                }),
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            });
+        }
+    
+        console.log('Datos procesados para el gráfico:', data);
+        return data;
+    }
+
+    function createChart(canvas, chartConfig, data) {
+        const ctx = canvas.getContext('2d');
+
+        new Chart(ctx, {
+            type: chartConfig.chart_type,
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: chartConfig.title
+                    },
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
     }
 
 });
