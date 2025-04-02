@@ -1,10 +1,12 @@
 <?php
 
-class NM_Chart_Manager {
+class NM_Chart_Manager
+{
     private $loader;
     private $model;
 
-    public function __construct($loader) {
+    public function __construct($loader)
+    {
         /**
          * $loader es asumido como una instancia que registra hooks de WordPress.
          * Verifica que realmente haga la llamada al add_action('admin_menu', ...) 
@@ -23,7 +25,8 @@ class NM_Chart_Manager {
     /**
      * Añade la página de Gestor de Gráficos como submenu de "nm"
      */
-    public function add_charts_menu() {
+    public function add_charts_menu()
+    {
         add_submenu_page(
             'nm',                          // slug del menú principal (verifica que exista)
             'Gestor de Gráficos',          // Título de la página
@@ -37,7 +40,8 @@ class NM_Chart_Manager {
     /**
      * Renderiza la página con el formulario que selecciona campos numéricos y de categoría
      */
-    public function render_charts_page() {
+    public function render_charts_page()
+    {
         // Verificar si la opción A/B está activa
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
         if ($ab_option_enabled) {
@@ -85,6 +89,8 @@ class NM_Chart_Manager {
             return;
         }
 
+        // Recuperamos los gráficos guardados (nm_chart_settings)
+        $saved_charts = get_option('nm_chart_settings', array());
         // Incluimos la vista (archivo PHP) que contendrá el HTML
         // Ajusta la ruta según tu estructura
         include_once 'views/chart-manager.php';
@@ -93,7 +99,8 @@ class NM_Chart_Manager {
     /**
      * Maneja la llamada AJAX para guardar los ajustes de los gráficos
      */
-    public function save_chart_settings() {
+    public function save_chart_settings()
+    {
         // Verificamos el nonce. Ajusta 'nm_admin_nonce' según cómo lo generes en tu JS/PHP
         check_ajax_referer('nm_admin_nonce', 'nonce');
 
@@ -119,6 +126,7 @@ class NM_Chart_Manager {
                 $numeric_field1 = isset($chart['numeric_field1']) ? sanitize_text_field($chart['numeric_field1']) : '';
                 $numeric_field2 = isset($chart['numeric_field2']) ? sanitize_text_field($chart['numeric_field2']) : '';
                 $category_field = isset($chart['category_field']) ? sanitize_text_field($chart['category_field']) : '';
+                $category_field_2 = isset($chart['category_field_2']) ? sanitize_text_field($chart['category_field_2']) : '';
                 $chart_type     = isset($chart['chart_type'])     ? sanitize_text_field($chart['chart_type'])     : '';
 
                 if (!empty($title) && !empty($numeric_field1) && !empty($category_field) && !empty($chart_type)) {
@@ -127,6 +135,7 @@ class NM_Chart_Manager {
                         'numeric_field1' => $numeric_field1,
                         'numeric_field2' => $numeric_field2,
                         'category_field' => $category_field,
+                        'category_field_2' => $category_field_2,
                         'chart_type'     => $chart_type
                     );
                 }
@@ -135,14 +144,14 @@ class NM_Chart_Manager {
 
         // Guardamos en la base de datos
         $updated = update_option('nm_chart_settings', $charts);
-        
+
         // Envía una respuesta JSON
         if ($updated) {
             wp_send_json_success(array('message' => 'Configuración guardada exitosamente'));
         } else {
             // Ojo: update_option devuelve false si la información es igual a la que ya estaba guardada.
             // Podrías manejar el caso donde no se actualice por no haber cambios.
-            wp_send_json_success(array('message' => 'Sin cambios o ya estaba guardado')); 
+            wp_send_json_success(array('message' => 'Sin cambios o ya estaba guardado'));
         }
     }
 }

@@ -412,11 +412,11 @@ jQuery(document).ready(function ($) {
                     });
                     $topControls.append($chartsButton);
                 }
-        
+
             }
 
 
-            
+
 
 
         }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -425,7 +425,7 @@ jQuery(document).ready(function ($) {
 
         // Botón para ver gráficos
 
-      
+
 
 
 
@@ -471,9 +471,6 @@ jQuery(document).ready(function ($) {
     }
 
     function processChartData(chartConfig, features) {
-        console.log('Chart Config:', chartConfig);
-        console.log('Features:', features);
-        
         const data = {
             labels: [],
             datasets: []
@@ -483,32 +480,28 @@ jQuery(document).ready(function ($) {
         const groupedData = {};
     
         features.forEach(feature => {
-            // Buscar el campo de categoría con y sin prefijo nm_
             const categoryFieldName = `nm_${chartConfig.category_field}`;
-            console.log('Buscando campo categoría:', categoryFieldName);
-            
-            // Obtener valor de categoría
+            const categoryFieldName2 = chartConfig.category_field_2 ? `nm_${chartConfig.category_field_2}` : null;
+    
             const rawCategoryValue = feature.properties[categoryFieldName];
-            console.log('Valor categoría encontrado:', rawCategoryValue);
-            
+            const rawCategoryValue2 = categoryFieldName2 ? feature.properties[categoryFieldName2] : null;
+    
             if (!rawCategoryValue) return;
     
             const categoryValue = Array.isArray(rawCategoryValue) ? rawCategoryValue[0] : rawCategoryValue;
             
+            // Usar categoryValue como clave en lugar de la combinación
             if (!groupedData[categoryValue]) {
                 groupedData[categoryValue] = {
                     numeric1: [],
-                    numeric2: []
+                    numeric2: [],
+                    category2: rawCategoryValue2 // Guardamos el segundo valor de categoría
                 };
             }
     
-            // Buscar campo numérico (reemplazar espacios por guiones bajos)
             const numericFieldName = `nm_${chartConfig.numeric_field1.replace(/\s+/g, '_')}`;
-            console.log('Buscando campo numérico:', numericFieldName);
-            
             const numeric1Value = parseFloat(feature.properties[numericFieldName]);
-            console.log('Valor numérico encontrado:', numeric1Value);
-            
+    
             if (!isNaN(numeric1Value)) {
                 groupedData[categoryValue].numeric1.push(numeric1Value);
             }
@@ -522,17 +515,19 @@ jQuery(document).ready(function ($) {
             }
         });
     
-        console.log('Datos agrupados:', groupedData);
-    
-        // Procesar datos agrupados
-        data.labels = Object.keys(groupedData);
+        // Generar labels
+        data.labels = Object.keys(groupedData).map(key => {
+            if (chartConfig.category_field_2 && groupedData[key].category2) {
+                return `${key} (${groupedData[key].category2})`;
+            }
+            return key;
+        });
     
         // Dataset para numeric_field1
         data.datasets.push({
             label: chartConfig.numeric_field1,
-            data: data.labels.map(label => {
-                const values = groupedData[label].numeric1;
-                // Usar reduce para sumar todos los valores, o 0 si no hay valores
+            data: Object.keys(groupedData).map(key => {
+                const values = groupedData[key].numeric1;
                 return values.length ? values.reduce((a, b) => a + b) : 0;
             }),
             backgroundColor: 'rgba(54, 162, 235, 0.5)',
@@ -543,9 +538,8 @@ jQuery(document).ready(function ($) {
         if (chartConfig.numeric_field2) {
             data.datasets.push({
                 label: chartConfig.numeric_field2,
-                data: data.labels.map(label => {
-                    const values = groupedData[label].numeric2;
-                    // Usar reduce para sumar todos los valores, o 0 si no hay valores
+                data: Object.keys(groupedData).map(key => {
+                    const values = groupedData[key].numeric2;
                     return values.length ? values.reduce((a, b) => a + b) : 0;
                 }),
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
@@ -558,33 +552,87 @@ jQuery(document).ready(function ($) {
         return data;
     }
 
-    function createChart(canvas, chartConfig, data) {
+       function createChart(canvas, chartConfig, data) {
         const ctx = canvas.getContext('2d');
-
-        new Chart(ctx, {
-            type: chartConfig.chart_type,
-            data: data,
-            options: {
-                responsive: true,
-                plugins: {
+        
+        // Configuración base para las opciones
+        const options = {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: chartConfig.title
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    position: 'left',
                     title: {
                         display: true,
-                        text: chartConfig.title
-                    },
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
+                        text: chartConfig.numeric_field1
                     }
                 }
             }
+        };
+    
+        // Si es tipo mixto, configurar datasets específicamente
+        if (chartConfig.chart_type === 'mixed') {
+            // Configurar el primer dataset como barras
+            if (data.datasets[0]) {
+                data.datasets[0].type = 'bar';
+                data.datasets[0].yAxisID = 'y';
+                data.datasets[0].order = 2; // Las barras detrás
+            }
+            
+            // Configurar el segundo dataset como línea
+            if (data.datasets[1]) {
+                data.datasets[1].type = 'line';
+                data.datasets[1].fill = false;
+                data.datasets[1].yAxisID = 'y1';
+                data.datasets[1].order = 1; // La línea delante
+                
+                // Añadir segundo eje Y
+                options.scales.y1 = {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: chartConfig.numeric_field2
+                    },
+                    grid: {
+                        drawOnChartArea: false // Solo mostrar la cuadrícula para el eje principal
+                    }
+                };
+            }
+            
+            // Usar 'bar' como tipo base
+            chartConfig.chart_type = 'bar';
+        }
+    
+        // Si hay segundo campo de categoría, rotar etiquetas
+        if (chartConfig.category_field_2) {
+            options.scales.x = {
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            };
+        }
+    
+        // Crear el gráfico
+        new Chart(ctx, {
+            type: chartConfig.chart_type,
+            data: data,
+            options: options
         });
     }
-
 });
 
 

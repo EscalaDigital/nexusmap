@@ -3,8 +3,8 @@
  * HTML con el formulario que permitirá gestionar los gráficos.
  */
 
-// Recuperamos los gráficos guardados, si existen
-$saved_charts = get_option('nm_chart_settings', array());
+// $saved_charts proviene de get_option('nm_chart_settings')
+// $numeric_fields y $category_fields provienen del modelo en tu render_charts_page()
 ?>
 
 <div class="wrap">
@@ -48,9 +48,9 @@ $saved_charts = get_option('nm_chart_settings', array());
                             <?php endforeach; ?>
                         </select>
 
-                        <!-- Campo de categoría -->
+                        <!-- Campo de categoría (para las barras, por ejemplo) -->
                         <select name="charts[<?php echo $index; ?>][category_field]" required>
-                            <option value="">Seleccione campo de categoría</option>
+                            <option value="">Seleccione campo de categoría (Eje X #1)</option>
                             <?php foreach ($category_fields as $field): ?>
                                 <option value="<?php echo esc_attr($field['name']); ?>"
                                     <?php selected($chart['category_field'], $field['name']); ?>>
@@ -59,12 +59,29 @@ $saved_charts = get_option('nm_chart_settings', array());
                             <?php endforeach; ?>
                         </select>
 
-                        <!-- Tipo de gráfico -->
+                        <!-- Nuevo: Campo de categoría 2 (opcional), Eje X #2 para la línea -->
+                        <select name="charts[<?php echo $index; ?>][category_field_2]">
+                            <option value="">(Opcional) Seleccione segundo campo de categoría (Eje X #2)</option>
+                            <?php foreach ($category_fields as $field): ?>
+                                <option value="<?php echo esc_attr($field['name']); ?>"
+                                    <?php 
+                                    // Si ya estaba guardado, recuérdalo
+                                    if (isset($chart['category_field_2'])) {
+                                        selected($chart['category_field_2'], $field['name']); 
+                                    }
+                                    ?>>
+                                    <?php echo esc_html($field['label']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <!-- Tipo de gráfico (global) -->
                         <select name="charts[<?php echo $index; ?>][chart_type]" required>
                             <option value="bar"   <?php selected($chart['chart_type'], 'bar'); ?>>Barras</option>
                             <option value="line"  <?php selected($chart['chart_type'], 'line'); ?>>Líneas</option>
                             <option value="pie"   <?php selected($chart['chart_type'], 'pie'); ?>>Circular</option>
                             <option value="mixed" <?php selected($chart['chart_type'], 'mixed'); ?>>Mixto (Barras y Líneas)</option>
+                            <!-- Podrías agregar un nuevo valor "two_x_axes" o similar -->
                         </select>
 
                         <button type="button" class="button remove-chart">Eliminar Gráfico</button>
@@ -78,7 +95,7 @@ $saved_charts = get_option('nm_chart_settings', array());
     </form>
 </div>
 
-<!-- Plantilla para nuevos gráficos (invisible, se clona al pulsar "Añadir Gráfico") -->
+<!-- Plantilla para nuevos gráficos (se clona al pulsar "Añadir Gráfico") -->
 <script type="text/template" id="chart-template">
     <div class="chart-box">
         <h3>Nuevo Gráfico</h3>
@@ -104,7 +121,17 @@ $saved_charts = get_option('nm_chart_settings', array());
         </select>
 
         <select name="charts[{index}][category_field]" required>
-            <option value="">Seleccione campo de categoría</option>
+            <option value="">Seleccione campo de categoría (Eje X #1)</option>
+            <?php foreach ($category_fields as $field): ?>
+                <option value="<?php echo esc_attr($field['name']); ?>">
+                    <?php echo esc_html($field['label']); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <!-- Campo de categoría 2 opcional -->
+        <select name="charts[{index}][category_field_2]">
+            <option value="">(Opcional) Seleccione segundo campo de categoría (Eje X #2)</option>
             <?php foreach ($category_fields as $field): ?>
                 <option value="<?php echo esc_attr($field['name']); ?>">
                     <?php echo esc_html($field['label']); ?>
