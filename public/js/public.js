@@ -435,36 +435,54 @@ jQuery(document).ready(function ($) {
     function showChartsModal(features) {
         if (jQuery('#nm-charts-modal').length === 0) {
             var modalHtml = `
-                <div id="nm-charts-modal" class="nm-modal">
+                <div id="nm-charts-modal" class="nm-charts-modal">
                     <div class="nm-modal-content">
                         <span class="nm-modal-close">&times;</span>
                         <div id="nm-charts-container"></div>
                     </div>
                 </div>
             `;
-            jQuery('body').append(modalHtml);
+            jQuery('#nm-main-map').append(modalHtml);
         }
-
-        jQuery('#nm-charts-modal').show();
+    
+        var $modal = jQuery('#nm-charts-modal');
+        $modal.show();
+        
+        // Forzar un reflow antes de añadir la clase active
+        void $modal[0].offsetWidth;
+        $modal.addClass('active');
+        
         processCharts(features);
-
-        jQuery('#nm-charts-modal .nm-modal-close').on('click', function () {
-            jQuery('#nm-charts-modal').hide();
+    
+        jQuery('#nm-charts-modal .nm-modal-close').off('click').on('click', function() {
+            $modal.removeClass('active');
+            setTimeout(function() {
+                $modal.hide();
+            }, 300);
         });
     }
 
     function processCharts(features) {
         const chartsContainer = document.getElementById('nm-charts-container');
         chartsContainer.innerHTML = '';
-
+    
         nmMapData.chart_settings.forEach((chartConfig, index) => {
             const canvasWrapper = document.createElement('div');
-            canvasWrapper.style.marginBottom = '20px';
+            canvasWrapper.style.height = '100%';
+            
+            // Añadir título del gráfico al wrapper
+            const titleDiv = document.createElement('div');
+            titleDiv.style.textAlign = 'center';
+            titleDiv.style.marginBottom = '10px';
+            titleDiv.style.fontWeight = 'bold';
+            titleDiv.textContent = chartConfig.title;
+            canvasWrapper.appendChild(titleDiv);
+    
             const canvas = document.createElement('canvas');
             canvas.id = `chart-${index}`;
             canvasWrapper.appendChild(canvas);
             chartsContainer.appendChild(canvasWrapper);
-
+    
             const data = processChartData(chartConfig, features);
             createChart(canvas, chartConfig, data);
         });
@@ -558,6 +576,7 @@ jQuery(document).ready(function ($) {
         // Configuración base para las opciones
         const options = {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
