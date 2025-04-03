@@ -48,14 +48,39 @@ function performSearch(query) {
         return;
     }
 
-    // Usar el geocodificador para obtener las coordenadas
-    var geocoder = L.Control.Geocoder.nominatim(); // O el geocodificador que estés utilizando
-    geocoder.geocode(query, function (results) {
-        if (results && results.length > 0) {
-            var result = results[0];
-            map.setView(result.center, 18); // Ajusta el nivel de zoom según sea necesario
-        } else {
-            alert('No se encontraron resultados para: ' + query);
+    // Usar el servicio de Nominatim directamente
+    var nominatimUrl = 'https://nominatim.openstreetmap.org/search';
+    
+    jQuery.ajax({
+        url: nominatimUrl,
+        data: {
+            q: query,
+            format: 'json',
+            limit: 1
+        },
+        jsonp: false,
+        success: function(results) {
+            if (results && results.length > 0) {
+                var result = results[0];
+                var latlng = [parseFloat(result.lat), parseFloat(result.lon)];
+                
+                // Eliminar marcador anterior si existe
+                if (window.searchMarker) {
+                    map.removeLayer(window.searchMarker);
+                }
+           
+                
+                // Centrar el mapa en la ubicación
+                map.setView(latlng, 16);
+                
+                // Mostrar popup con el nombre del lugar
+                window.searchMarker.bindPopup(result.display_name).openPopup();
+            } else {
+                alert('No se encontraron resultados para: ' + query);
+            }
+        },
+        error: function() {
+            alert('Error al realizar la búsqueda. Por favor, inténtelo de nuevo.');
         }
     });
 }
