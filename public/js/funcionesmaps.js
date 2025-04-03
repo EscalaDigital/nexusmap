@@ -66,6 +66,7 @@ function performSearch(query) {
 function showModal(properties) {
     var modalContent = '<div class="nm-modal-content">';
 
+
     for (var key in properties) {
         if (properties.hasOwnProperty(key)) {
             // Omitir el 'entry_id' si aún está presente
@@ -105,20 +106,41 @@ function showModal(properties) {
 
     modalContent += '</div>';
 
+    // Asegurarse de que el modal está dentro del contenedor del mapa
+    var $mapContainer = jQuery('#nm-main-map');
+    var $modal = jQuery('#nm-modal');
+    
+    // Si el modal no existe, crearlo
+    if ($modal.length === 0) {
+        $modal = jQuery('<div id="nm-modal" class="nm-modal"><span id="nm-modal-close" class="nm-modal-close">&times;</span><div id="nm-modal-body"></div></div>');
+        $mapContainer.append($modal);
+    }
+
     // Insertar el contenido en el cuerpo del modal
     jQuery('#nm-modal-body').html(modalContent);
 
-    // Mostrar el modal
-    jQuery('#nm-modal').css('display', 'block');
+    // Mostrar el modal con animación
+    $modal.css('display', 'block');
+    
+    // Forzar un reflow antes de añadir la clase active
+    void $modal[0].offsetWidth;
+    $modal.addClass('active');
 
     // Manejar el cierre del modal
-    jQuery('#nm-modal-close').on('click', function () {
-        jQuery('#nm-modal').css('display', 'none');
+    jQuery('#nm-modal-close').off('click').on('click', function() {
+        $modal.removeClass('active');
+        setTimeout(function() {
+            $modal.css('display', 'none');
+        }, 300);
     });
 
-    jQuery(window).on('click', function (event) {
+    // Cerrar al hacer clic fuera del modal
+    jQuery(window).off('click.modal').on('click.modal', function(event) {
         if (jQuery(event.target).is('#nm-modal')) {
-            jQuery('#nm-modal').css('display', 'none');
+            $modal.removeClass('active');
+            setTimeout(function() {
+                $modal.css('display', 'none');
+            }, 300);
         }
     });
 }
