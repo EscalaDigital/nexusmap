@@ -299,7 +299,7 @@ jQuery(document).ready(function ($) {
             action: 'nm_get_map_points',
             nonce: nmMapData.nonce
         }, function (response) {
-            console.log('Response received:', response); // Debug
+            console.log('Response received:', response);
 
             if (response && response.features) {
                 var layerGroups = {};
@@ -308,10 +308,9 @@ jQuery(document).ready(function ($) {
                 // Crear markersLayer como contenedor principal
                 markersLayer = L.featureGroup().addTo(map);
 
-
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
-                    console.log('Layer settings found:', response.layer_settings); // Debug
+                    console.log('Layer settings found:', response.layer_settings);
 
                     // Crear un grupo de capa para cada campo configurado
                     response.layer_settings.forEach(function (layerConfig) {
@@ -320,8 +319,7 @@ jQuery(document).ready(function ($) {
 
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
-                        console.log('Processing feature:', feature); // Debug
-
+                        console.log('Processing feature:', feature);
 
                         if (feature.properties && Array.isArray(feature.properties.layers) && feature.properties.layers.length > 0) {
                             // El feature puede estar en una o varias capas
@@ -347,17 +345,20 @@ jQuery(document).ready(function ($) {
                                 });
 
                                 // Añadir a la capa correspondiente
+                                var layerLabel = layerDef.layer_type === 'text' 
+                                    ? layerDef.layer_label 
+                                    : layerDef.layer_field;
+                                    
                                 if (layerGroups[layerDef.layer_field]) {
                                     layerGroups[layerDef.layer_field].addLayer(marker);
                                 }
 
-                                // Además, lo agregas al featureGroup principal (si así lo deseas)
+                                // Además, lo agregas al featureGroup principal
                                 markersLayer.addLayer(marker);
                                 allMarkers.push(marker);
                             });
                         }
                     });
-
 
                     // Añadir grupos de capas al control y al mapa
                     response.layer_settings.forEach(function (layerConfig) {
@@ -365,7 +366,12 @@ jQuery(document).ready(function ($) {
                             layerGroups[layerConfig.field].addTo(map);
                             firstLayer = false;
                         }
-                        overlays[layerConfig.label] = layerGroups[layerConfig.field];
+                        
+                        var layerLabel = layerConfig.type === 'text'
+                            ? layerConfig.label
+                            : layerConfig.label || layerConfig.field;
+                            
+                        overlays[layerLabel] = layerGroups[layerConfig.field];
                     });
 
                 } else {
@@ -376,13 +382,9 @@ jQuery(document).ready(function ($) {
                             feature.geometry.coordinates[0]
                         ]);
 
-                        // Añadir los datos originales al marker para los filtros
                         marker.feature = feature;
-
                         marker.on('click', function () {
-                            var propertiesToShow = Object.assign({}, feature.properties);
-                            delete propertiesToShow.entry_id;
-                            showModal(propertiesToShow);
+                            showModal(feature.properties);
                         });
 
                         markersLayer.addLayer(marker);
@@ -398,30 +400,11 @@ jQuery(document).ready(function ($) {
 
                 // Inicializar el contador de puntos
                 document.getElementById('nm-points-count').textContent = response.features.length;
-
-
-                if (nmMapData.charts_enabled) {
-                    var $chartsButton = jQuery('<button>', {
-                        class: 'nm-control-button',
-                        title: 'Ver Gráficos',
-                        html: '<i class="fa fa-chart-bar"></i>'
-                    });
-                    $chartsButton.on('click', function (e) {
-                        e.stopPropagation();
-                        showChartsModal(response.features);
-                    });
-                    $topControls.append($chartsButton);
-                }
-
             }
-
-
-
-
-
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);
         });
+
 
         // Botón para ver gráficos
 

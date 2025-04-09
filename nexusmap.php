@@ -12,6 +12,17 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
+// Enable WordPress debugging
+if (!defined('WP_DEBUG')) {
+    define('WP_DEBUG', true);
+}
+if (!defined('WP_DEBUG_LOG')) {
+    define('WP_DEBUG_LOG', true);
+}
+if (!defined('WP_DEBUG_DISPLAY')) {
+    define('WP_DEBUG_DISPLAY', true);
+}
+
 define( 'NM_VERSION', '1.0.0' );
 define( 'NM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -28,14 +39,6 @@ include_once plugin_dir_path(__FILE__) . 'nm-utils.php';
 // Registrar los hooks de activación y desactivación
 register_activation_hook( __FILE__, array( 'NM_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'NM_Deactivator', 'deactivate' ) );
-
-
-
-function console_log($message) {
-    echo '<script type="text/javascript">';
-    echo 'console.log(' . json_encode($message) . ');';
-    echo '</script>';
-}
 
 function run_nm() {
     $plugin = new NM();

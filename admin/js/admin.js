@@ -251,6 +251,11 @@ jQuery(document).ready(function ($) {
 
     $('#nm-layer-settings').on('submit', function (e) {
         e.preventDefault();
+        
+        // Mostrar indicador de carga
+        var $submitButton = $(this).find('button[type="submit"]');
+        var originalText = $submitButton.text();
+        $submitButton.prop('disabled', true).text('Guardando...');
 
         $.ajax({
             url: nmAdmin.ajax_url,
@@ -264,11 +269,23 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     alert('Configuración guardada correctamente');
                 } else {
-                    alert('Error al guardar la configuración');
+                    var errorMsg = response.data || 'Error al guardar la configuración';
+                    console.error('Error detallado:', response);
+                    alert(errorMsg);
                 }
             },
-            error: function () {
-                alert('Error en la comunicación con el servidor');
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('Error AJAX:', {
+                    status: jqXHR.status,
+                    statusText: jqXHR.statusText,
+                    responseText: jqXHR.responseText,
+                    errorThrown: errorThrown
+                });
+                alert('Error en la comunicación con el servidor. Por favor, revise la consola para más detalles.');
+            },
+            complete: function() {
+                // Restaurar el botón
+                $submitButton.prop('disabled', false).text(originalText);
             }
         });
     });

@@ -193,16 +193,11 @@ class NM_Public
     {
         check_ajax_referer('nm_public_nonce', 'nonce');
         $entries = $this->model->get_entries('approved');
-        if (!isset($feature['properties']['layers'])) {
-            $feature['properties']['layers'] = array();  // Array vacio al principio
-        }
+        $features = array();
 
         // Obtener configuración de capas
         $layer_settings = get_option('nm_layer_settings', array());
         $has_layers = !empty($layer_settings);
-
-        // Debug
-        error_log('Layer Settings: ' . print_r($layer_settings, true));
 
         foreach ($entries as $entry) {
             $entry_data = maybe_unserialize($entry->entry_data);
@@ -211,8 +206,10 @@ class NM_Public
                 if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
                     foreach ($map_data as $feature) {
                         if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
-                            // Debug - Mostrar datos del entry
-                            error_log('Processing entry data: ' . print_r($entry_data, true));
+                            // Inicializar array de capas
+                            if (!isset($feature['properties']['layers'])) {
+                                $feature['properties']['layers'] = array();
+                            }
 
                             // Agregar todas las propiedades del entry_data al properties
                             foreach ($entry_data as $key => $value) {
@@ -232,52 +229,64 @@ class NM_Public
 
                                     // Comprobar si existe la propiedad en feature properties
                                     if (isset($feature['properties'][$field_key])) {
-                                        // Si el valor es un array, tomar el primer elemento
-                                        $value = is_array($feature['properties'][$field_key])
-                                            ? $feature['properties'][$field_key][0]
-                                            : $feature['properties'][$field_key];
+                                        // Si es un campo de tipo texto
+                                        if ($layer_config['type'] === 'text') {
+                                            $value = $feature['properties'][$field_key];
+                                            if (!empty($value)) {
+                                                $feature['properties']['layers'][] = array(
+                                                    'layer_field' => $field_name,
+                                                    'layer_value' => $value,
+                                                    'layer_color' => $layer_config['color'],
+                                                    'layer_type' => 'text',
+                                                    'layer_label' => $layer_config['label']
+                                                );
+                                                $feature['properties']['has_layer'] = true;
+                                            }
+                                        } 
+                                        // Si es un campo select/radio/checkbox
+                                        else {
+                                            $value = is_array($feature['properties'][$field_key])
+                                                ? $feature['properties'][$field_key][0]
+                                                : $feature['properties'][$field_key];
 
-                                        error_log("Checking value '{$value}' for field {$field_key}");
-
-                                        // Convertir índices numéricos a strings para la comparación
-                                        $colors = array_combine(
-                                            array_map('strval', array_keys($layer_config['colors'])),
-                                            $layer_config['colors']
-                                        );
-                                        if (isset($colors[$value])) {
-                                            // Añadir una nueva entrada al array 'layers' de este feature
-                                            $feature['properties']['layers'][] = array(
-                                                'layer_field' => $field_name,
-                                                'layer_value' => $value,
-                                                'layer_color' => $colors[$value],
+                                            // Convertir índices numéricos a strings para la comparación
+                                            $colors = array_combine(
+                                                array_map('strval', array_keys($layer_config['colors'])),
+                                                $layer_config['colors']
                                             );
 
-                                            // Con que al menos una capa coincida, marcamos has_layer a true
-                                            $feature['properties']['has_layer'] = true;
+                                            if (isset($colors[$value])) {
+                                                $feature['properties']['layers'][] = array(
+                                                    'layer_field' => $field_name,
+                                                    'layer_value' => $value,
+                                                    'layer_color' => $colors[$value],
+                                                    'layer_type' => 'select'
+                                                );
+                                                $feature['properties']['has_layer'] = true;
+                                            }
                                         }
                                     }
                                 }
                             }
 
-                            // Añadir todas las features, independientemente de si tienen capa asignada
                             $features[] = $feature;
-                            error_log("Feature added with or without layer: " . print_r($feature, true));
                         }
                     }
                 }
             }
         }
 
-        // Preparar respuesta
+        // Preparar respuesta con configuración de capas
         $formatted_layer_settings = array();
         foreach ($layer_settings as $field_name => $config) {
             $formatted_layer_settings[] = array(
                 'field' => $field_name,
                 'label' => isset($config['label']) ? $config['label'] : $field_name,
-                'colors' => array_combine(
+                'type' => $config['type'],
+                'colors' => isset($config['colors']) ? array_combine(
                     array_map('strval', array_keys($config['colors'])),
                     $config['colors']
-                )
+                ) : ($config['type'] === 'text' ? array($config['color']) : array())
             );
         }
 
@@ -286,7 +295,6 @@ class NM_Public
             'layer_settings' => $formatted_layer_settings
         );
 
-        error_log('Final response: ' . print_r($response, true));
         wp_send_json($response);
     }
     // Método para obtener detalles de la entrada
