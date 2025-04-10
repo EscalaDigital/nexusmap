@@ -410,13 +410,13 @@ jQuery(document).ready(function ($) {
                     // Añadir grupos de capas al control y al mapa
                     response.layer_settings.forEach(function (layerConfig) {
                         if (layerConfig.type === 'text') {
-                            // Crear el HTML para la capa de texto con su indicador de color
-                            var labelHtml = '<div class="layer-color-indicator" style="background-color: ' + 
-                                          layerConfig.colors[0] + '"></div>Capas de Texto';
-                            overlays[labelHtml] = textLayerGroup;
-                            if (firstLayer) {
-                                textLayerGroup.addTo(map);
-                                firstLayer = false;
+                            // Solo añadir la capa de texto una vez
+                            if (!overlays['Capas de Texto']) {
+                                overlays['Capas de Texto'] = textLayerGroup;
+                                if (firstLayer) {
+                                    textLayerGroup.addTo(map);
+                                    firstLayer = false;
+                                }
                             }
                         } else if (layerConfig.type === 'select' && layerConfig.colors) {
                             // Para cada campo con colores, crear una etiqueta con el color correspondiente
