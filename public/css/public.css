@@ -55,16 +55,23 @@
     margin: 0;
   }
   
+  /* Ocultar los indicadores de color */
+  .layer-color-indicator {
+    display: none !important;
+  }
+
+  /* Mostrar el texto de las capas */
+  .leaflet-control-layers-overlays label span {
+    display: inline-block !important;
+    font-size: 14px; /* Tamaño de fuente */
+    color: #333; /* Color del texto */
+    margin-left: 8px;
+  }
+  
   /* Estilo para el checkbox */
   .leaflet-control-layers-selector {
     margin-right: 8px; /* Separación entre el checkbox y el texto */
     vertical-align: middle; /* Alinear el checkbox con el texto */
-  }
-  
-  /* Estilo del texto junto al checkbox */
-  .leaflet-control-layers-overlays label span {
-    font-size: 14px; /* Tamaño de fuente */
-    color: #333; /* Color del texto */
   }
   
   /* Efecto hover para el label */
@@ -75,16 +82,6 @@
   /* Efecto para cuando el checkbox está activo */
   .leaflet-control-layers-selector:checked + span {
     font-weight: bold; /* Negrita para el texto cuando está seleccionado */
-  }
-
-  .layer-color-indicator {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    margin-right: 8px;
-    border: 1px solid rgba(0,0,0,0.2);
-    display: inline-block;
-    flex-shrink: 0;
   }
 
   .leaflet-control-layers-expanded {
