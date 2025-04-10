@@ -147,10 +147,25 @@ class NM_Form_To_Map
 
             error_log('NexusMap: Attempting to save settings: ' . print_r($new_settings, true));
 
+            // Obtener la configuración actual
+            $current_settings = get_option('nm_layer_settings', array());
+
+            // Comparar si los valores son iguales
+            if ($current_settings === $new_settings) {
+                wp_send_json_success(array(
+                    'message' => 'No hay cambios que guardar - la configuración ya está actualizada',
+                    'type' => 'info'
+                ));
+                return;
+            }
+
             $update_result = update_option('nm_layer_settings', $new_settings);
             if ($update_result) {
                 error_log('NexusMap: Settings saved successfully');
-                wp_send_json_success('Configuración guardada correctamente');
+                wp_send_json_success(array(
+                    'message' => 'Configuración guardada correctamente',
+                    'type' => 'success'
+                ));
             } else {
                 error_log('NexusMap: Failed to update settings in database');
                 wp_send_json_error('Error al guardar la configuración en la base de datos');

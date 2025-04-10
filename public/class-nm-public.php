@@ -233,12 +233,14 @@ class NM_Public
                                         if ($layer_config['type'] === 'text') {
                                             $value = $feature['properties'][$field_key];
                                             if (!empty($value)) {
-                                                $feature['properties']['layers'][] = array(
-                                                    'layer_field' => $field_name,
-                                                    'layer_value' => $value,
-                                                    'layer_color' => $layer_config['color'],
-                                                    'layer_type' => 'text',
-                                                    'layer_label' => $layer_config['label']
+                                                if (!isset($feature['properties']['text_layers'])) {
+                                                    $feature['properties']['text_layers'] = array();
+                                                }
+                                                $feature['properties']['text_layers'][] = array(
+                                                    'field_name' => $field_name,
+                                                    'value' => $value,
+                                                    'color' => $layer_config['color'],
+                                                    'label' => $layer_config['label']
                                                 );
                                                 $feature['properties']['has_layer'] = true;
                                             }

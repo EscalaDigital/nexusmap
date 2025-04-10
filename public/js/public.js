@@ -304,6 +304,7 @@ jQuery(document).ready(function ($) {
             if (response && response.features) {
                 var layerGroups = {};
                 var firstLayer = true;
+                var textLayerGroup = L.layerGroup(); // Grupo para todas las capas de texto
 
                 // Crear markersLayer como contenedor principal
                 markersLayer = L.featureGroup().addTo(map);
@@ -312,91 +313,117 @@ jQuery(document).ready(function ($) {
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
                     console.log('Layer settings found:', response.layer_settings);
 
-                    // Crear un grupo de capa para cada campo configurado
+                    // Crear un grupo de capa para cada campo configurado (excepto texto)
                     response.layer_settings.forEach(function (layerConfig) {
-                        layerGroups[layerConfig.field] = L.layerGroup();
+                        if (layerConfig.type !== 'text') {
+                            layerGroups[layerConfig.field] = L.layerGroup();
+                        }
                     });
 
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
                         console.log('Processing feature:', feature);
 
-                        if (feature.properties && Array.isArray(feature.properties.layers) && feature.properties.layers.length > 0) {
-                            // El feature puede estar en una o varias capas
+                        // Si el feature tiene capas de texto
+                        if (feature.properties && feature.properties.text_layers) {
+                            var marker = L.circleMarker([
+                                feature.geometry.coordinates[1],
+                                feature.geometry.coordinates[0]
+                            ], {
+                                radius: 8,
+                                fillColor: feature.properties.text_layers[0].color,
+                                color: "#000",
+                                weight: 1,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            });
+
+                            marker.feature = feature;
+                            marker.on('click', function () {
+                                showModal(feature.properties);
+                            });
+
+                            textLayerGroup.addLayer(marker);
+                            markersLayer.addLayer(marker);
+                            allMarkers.push(marker);
+                        }
+
+                        // Procesar otras capas (select/radio/checkbox)
+                        if (feature.properties && Array.isArray(feature.properties.layers)) {
                             feature.properties.layers.forEach(function (layerDef) {
-                                var marker = L.circleMarker([
-                                    feature.geometry.coordinates[1],
-                                    feature.geometry.coordinates[0]
-                                ], {
-                                    radius: 8,
-                                    fillColor: layerDef.layer_color || '#ff0000',
-                                    color: "#000",
-                                    weight: 1,
-                                    opacity: 1,
-                                    fillOpacity: 0.8
-                                });
+                                if (layerDef.layer_type === 'select') {
+                                    var marker = L.circleMarker([
+                                        feature.geometry.coordinates[1],
+                                        feature.geometry.coordinates[0]
+                                    ], {
+                                        radius: 8,
+                                        fillColor: layerDef.layer_color,
+                                        color: "#000",
+                                        weight: 1,
+                                        opacity: 1,
+                                        fillOpacity: 0.8
+                                    });
 
-                                // Añadir datos originales
-                                marker.feature = feature;
+                                    marker.feature = feature;
+                                    marker.on('click', function () {
+                                        showModal(feature.properties);
+                                    });
 
-                                // Popup / click
-                                marker.on('click', function () {
-                                    showModal(feature.properties);
-                                });
-
-                                // Añadir a la capa correspondiente
-                                var layerLabel = layerDef.layer_type === 'text' 
-                                    ? layerDef.layer_label 
-                                    : layerDef.layer_field;
-                                    
-                                if (layerGroups[layerDef.layer_field]) {
-                                    layerGroups[layerDef.layer_field].addLayer(marker);
+                                    if (layerGroups[layerDef.layer_field]) {
+                                        layerGroups[layerDef.layer_field].addLayer(marker);
+                                    }
+                                    markersLayer.addLayer(marker);
+                                    allMarkers.push(marker);
                                 }
-
-                                // Además, lo agregas al featureGroup principal
-                                markersLayer.addLayer(marker);
-                                allMarkers.push(marker);
                             });
                         }
                     });
 
                     // Añadir grupos de capas al control y al mapa
                     response.layer_settings.forEach(function (layerConfig) {
-                        if (firstLayer) {
-                            layerGroups[layerConfig.field].addTo(map);
-                            firstLayer = false;
+                        if (layerConfig.type === 'text') {
+                            // Crear el HTML para la capa de texto con su indicador de color
+                            var labelHtml = '<div class="layer-color-indicator" style="background-color: ' + 
+                                          layerConfig.colors[0] + '"></div>Capas de Texto';
+                            overlays[labelHtml] = textLayerGroup;
+                            if (firstLayer) {
+                                textLayerGroup.addTo(map);
+                                firstLayer = false;
+                            }
+                        } else if (layerConfig.type === 'select' && layerConfig.colors) {
+                            // Para cada campo con colores, crear una etiqueta con el color correspondiente
+                            var labelHtml = '<div class="layer-color-indicator" style="background-color: ' + 
+                                          Object.values(layerConfig.colors)[0] + '"></div>' + layerConfig.label;
+                            overlays[labelHtml] = layerGroups[layerConfig.field];
+                            if (firstLayer) {
+                                layerGroups[layerConfig.field].addTo(map);
+                                firstLayer = false;
+                            }
                         }
-                        
-                        var layerLabel = layerConfig.type === 'text'
-                            ? layerConfig.label
-                            : layerConfig.label || layerConfig.field;
-                            
-                        overlays[layerLabel] = layerGroups[layerConfig.field];
-                    });
-
-                } else {
-                    // Si no hay configuración de capas, mostrar puntos normales
-                    response.features.forEach(function (feature) {
-                        var marker = L.marker([
-                            feature.geometry.coordinates[1],
-                            feature.geometry.coordinates[0]
-                        ]);
-
-                        marker.feature = feature;
-                        marker.on('click', function () {
-                            showModal(feature.properties);
-                        });
-
-                        markersLayer.addLayer(marker);
-                        allMarkers.push(marker);
                     });
                 }
 
-                // Actualizar el control de capas
+                // Actualizar el control de capas con los nuevos overlays
                 if (controlLayers) {
                     controlLayers.remove();
                 }
-                controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
+                controlLayers = L.control.layers(baseLayers, overlays, {
+                    collapsed: false,
+                    sortLayers: true
+                }).addTo(map);
+
+                // Aplicar estilos personalizados a los elementos del control después de añadirlo
+                var controlContainer = controlLayers.getContainer();
+                var labels = controlContainer.getElementsByTagName('label');
+                
+                for (var i = 0; i < labels.length; i++) {
+                    // Asegurarse de que el span que contiene el HTML se muestre correctamente
+                    var span = labels[i].getElementsByTagName('span')[0];
+                    if (span) {
+                        span.style.display = 'flex';
+                        span.style.alignItems = 'center';
+                    }
+                }
 
                 // Inicializar el contador de puntos
                 document.getElementById('nm-points-count').textContent = response.features.length;
@@ -405,14 +432,25 @@ jQuery(document).ready(function ($) {
             console.error('AJAX Error:', textStatus, errorThrown);
         });
 
-
         // Botón para ver gráficos
-
-
-
-
-
-
+        if (nmMapData.charts_enabled) {
+            var $chartsButton = jQuery('<button>', {
+                class: 'nm-control-button',
+                title: 'Ver gráficos',
+                html: '<i class="fa fa-chart-bar"></i>'
+            });
+            
+            $chartsButton.on('click', function(e) {
+                e.stopPropagation();
+                if (allMarkers.length > 0) {
+                    showChartsModal(allMarkers.map(marker => marker.feature));
+                } else {
+                    alert('No hay datos para mostrar en los gráficos');
+                }
+            });
+            
+            $topControls.append($chartsButton);
+        }
     }
 
     function showChartsModal(features) {

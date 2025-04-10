@@ -252,10 +252,13 @@ jQuery(document).ready(function ($) {
     $('#nm-layer-settings').on('submit', function (e) {
         e.preventDefault();
         
-        // Mostrar indicador de carga
-        var $submitButton = $(this).find('button[type="submit"]');
+        var $form = $(this);
+        var $submitButton = $form.find('button[type="submit"]');
         var originalText = $submitButton.text();
-        $submitButton.prop('disabled', true).text('Guardando...');
+        
+        // Deshabilitar el formulario y el botón
+        $form.find('input, select, button').prop('disabled', true);
+        $submitButton.text('Guardando...');
 
         $.ajax({
             url: nmAdmin.ajax_url,
@@ -263,29 +266,33 @@ jQuery(document).ready(function ($) {
             data: {
                 action: 'nm_save_layer_settings',
                 nonce: nmAdmin.nonce,
-                settings: $(this).serialize()
+                settings: $form.serialize()
             },
             success: function (response) {
                 if (response.success) {
-                    alert('Configuración guardada correctamente');
+                    var message = response.data.message || 'Configuración guardada correctamente';
+                    var type = response.data.type || 'success';
+                    
+                    // Si es mensaje informativo, usar un estilo menos llamativo
+                    if (type === 'info') {
+                        console.log('Info:', message);
+                    }
+                    
+                    alert(message);
                 } else {
                     var errorMsg = response.data || 'Error al guardar la configuración';
                     console.error('Error detallado:', response);
                     alert(errorMsg);
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.error('Error AJAX:', {
-                    status: jqXHR.status,
-                    statusText: jqXHR.statusText,
-                    responseText: jqXHR.responseText,
-                    errorThrown: errorThrown
-                });
-                alert('Error en la comunicación con el servidor. Por favor, revise la consola para más detalles.');
+            error: function(xhr, status, error) {
+                console.error('Error en la petición:', error);
+                alert('Error al intentar guardar la configuración');
             },
             complete: function() {
-                // Restaurar el botón
-                $submitButton.prop('disabled', false).text(originalText);
+                // Re-habilitar el formulario y restaurar el texto del botón
+                $form.find('input, select, button').prop('disabled', false);
+                $submitButton.text(originalText);
             }
         });
     });
