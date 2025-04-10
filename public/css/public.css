@@ -513,4 +513,112 @@
   border-color: #0056b3;
 }
 
+/* Estilos para el botón y el panel de la leyenda */
+.map-legend-control {
+    background-color: white;
+    padding: 8px 10px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.map-legend-control:hover {
+    background-color: #f4f4f4;
+}
+
+.map-legend-control:active {
+    background-color: #e6e6e6;
+}
+
+.map-legend-panel {
+    display: none;
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    z-index: 1000;
+    max-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.map-legend-panel.visible {
+    display: block;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+
+.legend-label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Estilos para el nuevo botón de leyenda personalizado */
+.legend-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    padding: 8px 12px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 99999; /* Aumentar el z-index para estar por encima de los controles de Leaflet */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.legend-button:hover {
+    background-color: #f4f4f4;
+}
+
+.legend-panel {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    right: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1500; /* Mismo z-index que el botón */
+    max-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.legend-panel.visible {
+    display: block;
+}
+
+.legend-group {
+    margin-bottom: 15px;
+}
+
+.legend-group strong {
+    display: block;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+}
+
 

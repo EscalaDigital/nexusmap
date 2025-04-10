@@ -14,7 +14,37 @@ jQuery(document).ready(function ($) {
 
         map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
+        // Crear botón y panel de leyenda personalizado
+        var legendButton = document.createElement('button');
+        legendButton.className = 'legend-button';
+        legendButton.innerHTML = '📊 Leyenda';
 
+        var legendPanel = document.createElement('div');
+        legendPanel.className = 'legend-panel';
+
+        // Asegurarse de que el contenedor del mapa tenga posición relativa
+        jQuery('#nm-main-map').css('position', 'relative');
+        
+        // Agregar el botón y panel directamente al contenedor del mapa
+        document.querySelector('#nm-main-map').appendChild(legendButton);
+        document.querySelector('#nm-main-map').appendChild(legendPanel);
+
+        // Manejar el clic en el botón de leyenda
+        legendButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            legendPanel.classList.toggle('visible');
+            if (legendPanel.classList.contains('visible') && window.updateLegend) {
+                window.updateLegend();
+            }
+        });
+
+        // Cerrar la leyenda al hacer clic fuera de ella
+        document.addEventListener('click', function(e) {
+            if (!legendButton.contains(e.target) && !legendPanel.contains(e.target)) {
+                legendPanel.classList.remove('visible');
+            }
+        });
 
         // Crear el contenedor de controles si aún no existe
         if (jQuery('#nm-top-controls').length === 0) {
@@ -82,9 +112,6 @@ jQuery(document).ready(function ($) {
             });
             $topControls.append($addWmsButton);
         }
-
-        // Asegurarse de que el contenedor del mapa tiene posición relativa
-        jQuery('#nm-main-map').css('position', 'relative');
 
         // Agregar las capas base
         if (Array.isArray(nmMapData.base_layers) && nmMapData.base_layers.length > 0) {
@@ -304,7 +331,8 @@ jQuery(document).ready(function ($) {
             if (response && response.features) {
                 var layerGroups = {};
                 var firstLayer = true;
-                var textLayerGroup = L.layerGroup(); // Grupo para todas las capas de texto
+                var textLayerGroup = L.layerGroup();
+                var legendData = response.layer_settings; // Guardar los datos para la leyenda
 
                 // Crear markersLayer como contenedor principal
                 markersLayer = L.featureGroup().addTo(map);
@@ -408,7 +436,7 @@ jQuery(document).ready(function ($) {
                     controlLayers.remove();
                 }
                 controlLayers = L.control.layers(baseLayers, overlays, {
-                    collapsed: false,
+                    collapsed: true, // Comenzar colapsado
                     sortLayers: true
                 }).addTo(map);
 
@@ -427,6 +455,38 @@ jQuery(document).ready(function ($) {
 
                 // Inicializar el contador de puntos
                 document.getElementById('nm-points-count').textContent = response.features.length;
+
+                // Función para actualizar el contenido de la leyenda
+                window.updateLegend = function() {
+                    var content = '<h4 style="margin: 0 0 10px 0">Leyenda del Mapa</h4>';
+
+                    if (response.layer_settings && response.layer_settings.length > 0) {
+                        response.layer_settings.forEach(function(layerConfig) {
+                            if (layerConfig.type === 'select' && layerConfig.colors) {
+                                content += '<div class="legend-group">';
+                                content += '<strong>' + layerConfig.label + '</strong>';
+                                Object.entries(layerConfig.colors).forEach(function([value, color]) {
+                                    content += '<div class="legend-item">';
+                                    content += '<div class="legend-color" style="background-color: ' + color + '"></div>';
+                                    content += '<span class="legend-label">' + value + '</span>';
+                                    content += '</div>';
+                                });
+                                content += '</div>';
+                            } else if (layerConfig.type === 'text') {
+                                content += '<div class="legend-group">';
+                                content += '<div class="legend-item">';
+                                content += '<div class="legend-color" style="background-color: ' + layerConfig.colors[0] + '"></div>';
+                                content += '<span class="legend-label">' + layerConfig.label + '</span>';
+                                content += '</div>';
+                                content += '</div>';
+                            }
+                        });
+                    } else {
+                        content += '<p>No hay capas configuradas</p>';
+                    }
+
+                    legendPanel.innerHTML = content;
+                };
             }
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);
