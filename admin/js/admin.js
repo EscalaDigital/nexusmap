@@ -256,41 +256,92 @@ jQuery(document).ready(function ($) {
         var $submitButton = $form.find('button[type="submit"]');
         var originalText = $submitButton.text();
         
-        // Deshabilitar el formulario y el botón
+        // Recopilar datos del formulario
+        var settings = {
+            layers: {},
+            text_layers: {}
+        };
+        
+        // Procesar campos de capas (layers)
+        $form.find('input[name^="layers["]').each(function() {
+            var $input = $(this);
+            var name = $input.attr('name');
+            var matches = name.match(/layers\[([^\]]+)\]\[([^\]]+)\]/);
+            
+            if (matches) {
+                var fieldKey = matches[1];
+                var propertyName = matches[2];
+                var value = $input.val();
+                
+                if ($input.attr('type') === 'checkbox') {
+                    value = $input.prop('checked') ? 'on' : 'off';
+                }
+                
+                if (!settings.layers[fieldKey]) {
+                    settings.layers[fieldKey] = {};
+                }
+                
+                if (propertyName === 'colors' || propertyName === 'labels') {
+                    if (!settings.layers[fieldKey][propertyName]) {
+                        settings.layers[fieldKey][propertyName] = [];
+                    }
+                    settings.layers[fieldKey][propertyName].push(value);
+                } else {
+                    settings.layers[fieldKey][propertyName] = value;
+                }
+            }
+        });
+        
+        // Procesar campos de texto (text_layers)
+        $form.find('input[name^="text_layers["]').each(function() {
+            var $input = $(this);
+            var name = $input.attr('name');
+            var matches = name.match(/text_layers\[([^\]]+)\]\[([^\]]+)\]/);
+            
+            if (matches) {
+                var fieldKey = matches[1];
+                var propertyName = matches[2];
+                var value = $input.val();
+                
+                if ($input.attr('type') === 'checkbox') {
+                    value = $input.prop('checked') ? 'on' : 'off';
+                }
+                
+                if (!settings.text_layers[fieldKey]) {
+                    settings.text_layers[fieldKey] = {};
+                }
+                
+                settings.text_layers[fieldKey][propertyName] = value;
+            }
+        });
+        
+        // Debug: Ver datos recopilados
+        console.log('Datos recopilados:', settings);
+        
+        // Deshabilitar formulario durante el envío
         $form.find('input, select, button').prop('disabled', true);
         $submitButton.text('Guardando...');
-
+    
         $.ajax({
             url: nmAdmin.ajax_url,
             method: 'POST',
             data: {
                 action: 'nm_save_layer_settings',
                 nonce: nmAdmin.nonce,
-                settings: $form.serialize()
+                settings: settings
             },
-            success: function (response) {
+            success: function(response) {
                 if (response.success) {
-                    var message = response.data.message || 'Configuración guardada correctamente';
-                    var type = response.data.type || 'success';
-                    
-                    // Si es mensaje informativo, usar un estilo menos llamativo
-                    if (type === 'info') {
-                        console.log('Info:', message);
-                    }
-                    
-                    alert(message);
+                    alert(response.data.message);
                 } else {
-                    var errorMsg = response.data || 'Error al guardar la configuración';
-                    console.error('Error detallado:', response);
-                    alert(errorMsg);
+                    alert(response.data);
                 }
             },
-            error: function(xhr, status, error) {
-                console.error('Error en la petición:', error);
-                alert('Error al intentar guardar la configuración');
+            error: function() {
+                alert('Error en la comunicación con el servidor');
             },
             complete: function() {
-                // Re-habilitar el formulario y restaurar el texto del botón
+                // Restaurar estado del formulario
                 $form.find('input, select, button').prop('disabled', false);
                 $submitButton.text(originalText);
             }

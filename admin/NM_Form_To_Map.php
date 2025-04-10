@@ -77,89 +77,67 @@ class NM_Form_To_Map
                 wp_send_json_error('Error de verificación de seguridad');
                 return;
             }
-
+    
             if (!current_user_can('manage_options')) {
                 error_log('NexusMap: Permission denied in save_layer_settings');
                 wp_send_json_error('Permiso denegado');
                 return;
             }
-
-            $settings = isset($_POST['settings']) ? $_POST['settings'] : '';
+    
+            // Recibir los datos
+            $settings = isset($_POST['settings']) ? $_POST['settings'] : array();
+            
+            // Debug de datos recibidos
+            error_log('NexusMap: Raw POST data: ' . print_r($_POST, true));
+            error_log('NexusMap: Settings received: ' . print_r($settings, true));
+    
             if (empty($settings)) {
                 error_log('NexusMap: No settings data received in save_layer_settings');
                 wp_send_json_error('No se recibieron datos');
                 return;
             }
-
-            parse_str($settings, $layer_settings);
-            if (empty($layer_settings)) {
-                error_log('NexusMap: Failed to parse settings string in save_layer_settings');
-                wp_send_json_error('Error al procesar los datos recibidos');
-                return;
-            }
-
-            error_log('NexusMap: Received layer settings: ' . print_r($layer_settings, true));
-            
+    
             // Inicializar nuevo array de configuraciones
             $new_settings = array();
-
+    
             // Procesar campos select/radio/checkbox
-            if (isset($layer_settings['layers']) && is_array($layer_settings['layers'])) {
-                foreach ($layer_settings['layers'] as $key => $values) {
-                    if (isset($values['active']) && $values['active'] === 'on') {
+            if (isset($settings['layers']) && is_array($settings['layers'])) {
+                foreach ($settings['layers'] as $key => $layer_data) {
+                    if (isset($layer_data['active']) && $layer_data['active'] === 'on') {
                         $new_settings[$key] = array(
                             'active' => 'on',
                             'type' => 'select'
                         );
-
-                        if (isset($values['colors']) && isset($values['labels'])) {
-                            $colors = array();
-                            $labels = $values['labels'];
-                            
-                            foreach ($values['colors'] as $index => $color) {
-                                if (isset($labels[$index])) {
-                                    $label = sanitize_text_field($labels[$index]);
-                                    $colors[$label] = sanitize_text_field($color);
-                                }
-                            }
-                            
-                            if (!empty($colors)) {
-                                $new_settings[$key]['colors'] = $colors;
-                            }
+                        
+                        if (isset($layer_data['colors']) && isset($layer_data['labels'])) {
+                            $new_settings[$key]['colors'] = array_combine(
+                                array_map('sanitize_text_field', $layer_data['labels']),
+                                array_map('sanitize_text_field', $layer_data['colors'])
+                            );
                         }
                     }
                 }
             }
-
+    
             // Procesar campos de texto
-            if (isset($layer_settings['text_layers']) && is_array($layer_settings['text_layers'])) {
-                foreach ($layer_settings['text_layers'] as $key => $values) {
-                    if (isset($values['active']) && $values['active'] === 'on') {
+            if (isset($settings['text_layers']) && is_array($settings['text_layers'])) {
+                foreach ($settings['text_layers'] as $key => $text_data) {
+                    if (isset($text_data['active']) && $text_data['active'] === 'on') {
                         $new_settings[$key] = array(
                             'active' => 'on',
                             'type' => 'text',
-                            'color' => sanitize_text_field($values['color']),
-                            'label' => sanitize_text_field($values['label'])
+                            'color' => sanitize_text_field($text_data['color']),
+                            'label' => sanitize_text_field($text_data['label'])
                         );
                     }
                 }
             }
-
-            error_log('NexusMap: Attempting to save settings: ' . print_r($new_settings, true));
-
-            // Obtener la configuración actual
-            $current_settings = get_option('nm_layer_settings', array());
-
-            // Comparar si los valores son iguales
-            if ($current_settings === $new_settings) {
-                wp_send_json_success(array(
-                    'message' => 'No hay cambios que guardar - la configuración ya está actualizada',
-                    'type' => 'info'
-                ));
-                return;
-            }
-
+    
+            error_log('NexusMap: Final settings to save: ' . print_r($new_settings, true));
+            
+            // Guardar la configuración
             $update_result = update_option('nm_layer_settings', $new_settings);
+            
             if ($update_result) {
                 error_log('NexusMap: Settings saved successfully');
                 wp_send_json_success(array(
@@ -170,7 +148,7 @@ class NM_Form_To_Map
                 error_log('NexusMap: Failed to update settings in database');
                 wp_send_json_error('Error al guardar la configuración en la base de datos');
             }
-
+    
         } catch (Exception $e) {
             error_log('NexusMap Error in save_layer_settings: ' . $e->getMessage());
             wp_send_json_error('Error interno del servidor: ' . $e->getMessage());
