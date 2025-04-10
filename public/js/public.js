@@ -372,7 +372,6 @@ jQuery(document).ready(function ($) {
                             });
 
                             textLayerGroup.addLayer(marker);
-                            markersLayer.addLayer(marker);
                             allMarkers.push(marker);
                         }
 
@@ -400,7 +399,6 @@ jQuery(document).ready(function ($) {
                                     if (layerGroups[layerDef.layer_field]) {
                                         layerGroups[layerDef.layer_field].addLayer(marker);
                                     }
-                                    markersLayer.addLayer(marker);
                                     allMarkers.push(marker);
                                 }
                             });
@@ -408,14 +406,16 @@ jQuery(document).ready(function ($) {
                     });
 
                     // Añadir grupos de capas al control y al mapa
+                    var isFirstLayer = true;
                     response.layer_settings.forEach(function (layerConfig) {
                         if (layerConfig.type === 'text') {
                             // Solo añadir la capa de texto una vez
                             if (!overlays['Capas de Texto']) {
                                 overlays['Capas de Texto'] = textLayerGroup;
-                                if (firstLayer) {
+                                if (isFirstLayer) {
                                     textLayerGroup.addTo(map);
-                                    firstLayer = false;
+                                    markersLayer.addLayer(textLayerGroup);
+                                    isFirstLayer = false;
                                 }
                             }
                         } else if (layerConfig.type === 'select' && layerConfig.colors) {
@@ -423,33 +423,49 @@ jQuery(document).ready(function ($) {
                             var labelHtml = '<div class="layer-color-indicator" style="background-color: ' + 
                                           Object.values(layerConfig.colors)[0] + '"></div>' + layerConfig.label;
                             overlays[labelHtml] = layerGroups[layerConfig.field];
-                            if (firstLayer) {
+                            if (isFirstLayer) {
                                 layerGroups[layerConfig.field].addTo(map);
-                                firstLayer = false;
+                                markersLayer.addLayer(layerGroups[layerConfig.field]);
+                                isFirstLayer = false;
                             }
                         }
                     });
-                }
 
-                // Actualizar el control de capas con los nuevos overlays
-                if (controlLayers) {
-                    controlLayers.remove();
-                }
-                controlLayers = L.control.layers(baseLayers, overlays, {
-                    collapsed: true, // Comenzar colapsado
-                    sortLayers: true
-                }).addTo(map);
+                    // Actualizar el control de capas con los nuevos overlays y configurar los eventos
+                    if (controlLayers) {
+                        controlLayers.remove();
+                    }
+                    controlLayers = L.control.layers(baseLayers, overlays, {
+                        collapsed: true,
+                        sortLayers: true
+                    }).addTo(map);
 
-                // Aplicar estilos personalizados a los elementos del control después de añadirlo
-                var controlContainer = controlLayers.getContainer();
-                var labels = controlContainer.getElementsByTagName('label');
-                
-                for (var i = 0; i < labels.length; i++) {
-                    // Asegurarse de que el span que contiene el HTML se muestre correctamente
-                    var span = labels[i].getElementsByTagName('span')[0];
-                    if (span) {
-                        span.style.display = 'flex';
-                        span.style.alignItems = 'center';
+                    // Manejar eventos de cambio de capas
+                    map.on('overlayadd', function(e) {
+                        var layer = e.layer;
+                        if (layer === textLayerGroup || Object.values(layerGroups).includes(layer)) {
+                            markersLayer.addLayer(layer);
+                        }
+                    });
+
+                    map.on('overlayremove', function(e) {
+                        var layer = e.layer;
+                        if (layer === textLayerGroup || Object.values(layerGroups).includes(layer)) {
+                            markersLayer.removeLayer(layer);
+                        }
+                    });
+
+                    // Aplicar estilos personalizados a los elementos del control después de añadirlo
+                    var controlContainer = controlLayers.getContainer();
+                    var labels = controlContainer.getElementsByTagName('label');
+                    
+                    for (var i = 0; i < labels.length; i++) {
+                        // Asegurarse de que el span que contiene el HTML se muestre correctamente
+                        var span = labels[i].getElementsByTagName('span')[0];
+                        if (span) {
+                            span.style.display = 'flex';
+                            span.style.alignItems = 'center';
+                        }
                     }
                 }
 
