@@ -259,7 +259,8 @@ jQuery(document).ready(function ($) {
         // Recopilar datos del formulario
         var settings = {
             layers: {},
-            text_layers: {}
+            text_layers: {},
+            nm_text_layer_name: $('#nm_text_layer_name').val() // Añadir el nombre de la capa de texto
         };
         
         // Procesar campos de capas (layers)

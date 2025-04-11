@@ -66,6 +66,18 @@
             <?php if (!empty($text_fields_for_view)): ?>
                 <h2 style="margin-top: 2em;">Campos de Texto</h2>
                 <p class="description">Los puntos se mostrarán del color seleccionado cuando contengan texto en estos campos.</p>
+                
+                <!-- Campo para el nombre de capa de texto -->
+                <div class="form-field" style="margin-bottom: 20px;">
+                    <label for="nm_text_layer_name" style="display: block; margin-bottom: 5px;"><strong>Nombre de la Capa de Texto:</strong></label>
+                    <input type="text" 
+                           id="nm_text_layer_name" 
+                           name="nm_text_layer_name" 
+                           value="<?php echo esc_attr(get_option('nm_text_layer_name', 'Capas de Texto')); ?>" 
+                           class="regular-text">
+                    <p class="description">Este nombre se mostrará en el control de capas del mapa para las capas de tipo texto.</p>
+                </div>
+
                 <table class="widefat">
                     <thead>
                         <tr>

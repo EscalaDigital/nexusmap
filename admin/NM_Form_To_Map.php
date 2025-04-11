@@ -87,6 +87,11 @@ class NM_Form_To_Map
             // Recibir los datos
             $settings = isset($_POST['settings']) ? $_POST['settings'] : array();
             
+            // Guardar el nombre de la capa de texto
+            if (isset($settings['nm_text_layer_name'])) {
+                update_option('nm_text_layer_name', sanitize_text_field($settings['nm_text_layer_name']));
+            }
+            
             // Debug de datos recibidos
             error_log('NexusMap: Raw POST data: ' . print_r($_POST, true));
             error_log('NexusMap: Settings received: ' . print_r($settings, true));
