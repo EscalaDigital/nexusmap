@@ -5,6 +5,7 @@ $enable_user_wms = get_option('nm_enable_user_wms', false);
 $base_layers = get_option( 'nm_base_layers', array() );
 $overlay_layers = get_option( 'nm_overlay_layers', array() );
 $active_layers = get_option( 'nm_active_layers', array() );
+$text_layer_name = get_option( 'nm_text_layer_name', 'Text Layer' );
 $filter_settings = $this->get_filter_settings();
 ?>
 
@@ -49,7 +50,8 @@ $filter_settings = $this->get_filter_settings();
         layer_settings: <?php echo json_encode($active_layers); ?>,
         filter_settings: <?php echo json_encode($filter_settings); ?>,
         charts_enabled: <?php echo !empty($chart_settings) ? 'true' : 'false'; ?>,
-        chart_settings: <?php echo json_encode($chart_settings); ?>
+        chart_settings: <?php echo json_encode($chart_settings); ?>,
+        text_layer_name: <?php echo json_encode($text_layer_name); ?>
     
     };
 </script>

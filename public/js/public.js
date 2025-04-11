@@ -410,8 +410,9 @@ jQuery(document).ready(function ($) {
                     response.layer_settings.forEach(function (layerConfig) {
                         if (layerConfig.type === 'text') {
                             // Solo añadir la capa de texto una vez
-                            if (!overlays['Capas de Texto']) {
-                                overlays['Capas de Texto'] = textLayerGroup;
+                            const textLayerName = nmMapData.text_layer_name || 'Capas de Texto';
+                            if (!overlays[textLayerName]) {
+                                overlays[textLayerName] = textLayerGroup;
                                 if (isFirstLayer) {
                                     textLayerGroup.addTo(map);
                                     markersLayer.addLayer(textLayerGroup);
