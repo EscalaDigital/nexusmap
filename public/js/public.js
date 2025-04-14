@@ -327,6 +327,7 @@ jQuery(document).ready(function ($) {
             nonce: nmMapData.nonce
         }, function (response) {
             console.log('Response received:', response);
+            const textLayerName = nmMapData.text_layer_name || 'Capas de Texto'; 
 
             if (response && response.features) {
                 var layerGroups = {};
@@ -410,7 +411,7 @@ jQuery(document).ready(function ($) {
                     response.layer_settings.forEach(function (layerConfig) {
                         if (layerConfig.type === 'text') {
                             // Solo añadir la capa de texto una vez
-                            const textLayerName = nmMapData.text_layer_name || 'Capas de Texto';
+                          
                             if (!overlays[textLayerName]) {
                                 overlays[textLayerName] = textLayerGroup;
                                 if (isFirstLayer) {
@@ -475,9 +476,13 @@ jQuery(document).ready(function ($) {
 
                 // Función para actualizar el contenido de la leyenda
                 window.updateLegend = function() {
-                    var content = '<h4 style="margin: 0 0 10px 0">Leyenda del Mapa</h4>';
-
+                    var content = '<h4 style="margin: 0 0 10px 0">Leyenda</h4>';
+                
                     if (response.layer_settings && response.layer_settings.length > 0) {
+                        // Primero verificamos si hay capas de texto
+                        const hasTextLayers = response.layer_settings.some(layer => layer.type === 'text');
+                        
+                        // Procesar capas de tipo 'select'
                         response.layer_settings.forEach(function(layerConfig) {
                             if (layerConfig.type === 'select' && layerConfig.colors) {
                                 content += '<div class="legend-group">';
@@ -489,19 +494,30 @@ jQuery(document).ready(function ($) {
                                     content += '</div>';
                                 });
                                 content += '</div>';
-                            } else if (layerConfig.type === 'text') {
-                                content += '<div class="legend-group">';
-                                content += '<div class="legend-item">';
-                                content += '<div class="legend-color" style="background-color: ' + layerConfig.colors[0] + '"></div>';
-                                content += '<span class="legend-label">' + layerConfig.label + '</span>';
-                                content += '</div>';
-                                content += '</div>';
                             }
                         });
+                
+                        // Si hay capas de texto, mostrar su sección
+                        if (hasTextLayers) {
+                            content += '<div class="legend-group">';
+                            content += '<strong>' + (nmMapData.text_layer_name || 'Capas de Texto') + '</strong>';
+                            
+                            // Mostrar cada capa de texto
+                            response.layer_settings.forEach(function(layerConfig) {
+                                if (layerConfig.type === 'text') {
+                                    content += '<div class="legend-item">';
+                                    content += '<div class="legend-color" style="background-color: ' + layerConfig.colors[0] + '"></div>';
+                                    content += '<span class="legend-label">' + layerConfig.label + '</span>';
+                                    content += '</div>';
+                                }
+                            });
+                            
+                            content += '</div>';
+                        }
                     } else {
                         content += '<p>No hay capas configuradas</p>';
                     }
-
+                
                     legendPanel.innerHTML = content;
                 };
             }
