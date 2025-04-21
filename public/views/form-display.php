@@ -1,4 +1,5 @@
 <div id="nm-custom-form-container">
+    <div id="nm-form-messages" class="nm-messages"></div>
     <form id="nm-user-form">
 
         <!-- Dynamic Fields -->

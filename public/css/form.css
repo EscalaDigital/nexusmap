@@ -1,4 +1,3 @@
-
 #nm-custom-form-container {
     width: 100%;
     max-width: 600px;
@@ -112,4 +111,25 @@
 
 .selection-button:active {
     background-color: #003f7d;
+}
+
+.nm-messages {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    display: none;
+}
+
+.nm-messages.error {
+    background-color: #ffe6e6;
+    border: 1px solid #ff9999;
+    color: #dc3545;
+    display: block;
+}
+
+.nm-messages.success {
+    background-color: #e6ffe6;
+    border: 1px solid #99ff99;
+    color: #28a745;
+    display: block;
 }
