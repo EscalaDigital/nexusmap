@@ -89,8 +89,13 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                                 <label><?php echo esc_html($field['label']); ?></label>
                                 <div class="radio-group">
                                     <?php if (isset($field['options']) && is_array($field['options'])) { ?>
-                                        <?php foreach ($field['options'] as $option) { ?>
-                                            <input type="radio" name="<?php echo esc_attr($field['name']); ?>" value="<?php echo esc_attr($option); ?>"> <?php echo esc_html($option); ?><br>
+                                        <?php foreach ($field['options'] as $index => $option) { 
+                                            $radio_id = esc_attr($field['name'] . '_' . $index);
+                                        ?>
+                                            <div class="radio-option">
+                                                <input type="radio" id="<?php echo $radio_id; ?>" name="<?php echo esc_attr($field['name']); ?>" value="<?php echo esc_attr($option); ?>">
+                                                <label for="<?php echo $radio_id; ?>"><?php echo esc_html($option); ?></label>
+                                            </div>
                                         <?php } ?>
                                     <?php } else { ?>
                                         <p>No options available for this field.</p>
@@ -136,8 +141,13 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                             <div class="nm-form-field" data-type="checkbox">
                                 <label><?php echo esc_html($field['label']); ?></label>
                                 <div class="checkbox-group">
-                                    <?php foreach ($field['options'] as $option) { ?>
-                                        <input type="checkbox" name="<?php echo esc_attr($field['name']); ?>[]" value="<?php echo esc_attr($option); ?>"> <?php echo esc_html($option); ?><br>
+                                    <?php foreach ($field['options'] as $index => $option) { 
+                                        $checkbox_id = esc_attr($field['name'] . '_' . $index);
+                                    ?>
+                                        <div class="checkbox-option">
+                                            <input type="checkbox" id="<?php echo $checkbox_id; ?>" name="<?php echo esc_attr($field['name']); ?>[]" value="<?php echo esc_attr($option); ?>">
+                                            <label for="<?php echo $checkbox_id; ?>"><?php echo esc_html($option); ?></label>
+                                        </div>
                                     <?php } ?>
                                 </div>
                             </div>

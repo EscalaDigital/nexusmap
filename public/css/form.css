@@ -43,6 +43,26 @@
     margin-right: 10px;
 }
 
+#nm-user-form .radio-option,
+#nm-user-form .checkbox-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+#nm-user-form .radio-option label,
+#nm-user-form .checkbox-option label {
+    margin-bottom: 0;
+    margin-left: 8px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+#nm-user-form .radio-group,
+#nm-user-form .checkbox-group {
+    margin-top: 8px;
+}
+
 #nm-user-form .nm-form-field .field-label,
 #nm-user-form .nm-form-field .field-name {
     margin-top: 10px;
