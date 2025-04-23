@@ -329,110 +329,160 @@ class NM_Public
 
     public function submit_form()
     {
-        // Verify nonce for security
+        /* ───────── Seguridad ───────── */
         check_ajax_referer('nm_public_nonce', 'nonce');
-
-        // Collect form fields (excluding 'action', 'nonce', 'map_data')
-        $form_fields = array();
+    
         $form_type = isset($_POST['nm_form_type']) ? intval($_POST['nm_form_type']) : 0;
-        foreach ($_POST as $key => $value) {
-
-            if (in_array($key, array('action', 'nonce', 'map_data', 'nm_form_nonce', '_wp_http_referer', 'nm_submit_form', 'nm_form_type'))) {
+        $form_fields          = array();   // propiedades finales, en orden
+        $already_processed    = array();   // names tratados para no duplicar
+    
+        /* ────── 1. Cargar la definición del formulario (orden “oficial”) ────── */
+        $form_data  = $this->model->get_form($form_type);
+        $field_defs = isset($form_data['fields']) && is_array($form_data['fields'])
+            ? $form_data['fields']
+            : array();
+    
+        /* Función de normalización: coincide con cómo generas el atributo name="" */
+        $normalize = static function ( $raw ) {
+            // 1) quita tildes, 2) reemplaza espacios por '_' , 3) quita caracteres raros
+            $no_accents = remove_accents( $raw );
+            return preg_replace('/[^A-Za-z0-9_\-]/', '_', str_replace(' ', '_', $no_accents));
+        };
+    
+        /* ────── 2. Recorrer los campos tal cual están en la definición ────── */
+        foreach ( $field_defs as $field ) {
+            if ( empty( $field['name'] ) ) {
+                continue;                             // headers, etc.
+            }
+    
+            $orig_name   = $field['name'];            // ej: "Imagen principal"
+            $html_name   = $normalize( $orig_name );  // ej: "Imagen_principal"
+            $store_key   = 'nm_' . $orig_name;        // mantenemos nombre original en BD
+    
+            $already_processed[] = $html_name;        // marcarlo
+    
+            /* ---- FILE ---- */
+            if ( $field['type'] === 'file' && isset( $_FILES[ $html_name ] )
+                 && $_FILES[ $html_name ]['error'] === UPLOAD_ERR_OK ) {
+    
+                $allowed = array(
+                    'jpg|jpeg|jpe' => 'image/jpeg',
+                    'png'          => 'image/png',
+                    'gif'          => 'image/gif',
+                    'pdf'          => 'application/pdf',
+                );
+    
+                $up = wp_handle_upload( $_FILES[ $html_name ], array(
+                    'test_form' => false,
+                    'mimes'     => $allowed,
+                ));
+    
+                if ( $up && ! isset( $up['error'] ) ) {
+                    $form_fields[ $store_key ] = esc_url_raw(
+                        str_replace( 'http://', 'https://', $up['url'] )
+                    );
+                } else {
+                    wp_send_json_error( 'Error al subir "' . esc_html( $orig_name ) . '": ' . $up['error'] );
+                    wp_die();
+                }
+            }
+    
+            /* ---- INPUT NORMAL ---- */
+            elseif ( isset( $_POST[ $html_name ] ) ) {
+                $val = $_POST[ $html_name ];
+                $form_fields[ $store_key ] = is_array( $val )
+                    ? array_map( 'sanitize_text_field', $val )
+                    : sanitize_text_field( $val );
+            }
+            // si es file sin subir nada → simplemente se omite
+        }
+    
+        /* ────── 3. Pasada de “rescate” ──────
+           Por si el frontend añadió campos que no están en la definición      */
+        $incoming_keys = array_keys( array_merge( $_POST, $_FILES ) );
+    
+        foreach ( $incoming_keys as $inkey ) {
+    
+            if ( in_array( $inkey, $already_processed, true ) ||
+                 in_array( $inkey, array(
+                     'action','nonce','map_data','nm_form_nonce',
+                     '_wp_http_referer','nm_submit_form','nm_form_type'
+                 ), true ) ) {
                 continue;
             }
-
-            if (is_array($value)) {
-                $sanitized_value = array_map('sanitize_text_field', $value);
-                $form_fields['nm_' . $key] = $sanitized_value;
-            } else {
-                $form_fields['nm_' . $key] = sanitize_text_field($value);
-            }
-        }
-
-        // Handle file uploads
-        if (!empty($_FILES)) {
-            foreach ($_FILES as $file_key => $file_array) {
-                // Verify if the file was uploaded without errors
-                if ($file_array['error'] === UPLOAD_ERR_OK) {
-                    // Specify allowed file types
-                    $allowed_types = array(
+    
+            $store_key = 'nm_' . $inkey;
+    
+            /* file suelto */
+            if ( isset( $_FILES[ $inkey ] ) && $_FILES[ $inkey ]['error'] === UPLOAD_ERR_OK ) {
+    
+                $up = wp_handle_upload( $_FILES[ $inkey ], array(
+                    'test_form' => false,
+                    'mimes'     => array(
                         'jpg|jpeg|jpe' => 'image/jpeg',
                         'png'          => 'image/png',
                         'gif'          => 'image/gif',
                         'pdf'          => 'application/pdf',
-                        // Add other file types if necessary
+                    ),
+                ));
+    
+                if ( $up && ! isset( $up['error'] ) ) {
+                    $form_fields[ $store_key ] = esc_url_raw(
+                        str_replace( 'http://', 'https://', $up['url'] )
                     );
-
-                    // Handle file upload
-                    $uploaded_file = wp_handle_upload($file_array, array(
-                        'test_form' => false,
-                        'mimes'     => $allowed_types,
-                    ));
-
-                    if ($uploaded_file && !isset($uploaded_file['error'])) {
-                        // Upload was successful, get the file URL
-                        $file_url = $uploaded_file['url'];
-                        // Add the file URL to $form_fields
-                        $form_fields['nm_' . $file_key] = esc_url_raw($file_url);
-                    } else {
-                        // Handle upload error
-                        wp_send_json_error('Error al subir el archivo: ' . $uploaded_file['error']);
-                        wp_die();
-                    }
-                } elseif ($file_array['error'] !== UPLOAD_ERR_NO_FILE) {
-                    // Handle other upload errors
-                    wp_send_json_error('Código de error al subir el archivo: ' . $file_array['error']);
+                } else {
+                    wp_send_json_error( 'Error al subir "' . esc_html( $inkey ) . '": ' . $up['error'] );
                     wp_die();
                 }
-                // If UPLOAD_ERR_NO_FILE, no file was uploaded for this field; you can skip it
+    
+            } elseif ( isset( $_POST[ $inkey ] ) ) {
+                $v = $_POST[ $inkey ];
+                $form_fields[ $store_key ] = is_array( $v )
+                    ? array_map( 'sanitize_text_field', $v )
+                    : sanitize_text_field( $v );
             }
         }
-
-        // Get 'map_data' from $_POST
-        if (isset($_POST['map_data'])) {
-            $map_data_json = stripslashes($_POST['map_data']);
-            $map_data = json_decode($map_data_json, true);
-            if ($map_data === null && json_last_error() !== JSON_ERROR_NONE) {
-                wp_send_json_error('Datos JSON inválidos para map_data.');
-                wp_die();
-            }
-        } else {
-            wp_send_json_error('No se proporcionó map_data.');
+    
+        /* ────── 4. Procesar map_data ────── */
+        if ( empty( $_POST['map_data'] ) ) {
+            wp_send_json_error( 'No se proporcionó map_data.' );
             wp_die();
         }
-
-        // Assign the form_fields to the 'properties' of the Feature
-        $map_data['properties'] = $form_fields;
-
-        // Ensure 'geometry' comes before 'properties' in the JSON
-        $ordered_map_data = array(
-            'type' => $map_data['type'],
-            'geometry' => $map_data['geometry'],
-            'properties' => $map_data['properties']
+    
+        $map_raw = stripslashes( $_POST['map_data'] );
+        $map_arr = json_decode( $map_raw, true );
+    
+        if ( $map_arr === null && json_last_error() !== JSON_ERROR_NONE ) {
+            wp_send_json_error( 'Datos JSON inválidos para map_data.' );
+            wp_die();
+        }
+    
+        $map_arr['properties'] = $form_fields;
+    
+        $feature = array(
+            'type'       => $map_arr['type'],
+            'geometry'   => $map_arr['geometry'],
+            'properties' => $map_arr['properties'],
         );
-
-        // Re-encode the JSON without escaping unicode and slashes
-        $final_map_data_json = json_encode([$ordered_map_data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-        // Escape the JSON string
-        $final_map_data_json_escaped = addslashes($final_map_data_json);
-
-        // Prepare the data to be saved
-        $entry_data = array();
-        $entry_data['map_data'] = $final_map_data_json_escaped;
-        $entry_data['form_type'] = isset($form_type) ? $form_type : 0;
-
-
-        // Save the data using your model's save_entry method
-        $user_id = get_current_user_id();
-        $this->model->save_entry($entry_data, $user_id);
-
-        // Send notification to the administrator
-        wp_mail(get_option('admin_email'), 'Nueva presentación de formulario', 'Se ha enviado un nuevo formulario y está pendiente de aprobación.');
-
-        // Send success response
-        wp_send_json_success('Formulario enviado exitosamente.');
+    
+        /* ────── 5. Guardar la entrada ────── */
+        $entry_data = array(
+            'map_data'  => addslashes( json_encode( array( $feature ),
+                                  JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ),
+            'form_type' => $form_type,
+        );
+    
+        $this->model->save_entry( $entry_data, get_current_user_id() );
+    
+        wp_mail(
+            get_option( 'admin_email' ),
+            'Nueva presentación de formulario',
+            'Se ha enviado un nuevo formulario y está pendiente de aprobación.'
+        );
+    
+        wp_send_json_success( 'Formulario enviado exitosamente.' );
     }
+    
 
 
     public function get_filter_settings()
