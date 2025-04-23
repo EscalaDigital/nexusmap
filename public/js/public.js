@@ -24,13 +24,13 @@ jQuery(document).ready(function ($) {
 
         // Asegurarse de que el contenedor del mapa tenga posición relativa
         jQuery('#nm-main-map').css('position', 'relative');
-        
+
         // Agregar el botón y panel directamente al contenedor del mapa
         document.querySelector('#nm-main-map').appendChild(legendButton);
         document.querySelector('#nm-main-map').appendChild(legendPanel);
 
         // Manejar el clic en el botón de leyenda
-        legendButton.addEventListener('click', function(e) {
+        legendButton.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             legendPanel.classList.toggle('visible');
@@ -40,7 +40,7 @@ jQuery(document).ready(function ($) {
         });
 
         // Cerrar la leyenda al hacer clic fuera de ella
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!legendButton.contains(e.target) && !legendPanel.contains(e.target)) {
                 legendPanel.classList.remove('visible');
             }
@@ -314,7 +314,10 @@ jQuery(document).ready(function ($) {
             });
 
             console.log('Visible points:', visibleCount);
-            document.getElementById('nm-points-count').textContent = visibleCount;
+            const pointsCountElement = document.getElementById('nm-points-count');
+            if (pointsCountElement) {
+                pointsCountElement.textContent = visibleCount;
+            }
         }
 
         // Llamar a la función después de inicializar el mapa
@@ -327,7 +330,7 @@ jQuery(document).ready(function ($) {
             nonce: nmMapData.nonce
         }, function (response) {
             console.log('Response received:', response);
-            const textLayerName = nmMapData.text_layer_name || 'Capas de Texto'; 
+            const textLayerName = nmMapData.text_layer_name || 'Capas de Texto';
 
             if (response && response.features) {
                 var layerGroups = {};
@@ -411,7 +414,7 @@ jQuery(document).ready(function ($) {
                     response.layer_settings.forEach(function (layerConfig) {
                         if (layerConfig.type === 'text') {
                             // Solo añadir la capa de texto una vez
-                          
+
                             if (!overlays[textLayerName]) {
                                 overlays[textLayerName] = textLayerGroup;
                                 if (isFirstLayer) {
@@ -422,8 +425,8 @@ jQuery(document).ready(function ($) {
                             }
                         } else if (layerConfig.type === 'select' && layerConfig.colors) {
                             // Para cada campo con colores, crear una etiqueta con el color correspondiente
-                            var labelHtml = '<div class="layer-color-indicator" style="background-color: ' + 
-                                          Object.values(layerConfig.colors)[0] + '"></div>' + layerConfig.label;
+                            var labelHtml = '<div class="layer-color-indicator" style="background-color: ' +
+                                Object.values(layerConfig.colors)[0] + '"></div>' + layerConfig.label;
                             overlays[labelHtml] = layerGroups[layerConfig.field];
                             if (isFirstLayer) {
                                 layerGroups[layerConfig.field].addTo(map);
@@ -443,14 +446,14 @@ jQuery(document).ready(function ($) {
                     }).addTo(map);
 
                     // Manejar eventos de cambio de capas
-                    map.on('overlayadd', function(e) {
+                    map.on('overlayadd', function (e) {
                         var layer = e.layer;
                         if (layer === textLayerGroup || Object.values(layerGroups).includes(layer)) {
                             markersLayer.addLayer(layer);
                         }
                     });
 
-                    map.on('overlayremove', function(e) {
+                    map.on('overlayremove', function (e) {
                         var layer = e.layer;
                         if (layer === textLayerGroup || Object.values(layerGroups).includes(layer)) {
                             markersLayer.removeLayer(layer);
@@ -460,7 +463,7 @@ jQuery(document).ready(function ($) {
                     // Aplicar estilos personalizados a los elementos del control después de añadirlo
                     var controlContainer = controlLayers.getContainer();
                     var labels = controlContainer.getElementsByTagName('label');
-                    
+
                     for (var i = 0; i < labels.length; i++) {
                         // Asegurarse de que el span que contiene el HTML se muestre correctamente
                         var span = labels[i].getElementsByTagName('span')[0];
@@ -472,22 +475,25 @@ jQuery(document).ready(function ($) {
                 }
 
                 // Inicializar el contador de puntos
-                document.getElementById('nm-points-count').textContent = response.features.length;
+                const pointsCountElement = document.getElementById('nm-points-count');
+                if (pointsCountElement) {
+                    pointsCountElement.textContent = response.features.length;
+                }
 
                 // Función para actualizar el contenido de la leyenda
-                window.updateLegend = function() {
+                window.updateLegend = function () {
                     var content = '<h4 style="margin: 0 0 10px 0">Leyenda</h4>';
-                
+
                     if (response.layer_settings && response.layer_settings.length > 0) {
                         // Primero verificamos si hay capas de texto
                         const hasTextLayers = response.layer_settings.some(layer => layer.type === 'text');
-                        
+
                         // Procesar capas de tipo 'select'
-                        response.layer_settings.forEach(function(layerConfig) {
+                        response.layer_settings.forEach(function (layerConfig) {
                             if (layerConfig.type === 'select' && layerConfig.colors) {
                                 content += '<div class="legend-group">';
                                 content += '<strong>' + layerConfig.label + '</strong>';
-                                Object.entries(layerConfig.colors).forEach(function([value, color]) {
+                                Object.entries(layerConfig.colors).forEach(function ([value, color]) {
                                     content += '<div class="legend-item">';
                                     content += '<div class="legend-color" style="background-color: ' + color + '"></div>';
                                     content += '<span class="legend-label">' + value + '</span>';
@@ -496,14 +502,14 @@ jQuery(document).ready(function ($) {
                                 content += '</div>';
                             }
                         });
-                
+
                         // Si hay capas de texto, mostrar su sección
                         if (hasTextLayers) {
                             content += '<div class="legend-group">';
                             content += '<strong>' + (nmMapData.text_layer_name || 'Capas de Texto') + '</strong>';
-                            
+
                             // Mostrar cada capa de texto
-                            response.layer_settings.forEach(function(layerConfig) {
+                            response.layer_settings.forEach(function (layerConfig) {
                                 if (layerConfig.type === 'text') {
                                     content += '<div class="legend-item">';
                                     content += '<div class="legend-color" style="background-color: ' + layerConfig.colors[0] + '"></div>';
@@ -511,13 +517,13 @@ jQuery(document).ready(function ($) {
                                     content += '</div>';
                                 }
                             });
-                            
+
                             content += '</div>';
                         }
                     } else {
                         content += '<p>No hay capas configuradas</p>';
                     }
-                
+
                     legendPanel.innerHTML = content;
                 };
             }
@@ -532,8 +538,8 @@ jQuery(document).ready(function ($) {
                 title: 'Ver gráficos',
                 html: '<i class="fa fa-chart-bar"></i>'
             });
-            
-            $chartsButton.on('click', function(e) {
+
+            $chartsButton.on('click', function (e) {
                 e.stopPropagation();
                 if (allMarkers.length > 0) {
                     showChartsModal(allMarkers.map(marker => marker.feature));
@@ -541,7 +547,7 @@ jQuery(document).ready(function ($) {
                     alert('No hay datos para mostrar en los gráficos');
                 }
             });
-            
+
             $topControls.append($chartsButton);
         }
     }
@@ -558,19 +564,19 @@ jQuery(document).ready(function ($) {
             `;
             jQuery('#nm-main-map').append(modalHtml);
         }
-    
+
         var $modal = jQuery('#nm-charts-modal');
         $modal.show();
-        
+
         // Forzar un reflow antes de añadir la clase active
         void $modal[0].offsetWidth;
         $modal.addClass('active');
-        
+
         processCharts(features);
-    
-        jQuery('#nm-charts-modal .nm-modal-close').off('click').on('click', function() {
+
+        jQuery('#nm-charts-modal .nm-modal-close').off('click').on('click', function () {
             $modal.removeClass('active');
-            setTimeout(function() {
+            setTimeout(function () {
                 $modal.hide();
             }, 300);
         });
@@ -579,11 +585,11 @@ jQuery(document).ready(function ($) {
     function processCharts(features) {
         const chartsContainer = document.getElementById('nm-charts-container');
         chartsContainer.innerHTML = '';
-    
+
         nmMapData.chart_settings.forEach((chartConfig, index) => {
             const canvasWrapper = document.createElement('div');
             canvasWrapper.style.height = '100%';
-            
+
             // Añadir título del gráfico al wrapper
             const titleDiv = document.createElement('div');
             titleDiv.style.textAlign = 'center';
@@ -591,12 +597,12 @@ jQuery(document).ready(function ($) {
             titleDiv.style.fontWeight = 'bold';
             titleDiv.textContent = chartConfig.title;
             canvasWrapper.appendChild(titleDiv);
-    
+
             const canvas = document.createElement('canvas');
             canvas.id = `chart-${index}`;
             canvasWrapper.appendChild(canvas);
             chartsContainer.appendChild(canvasWrapper);
-    
+
             const data = processChartData(chartConfig, features);
             createChart(canvas, chartConfig, data);
         });
@@ -607,21 +613,21 @@ jQuery(document).ready(function ($) {
             labels: [],
             datasets: []
         };
-    
+
         // Agrupar datos por categoría
         const groupedData = {};
-    
+
         features.forEach(feature => {
             const categoryFieldName = `nm_${chartConfig.category_field}`;
             const categoryFieldName2 = chartConfig.category_field_2 ? `nm_${chartConfig.category_field_2}` : null;
-    
+
             const rawCategoryValue = feature.properties[categoryFieldName];
             const rawCategoryValue2 = categoryFieldName2 ? feature.properties[categoryFieldName2] : null;
-    
+
             if (!rawCategoryValue) return;
-    
+
             const categoryValue = Array.isArray(rawCategoryValue) ? rawCategoryValue[0] : rawCategoryValue;
-            
+
             // Usar categoryValue como clave en lugar de la combinación
             if (!groupedData[categoryValue]) {
                 groupedData[categoryValue] = {
@@ -630,14 +636,14 @@ jQuery(document).ready(function ($) {
                     category2: rawCategoryValue2 // Guardamos el segundo valor de categoría
                 };
             }
-    
+
             const numericFieldName = `nm_${chartConfig.numeric_field1.replace(/\s+/g, '_')}`;
             const numeric1Value = parseFloat(feature.properties[numericFieldName]);
-    
+
             if (!isNaN(numeric1Value)) {
                 groupedData[categoryValue].numeric1.push(numeric1Value);
             }
-    
+
             if (chartConfig.numeric_field2) {
                 const numeric2FieldName = `nm_${chartConfig.numeric_field2.replace(/\s+/g, '_')}`;
                 const numeric2Value = parseFloat(feature.properties[numeric2FieldName]);
@@ -646,7 +652,7 @@ jQuery(document).ready(function ($) {
                 }
             }
         });
-    
+
         // Generar labels
         data.labels = Object.keys(groupedData).map(key => {
             if (chartConfig.category_field_2 && groupedData[key].category2) {
@@ -654,7 +660,7 @@ jQuery(document).ready(function ($) {
             }
             return key;
         });
-    
+
         // Dataset para numeric_field1
         data.datasets.push({
             label: chartConfig.numeric_field1,
@@ -666,7 +672,7 @@ jQuery(document).ready(function ($) {
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1
         });
-    
+
         if (chartConfig.numeric_field2) {
             data.datasets.push({
                 label: chartConfig.numeric_field2,
@@ -679,14 +685,14 @@ jQuery(document).ready(function ($) {
                 borderWidth: 1
             });
         }
-    
+
         console.log('Datos procesados para el gráfico:', data);
         return data;
     }
 
-       function createChart(canvas, chartConfig, data) {
+    function createChart(canvas, chartConfig, data) {
         const ctx = canvas.getContext('2d');
-        
+
         // Configuración base para las opciones
         const options = {
             responsive: true,
@@ -712,7 +718,7 @@ jQuery(document).ready(function ($) {
                 }
             }
         };
-    
+
         // Si es tipo mixto, configurar datasets específicamente
         if (chartConfig.chart_type === 'mixed') {
             // Configurar el primer dataset como barras
@@ -721,14 +727,14 @@ jQuery(document).ready(function ($) {
                 data.datasets[0].yAxisID = 'y';
                 data.datasets[0].order = 2; // Las barras detrás
             }
-            
+
             // Configurar el segundo dataset como línea
             if (data.datasets[1]) {
                 data.datasets[1].type = 'line';
                 data.datasets[1].fill = false;
                 data.datasets[1].yAxisID = 'y1';
                 data.datasets[1].order = 1; // La línea delante
-                
+
                 // Añadir segundo eje Y
                 options.scales.y1 = {
                     type: 'linear',
@@ -744,11 +750,11 @@ jQuery(document).ready(function ($) {
                     }
                 };
             }
-            
+
             // Usar 'bar' como tipo base
             chartConfig.chart_type = 'bar';
         }
-    
+
         // Si hay segundo campo de categoría, rotar etiquetas
         if (chartConfig.category_field_2) {
             options.scales.x = {
@@ -758,7 +764,7 @@ jQuery(document).ready(function ($) {
                 }
             };
         }
-    
+
         // Crear el gráfico
         new Chart(ctx, {
             type: chartConfig.chart_type,

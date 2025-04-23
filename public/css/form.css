@@ -153,3 +153,45 @@
     color: #28a745;
     display: block;
 }
+
+/* Estilos para el control de búsqueda */
+.leaflet-control-search .search-container {
+    display: flex;
+    align-items: center;
+}
+
+.leaflet-control-search input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.leaflet-control-search button {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.leaflet-control-search button:hover {
+    background: #f0f0f0;
+}
+
+.search-results-modal {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+}
+
+.search-results-modal ul li {
+    transition: background-color 0.2s;
+}
+
+.search-results-modal ul li:hover {
+    background-color: #f0f0f0;
+}
