@@ -202,7 +202,29 @@ class NM_Public
         foreach ($entries as $entry) {
             $entry_data = maybe_unserialize($entry->entry_data);
             if (isset($entry_data['map_data'])) {
-                $map_data = json_decode(stripslashes($entry_data['map_data']), true);
+              
+
+                $raw_json = wp_unslash( $entry_data['map_data'] ); 
+             
+
+               try {
+                // ② Intenta decodificar: si falla lanzará JsonException
+                $map_data = json_decode( $raw_json, true, 512, JSON_THROW_ON_ERROR );
+            
+            } catch ( \JsonException $e ) {
+            
+                // ③ Apunta en el log la razón exacta y salta al siguiente registro
+                error_log( sprintf(
+                    'JSON ERROR (entry_id %d): %s',
+                    $entry->id,
+                    $e->getMessage()          // ej.: "Syntax error"
+                ) );
+            
+                continue;                     // no añadas esta feature a $features
+            }
+
+       
+
                 if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
                     foreach ($map_data as $feature) {
                         if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
@@ -467,8 +489,7 @@ class NM_Public
     
         /* ────── 5. Guardar la entrada ────── */
         $entry_data = array(
-            'map_data'  => addslashes( json_encode( array( $feature ),
-                                  JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ),
+            'map_data' => wp_slash( wp_json_encode( array( $feature ), JSON_UNESCAPED_UNICODE) ),
             'form_type' => $form_type,
         );
     
