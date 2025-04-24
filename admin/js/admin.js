@@ -134,54 +134,66 @@ jQuery(document).ready(function ($) {
     jQuery(document).on('click', '.remove-option', function () {
         jQuery(this).closest('.select-option').remove();
     });
+    
 
+    // Función de normalización de nombres de campos
+function normalizeFieldName(rawName) {
+    return rawName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+        .replace(/[^a-z0-9]+/g, '_')     // Caracteres especiales a guiones bajos
+        .replace(/_+/g, '_')             // Eliminar guiones bajos múltiples
+        .replace(/^_|_$/g, '');          // Quitar guiones al inicio/final
+}
     // Modificar la función de guardar formulario para incluir checkboxes
-    // Function to collect form fields and send to server
-    function saveForm(formSelector, formType) {
-        var formFields = [];
-        jQuery(formSelector + ' .nm-form-field').each(function () {
-            var fieldType = jQuery(this).data('type');
-            var fieldLabel = jQuery(this).find('.field-label').val() || '';
-            var fieldName = jQuery(this).find('.field-name').val() || '';
-            var fieldOptions = [];
+    // Modificar la función saveForm existente
+function saveForm(formSelector, formType) {
+    var formFields = [];
+    jQuery(formSelector + ' .nm-form-field').each(function () {
+        var fieldType = jQuery(this).data('type');
+        var fieldLabel = jQuery(this).find('.field-label').val() || '';
+        var rawName = jQuery(this).find('.field-name').val() || fieldLabel;
+        var fieldName = normalizeFieldName(rawName);
+        var fieldOptions = [];
 
-            // Collect options if the field has them
-            if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
-                jQuery(this).find('.field-option').each(function () {
-                    var optionValue = jQuery(this).val();
-                    if (optionValue) {
-                        fieldOptions.push(optionValue);
-                    }
-                });
-            }
+        // Collect options if the field has them
+        if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
+            jQuery(this).find('.field-option').each(function () {
+                var optionValue = jQuery(this).val();
+                if (optionValue) {
+                    fieldOptions.push(optionValue);
+                }
+            });
+        }
 
-            var fieldData = {
-                type: fieldType,
-                label: fieldLabel,
-                name: fieldName
-            };
+        var fieldData = {
+            type: fieldType,
+            label: fieldLabel,
+            name: fieldName
+        };
 
-            if (fieldOptions.length > 0) {
-                fieldData.options = fieldOptions;
-            }
+        if (fieldOptions.length > 0) {
+            fieldData.options = fieldOptions;
+        }
 
-            formFields.push(fieldData);
-        });
+        formFields.push(fieldData);
+    });
 
-        // Send formFields to the server via AJAX
-        $.post(nmAdmin.ajax_url, {
-            action: 'nm_save_form',
-            form_type: formType,
-            form_data: { fields: formFields },
-            nonce: nmAdmin.nonce
-        }, function (response) {
-            if (response.success) {
-                alert('Form saved successfully.');
-            } else {
-                alert('Error saving form.');
-            }
-        });
-    }
+    // Send formFields to the server via AJAX
+    $.post(nmAdmin.ajax_url, {
+        action: 'nm_save_form',
+        form_type: formType,
+        form_data: { fields: formFields },
+        nonce: nmAdmin.nonce
+    }, function (response) {
+        if (response.success) {
+            alert('Form saved successfully.');
+        } else {
+            alert('Error saving form.');
+        }
+    });
+}
 
     // Function to validate if all fields are filled
     function validateForm(formId) {
