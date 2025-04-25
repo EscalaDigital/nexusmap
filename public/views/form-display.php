@@ -77,13 +77,12 @@
                                 if (isset($field['options']) && is_array($field['options'])) {
                                     foreach ($field['options'] as $index => $option) {
                                         $option_id = esc_attr($field_id . '_' . $index);
-                                        $option_value = nm_normalize_field_name($option);
                                         ?>
                                         <div class="radio-option">
                                             <input type="radio" 
                                                    id="<?php echo $option_id; ?>"
                                                    name="<?php echo esc_attr($field_name); ?>"
-                                                   value="<?php echo esc_attr($option_value); ?>">
+                                                   value="<?php echo esc_attr($option); ?>">
                                             <label for="<?php echo $option_id; ?>"><?php echo esc_html($option); ?></label>
                                         </div>
                                         <?php
@@ -108,9 +107,8 @@
                                         name="<?php echo esc_attr($field_name); ?>">
                                     <?php 
                                     foreach ($field['options'] as $option) {
-                                        $option_value = nm_normalize_field_name($option);
                                         ?>
-                                        <option value="<?php echo esc_attr($option_value); ?>">
+                                        <option value="<?php echo esc_attr($option); ?>">
                                             <?php echo esc_html($option); ?>
                                         </option>
                                         <?php
@@ -134,13 +132,12 @@
                                 <?php 
                                 foreach ($field['options'] as $index => $option) {
                                     $option_id = esc_attr($field_id . '_' . $index);
-                                    $option_value = nm_normalize_field_name($option);
                                     ?>
                                     <div class="checkbox-option">
                                         <input type="checkbox" 
                                                id="<?php echo $option_id; ?>"
                                                name="<?php echo esc_attr($field_name); ?>[]"
-                                               value="<?php echo esc_attr($option_value); ?>">
+                                               value="<?php echo esc_attr($option); ?>">
                                         <label for="<?php echo $option_id; ?>"><?php echo esc_html($option); ?></label>
                                     </div>
                                     <?php
