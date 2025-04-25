@@ -50,7 +50,7 @@ function performSearch(query) {
 
     // Usar el servicio de Nominatim directamente
     var nominatimUrl = 'https://nominatim.openstreetmap.org/search';
-    
+
     jQuery.ajax({
         url: nominatimUrl,
         data: {
@@ -59,27 +59,27 @@ function performSearch(query) {
             limit: 1
         },
         jsonp: false,
-        success: function(results) {
+        success: function (results) {
             if (results && results.length > 0) {
                 var result = results[0];
                 var latlng = [parseFloat(result.lat), parseFloat(result.lon)];
-                
+
                 // Eliminar marcador anterior si existe
                 if (window.searchMarker) {
                     map.removeLayer(window.searchMarker);
                 }
-           
-                
+
+
                 // Centrar el mapa en la ubicación
                 map.setView(latlng, 16);
-                
+
                 // Mostrar popup con el nombre del lugar
                 window.searchMarker.bindPopup(result.display_name).openPopup();
             } else {
                 alert('No se encontraron resultados para: ' + query);
             }
         },
-        error: function() {
+        error: function () {
             alert('Error al realizar la búsqueda. Por favor, inténtelo de nuevo.');
         }
     });
@@ -98,6 +98,12 @@ function showModal(properties) {
             if (key === 'entry_id') {
                 continue;
             }
+
+            // Mostrar solo campos que empiecen por 'nm_'
+            if (!key.startsWith('nm_')) {
+                continue;
+            }
+
 
             // Remover el prefijo 'nm_' si existe (si no lo has hecho ya en el servidor)
             var cleanKey = key.startsWith('nm_') ? key.substring(3) : key;
@@ -134,7 +140,7 @@ function showModal(properties) {
     // Asegurarse de que el modal está dentro del contenedor del mapa
     var $mapContainer = jQuery('#nm-main-map');
     var $modal = jQuery('#nm-modal');
-    
+
     // Si el modal no existe, crearlo
     if ($modal.length === 0) {
         $modal = jQuery('<div id="nm-modal" class="nm-modal"><span id="nm-modal-close" class="nm-modal-close">&times;</span><div id="nm-modal-body"></div></div>');
@@ -146,24 +152,24 @@ function showModal(properties) {
 
     // Mostrar el modal con animación
     $modal.css('display', 'block');
-    
+
     // Forzar un reflow antes de añadir la clase active
     void $modal[0].offsetWidth;
     $modal.addClass('active');
 
     // Manejar el cierre del modal
-    jQuery('#nm-modal-close').off('click').on('click', function() {
+    jQuery('#nm-modal-close').off('click').on('click', function () {
         $modal.removeClass('active');
-        setTimeout(function() {
+        setTimeout(function () {
             $modal.css('display', 'none');
         }, 300);
     });
 
     // Cerrar al hacer clic fuera del modal
-    jQuery(window).off('click.modal').on('click.modal', function(event) {
+    jQuery(window).off('click.modal').on('click.modal', function (event) {
         if (jQuery(event.target).is('#nm-modal')) {
             $modal.removeClass('active');
-            setTimeout(function() {
+            setTimeout(function () {
                 $modal.css('display', 'none');
             }, 300);
         }
