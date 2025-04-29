@@ -1,5 +1,3 @@
-
-
 //funcion para descargar datos en formato geojson
 // Manejar el botón de descarga
 function downloadGeoJson() {
@@ -329,4 +327,27 @@ function isImage(extension) {
     var imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
     return imageExtensions.includes(extension);
 }
+
+// Función para verificar la estructura del formulario
+function checkFormStructure() {
+    console.log('Comprobando estructura del formulario...');
+    
+    if (typeof nmFormStructure === 'undefined') {
+        console.error('Error: La variable nmFormStructure no está definida');
+        return false;
+    }
+    
+    console.log('nmFormStructure encontrada:', nmFormStructure);
+    
+    if (!nmFormStructure.fields || !Array.isArray(nmFormStructure.fields)) {
+        console.error('Error: nmFormStructure.fields no es un array válido');
+        return false;
+    }
+    
+    console.log('Número de campos encontrados:', nmFormStructure.fields.length);
+    console.log('Estructura de campos:', nmFormStructure.fields);
+    
+    return true;
+}
+
 

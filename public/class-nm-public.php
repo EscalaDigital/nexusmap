@@ -142,6 +142,26 @@ class NM_Public
         // Obtener configuración de gráficos
         $chart_settings = get_option('nm_chart_settings', array());
 
+        // Obtener la estructura del formulario
+        $form_data = $this->model->get_form(0); // Obtiene el formulario principal
+        $form_structure = array();
+        
+        if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+            foreach ($form_data['fields'] as $field) {
+                if (!empty($field['name'])) {
+                    $form_structure[] = array(
+                        'name' => $field['name'],
+                        'label' => $field['label'],
+                        'type' => $field['type']
+                    );
+                }
+            }
+        }
+
+        // Convertir la estructura del formulario a JSON para pasarla al frontend
+        wp_localize_script('nm-public-js', 'nmFormStructure', array(
+            'fields' => $form_structure
+        ));
 
         ob_start();
         include NM_PLUGIN_DIR . 'public/views/main-map.php';
