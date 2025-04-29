@@ -89,11 +89,18 @@ function performSearch(query) {
 function showModal(properties) {
     var modalContent = '<div class="nm-modal-content">';
 
+    // Crear un mapa de nombres de campo a labels usando nmFormStructure
+    var fieldLabels = {};
+    if (typeof nmFormStructure !== 'undefined' && nmFormStructure.fields) {
+        nmFormStructure.fields.forEach(function(field) {
+            fieldLabels['nm_' + field.name] = field.label;
+        });
+    }
 
     for (var key in properties) {
         if (properties.hasOwnProperty(key)) {
-            // Omitir el 'entry_id' si aún está presente
-            if (key === 'entry_id') {
+            // Omitir campos especiales
+            if (key === 'entry_id' || key === 'layers' || key === 'has_layer' || key === 'text_layers') {
                 continue;
             }
 
@@ -102,32 +109,22 @@ function showModal(properties) {
                 continue;
             }
 
-
-            // Remover el prefijo 'nm_' si existe (si no lo has hecho ya en el servidor)
-            var cleanKey = key.startsWith('nm_') ? key.substring(3) : key;
-
-            // Formatear la clave para mostrarla como etiqueta
-            var label = cleanKey.charAt(0).toUpperCase() + cleanKey.slice(1).replace(/_/g, ' ');
-
+            // Usar el label del formulario si está disponible, si no, formatear el nombre del campo
+            var label = fieldLabels[key] || key.substring(3).charAt(0).toUpperCase() + key.substring(4).replace(/_/g, ' ');
             var value = properties[key];
 
             // Verificar si el valor es una URL de archivo
             if (isValidURL(value) && isFile(value)) {
-                // Determinar el tipo de archivo por la extensión
                 var fileType = getFileExtension(value).toLowerCase();
 
                 if (isImage(fileType)) {
-                    // Mostrar la imagen
                     modalContent += '<p><strong>' + label + ':</strong><br><img src="' + value + '" alt="' + label + '" style="max-width:100%; height:auto;"></p>';
                 } else if (fileType === 'pdf') {
-                    // Mostrar un enlace al PDF
                     modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" target="_blank">Ver documento PDF</a></p>';
                 } else {
-                    // Para otros tipos de archivos, mostrar un enlace de descarga
                     modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" download>Descargar archivo</a></p>';
                 }
             } else {
-                // Mostrar el valor como texto
                 modalContent += '<p><strong>' + label + ':</strong> ' + value + '</p>';
             }
         }
@@ -135,27 +132,19 @@ function showModal(properties) {
 
     modalContent += '</div>';
 
-    // Asegurarse de que el modal está dentro del contenedor del mapa
     var $mapContainer = jQuery('#nm-main-map');
     var $modal = jQuery('#nm-modal');
 
-    // Si el modal no existe, crearlo
     if ($modal.length === 0) {
         $modal = jQuery('<div id="nm-modal" class="nm-modal"><span id="nm-modal-close" class="nm-modal-close">&times;</span><div id="nm-modal-body"></div></div>');
         $mapContainer.append($modal);
     }
 
-    // Insertar el contenido en el cuerpo del modal
     jQuery('#nm-modal-body').html(modalContent);
-
-    // Mostrar el modal con animación
     $modal.css('display', 'block');
-
-    // Forzar un reflow antes de añadir la clase active
     void $modal[0].offsetWidth;
     $modal.addClass('active');
 
-    // Manejar el cierre del modal
     jQuery('#nm-modal-close').off('click').on('click', function () {
         $modal.removeClass('active');
         setTimeout(function () {
@@ -163,7 +152,6 @@ function showModal(properties) {
         }, 300);
     });
 
-    // Cerrar al hacer clic fuera del modal
     jQuery(window).off('click.modal').on('click.modal', function (event) {
         if (jQuery(event.target).is('#nm-modal')) {
             $modal.removeClass('active');
@@ -173,7 +161,6 @@ function showModal(properties) {
         }
     });
 }
-
 
 /// Función para mostrar el formulario de añadir WMS
 function showAddWmsForm() {
