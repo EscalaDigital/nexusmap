@@ -543,8 +543,11 @@ jQuery(document).ready(function ($) {
 
             $chartsButton.on('click', function (e) {
                 e.stopPropagation();
-                if (allMarkers.length > 0) {
-                    showChartsModal(allMarkers.map(marker => marker.feature));
+
+                const features = getUniqueFeatures(allMarkers);
+
+                if (features.length) {
+                    showChartsModal(features);
                 } else {
                     alert('No hay datos para mostrar en los gráficos');
                 }
@@ -618,6 +621,7 @@ jQuery(document).ready(function ($) {
 
         // Agrupar datos por categoría
         const groupedData = {};
+        const isCountMode = !chartConfig.numeric_field1;
 
         features.forEach(feature => {
             const categoryFieldName = `nm_${chartConfig.category_field}`;
@@ -630,27 +634,34 @@ jQuery(document).ready(function ($) {
 
             const categoryValue = Array.isArray(rawCategoryValue) ? rawCategoryValue[0] : rawCategoryValue;
 
-            // Usar categoryValue como clave en lugar de la combinación
+            // Inicializar la estructura de datos para esta categoría
             if (!groupedData[categoryValue]) {
                 groupedData[categoryValue] = {
+                    count: 0,
                     numeric1: [],
                     numeric2: [],
-                    category2: rawCategoryValue2 // Guardamos el segundo valor de categoría
+                    category2: rawCategoryValue2
                 };
             }
 
-            const numericFieldName = `nm_${chartConfig.numeric_field1.replace(/\s+/g, '_')}`;
-            const numeric1Value = parseFloat(feature.properties[numericFieldName]);
+            // Incrementar contador para modo conteo
+            groupedData[categoryValue].count++;
 
-            if (!isNaN(numeric1Value)) {
-                groupedData[categoryValue].numeric1.push(numeric1Value);
-            }
+            // Procesar campos numéricos si no estamos en modo conteo
+            if (!isCountMode) {
+                const numericFieldName = `nm_${chartConfig.numeric_field1.replace(/\s+/g, '_')}`;
+                const numeric1Value = parseFloat(feature.properties[numericFieldName]);
 
-            if (chartConfig.numeric_field2) {
-                const numeric2FieldName = `nm_${chartConfig.numeric_field2.replace(/\s+/g, '_')}`;
-                const numeric2Value = parseFloat(feature.properties[numeric2FieldName]);
-                if (!isNaN(numeric2Value)) {
-                    groupedData[categoryValue].numeric2.push(numeric2Value);
+                if (!isNaN(numeric1Value)) {
+                    groupedData[categoryValue].numeric1.push(numeric1Value);
+                }
+
+                if (chartConfig.numeric_field2) {
+                    const numeric2FieldName = `nm_${chartConfig.numeric_field2.replace(/\s+/g, '_')}`;
+                    const numeric2Value = parseFloat(feature.properties[numeric2FieldName]);
+                    if (!isNaN(numeric2Value)) {
+                        groupedData[categoryValue].numeric2.push(numeric2Value);
+                    }
                 }
             }
         });
@@ -663,37 +674,53 @@ jQuery(document).ready(function ($) {
             return key;
         });
 
-        // Dataset para numeric_field1
-        data.datasets.push({
-            label: chartConfig.numeric_field1,
-            data: Object.keys(groupedData).map(key => {
-                const values = groupedData[key].numeric1;
-                return values.length ? values.reduce((a, b) => a + b) : 0;
-            }),
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-        });
-
-        if (chartConfig.numeric_field2) {
+        // Crear datasets según el modo
+        if (isCountMode) {
+            // Dataset para modo conteo
             data.datasets.push({
-                label: chartConfig.numeric_field2,
-                data: Object.keys(groupedData).map(key => {
-                    const values = groupedData[key].numeric2;
-                    return values.length ? values.reduce((a, b) => a + b) : 0;
-                }),
-                backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                borderColor: 'rgba(255, 99, 132, 1)',
+                label: 'Número de casos',
+                data: Object.keys(groupedData).map(key => groupedData[key].count),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
             });
+        } else {
+            // Dataset para primer campo numérico
+            data.datasets.push({
+                label: chartConfig.numeric_field1,
+                data: Object.keys(groupedData).map(key => {
+                    const values = groupedData[key].numeric1;
+                    return values.length ? values.reduce((a, b) => a + b) : 0;
+                }),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            });
+
+            // Dataset para segundo campo numérico si existe
+            if (chartConfig.numeric_field2) {
+                data.datasets.push({
+                    label: chartConfig.numeric_field2,
+                    data: Object.keys(groupedData).map(key => {
+                        const values = groupedData[key].numeric2;
+                        return values.length ? values.reduce((a, b) => a + b) : 0;
+                    }),
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                });
+            }
         }
 
         console.log('Datos procesados para el gráfico:', data);
         return data;
     }
-
     function createChart(canvas, chartConfig, data) {
         const ctx = canvas.getContext('2d');
+
+          // Destruir cualquier gráfico anterior dibujado sobre este canvas
+          const old = Chart.getChart(canvas);
+          if (old) old.destroy();
 
         // Configuración base para las opciones
         const options = {
@@ -767,6 +794,8 @@ jQuery(document).ready(function ($) {
             };
         }
 
+      
+
         // Crear el gráfico
         new Chart(ctx, {
             type: chartConfig.chart_type,
@@ -774,6 +803,32 @@ jQuery(document).ready(function ($) {
             options: options
         });
     }
+
+/**
+ * Devuelve un array de features sin duplicados usando las
+ * coordenadas [lon, lat] como clave única.
+
+ */
+function getUniqueFeatures(markers) {
+    const vistos = new Set();
+    const unicos = [];
+
+    markers.forEach(m => {
+        const coords = m.feature.geometry?.coordinates;
+        if (!Array.isArray(coords)) return;       
+
+
+        const key = coords.join(',');                        
+
+        if (!vistos.has(key)) {
+            vistos.add(key);
+            unicos.push(m.feature);
+        }
+    });
+
+    return unicos;
+}
+
 });
 
 

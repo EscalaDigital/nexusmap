@@ -1,4 +1,5 @@
 <?php
+
 /**
  * HTML con el formulario que permitirá gestionar los gráficos.
  */
@@ -16,23 +17,21 @@
                 <?php foreach ($saved_charts as $index => $chart): ?>
                     <div class="chart-box">
                         <h3>Gráfico <?php echo intval($index + 1); ?></h3>
-                        
+
                         <!-- Título del gráfico -->
-                        <input 
-                            type="text" 
-                            name="charts[<?php echo $index; ?>][title]" 
-                            value="<?php echo esc_attr($chart['title']); ?>" 
-                            placeholder="Título del gráfico" 
-                            required
-                        />
+                        <input
+                            type="text"
+                            name="charts[<?php echo $index; ?>][title]"
+                            value="<?php echo esc_attr($chart['title']); ?>"
+                            placeholder="Título del gráfico"
+                            required />
 
                         <!-- Campo numérico 1 -->
-                        <select name="charts[<?php echo $index; ?>][numeric_field1]" required>
-                            <option value="">Seleccione campo numérico 1</option>
+                        <select name="charts[{index}][numeric_field1]">
+                            <option value="">Ninguno (contar ocurrencias)</option>
                             <?php foreach ($numeric_fields as $field): ?>
-                                <option value="<?php echo esc_attr($field['name']); ?>"
-                                    <?php selected($chart['numeric_field1'], $field['name']); ?>>
-                                    <?php echo esc_html($field['label']); ?>
+                                <option value="<?php echo esc_attr($field['name']); ?>">
+                                    Sumar <?php echo esc_html($field['label']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -64,10 +63,10 @@
                             <option value="">(Opcional) Seleccione segundo campo de categoría (Eje X #2)</option>
                             <?php foreach ($category_fields as $field): ?>
                                 <option value="<?php echo esc_attr($field['name']); ?>"
-                                    <?php 
+                                    <?php
                                     // Si ya estaba guardado, recuérdalo
                                     if (isset($chart['category_field_2'])) {
-                                        selected($chart['category_field_2'], $field['name']); 
+                                        selected($chart['category_field_2'], $field['name']);
                                     }
                                     ?>>
                                     <?php echo esc_html($field['label']); ?>
@@ -77,9 +76,9 @@
 
                         <!-- Tipo de gráfico (global) -->
                         <select name="charts[<?php echo $index; ?>][chart_type]" required>
-                            <option value="bar"   <?php selected($chart['chart_type'], 'bar'); ?>>Barras</option>
-                            <option value="line"  <?php selected($chart['chart_type'], 'line'); ?>>Líneas</option>
-                            <option value="pie"   <?php selected($chart['chart_type'], 'pie'); ?>>Circular</option>
+                            <option value="bar" <?php selected($chart['chart_type'], 'bar'); ?>>Barras</option>
+                            <option value="line" <?php selected($chart['chart_type'], 'line'); ?>>Líneas</option>
+                            <option value="pie" <?php selected($chart['chart_type'], 'pie'); ?>>Circular</option>
                             <option value="mixed" <?php selected($chart['chart_type'], 'mixed'); ?>>Mixto (Barras y Líneas)</option>
                             <!-- Podrías agregar un nuevo valor "two_x_axes" o similar -->
                         </select>
@@ -102,15 +101,14 @@
         
         <input type="text" name="charts[{index}][title]" placeholder="Título del gráfico" required />
 
-        <select name="charts[{index}][numeric_field1]" required>
-            <option value="">Seleccione campo numérico 1</option>
-            <?php foreach ($numeric_fields as $field): ?>
-                <option value="<?php echo esc_attr($field['name']); ?>">
-                    <?php echo esc_html($field['label']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-
+        <select name="charts[{index}][numeric_field1]">
+    <option value="">Ninguno (contar ocurrencias)</option>
+    <?php foreach ($numeric_fields as $field): ?>
+        <option value="<?php echo esc_attr($field['name']); ?>">
+            Sumar <?php echo esc_html($field['label']); ?>
+        </option>
+    <?php endforeach; ?>
+</select>
         <select name="charts[{index}][numeric_field2]">
             <option value="">Seleccione campo numérico 2 (opcional)</option>
             <?php foreach ($numeric_fields as $field): ?>

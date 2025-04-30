@@ -65,25 +65,19 @@ class NM_Chart_Manager
                 // Ajusta estas validaciones a tu estructura real: 
                 // hay sitios donde "type" podría venir con otro nombre o forma.
                 if (isset($field['type'])) {
-                    switch ($field['type']) {
-                        case 'number':
-                            $numeric_fields[] = $field;
-                            break;
-                        case 'select':
-                        case 'radio':
-                        case 'checkbox':
-                            $category_fields[] = $field;
-                            break;
+                    // Campos que pueden ser contados
+                    if (in_array($field['type'], ['select', 'radio', 'checkbox', 'text', 'textarea'])) {
+                        $category_fields[] = $field;
+                    }
+                    // Campos numéricos para sumas tradicionales
+                    if ($field['type'] === 'number') {
+                        $numeric_fields[] = $field;
                     }
                 }
             }
         }
 
-        // Si no hay campos numéricos ni de categorías, advertimos
-        if (empty($numeric_fields)) {
-            echo '<div class="notice notice-warning"><p>No se encontraron campos numéricos en el formulario.</p></div>';
-            return;
-        }
+      
         if (empty($category_fields)) {
             echo '<div class="notice notice-warning"><p>No se encontraron campos de categorías en el formulario.</p></div>';
             return;
@@ -129,9 +123,10 @@ class NM_Chart_Manager
                 $category_field_2 = isset($chart['category_field_2']) ? sanitize_text_field($chart['category_field_2']) : '';
                 $chart_type     = isset($chart['chart_type'])     ? sanitize_text_field($chart['chart_type'])     : '';
 
-                if (!empty($title) && !empty($numeric_field1) && !empty($category_field) && !empty($chart_type)) {
+                if (!empty($title) && !empty($category_field) && !empty($chart_type)) {
                     $charts[] = array(
                         'title'          => $title,
+                        'count_only'     => empty($numeric_field1), // True si no hay campo numérico
                         'numeric_field1' => $numeric_field1,
                         'numeric_field2' => $numeric_field2,
                         'category_field' => $category_field,
