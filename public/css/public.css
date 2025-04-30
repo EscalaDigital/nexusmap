@@ -441,18 +441,38 @@
   z-index: 998;
 }
 
+/* Estilos para el panel de filtros */
 .nm-filters-panel {
   position: absolute;
-  left: 50px; /* Distancia desde el borde izquierdo del mapa */
-  top: 10px; /* Distancia desde el borde superior del mapa */
+  left: 50px;
+  top: 10px;
   background: white;
   padding: 15px;
   border-radius: 4px;
   box-shadow: 0 1px 5px rgba(0,0,0,0.2);
   width: 280px;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
-  z-index: 999;
+  max-height: 60vh; /* Altura máxima del 80% del viewport */
+  overflow-y: auto; /* Habilita el scroll vertical */
+  z-index: 9999;
+}
+
+/* Estilos para el scroll */
+.nm-filters-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .nm-filters-panel.collapsed {
