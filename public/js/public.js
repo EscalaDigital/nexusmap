@@ -356,27 +356,29 @@ jQuery(document).ready(function ($) {
                     response.features.forEach(function (feature) {
                         console.log('Processing feature:', feature);
 
-                        // Si el feature tiene capas de texto
+                        // Si el feature tiene capas de texto o textarea
                         if (feature.properties && feature.properties.text_layers) {
-                            var marker = L.circleMarker([
-                                feature.geometry.coordinates[1],
-                                feature.geometry.coordinates[0]
-                            ], {
-                                radius: 8,
-                                fillColor: feature.properties.text_layers[0].color,
-                                color: "#000",
-                                weight: 1,
-                                opacity: 1,
-                                fillOpacity: 0.8
+                            feature.properties.text_layers.forEach(function(textLayer) {
+                                var marker = L.circleMarker([
+                                    feature.geometry.coordinates[1],
+                                    feature.geometry.coordinates[0]
+                                ], {
+                                    radius: 8,
+                                    fillColor: textLayer.color,
+                                    color: "#000",
+                                    weight: 1,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                });
+                    
+                                marker.feature = feature;
+                                marker.on('click', function () {
+                                    showModal(feature.properties);
+                                });
+                    
+                                textLayerGroup.addLayer(marker);
+                                allMarkers.push(marker);
                             });
-
-                            marker.feature = feature;
-                            marker.on('click', function () {
-                                showModal(feature.properties);
-                            });
-
-                            textLayerGroup.addLayer(marker);
-                            allMarkers.push(marker);
                         }
 
                         // Procesar otras capas (select/radio/checkbox)

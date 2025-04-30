@@ -64,8 +64,8 @@
 
             <!-- Campos de Texto -->
             <?php if (!empty($text_fields_for_view)): ?>
-                <h2 style="margin-top: 2em;">Campos de Texto</h2>
-                <p class="description">Los puntos se mostrarán del color seleccionado cuando contengan texto en estos campos.</p>
+    <h2>Campos de Texto y Área de Texto</h2>
+    <p class="description">Los puntos se mostrarán del color seleccionado cuando contengan texto en estos campos (texto simple o área de texto).</p>
                 
                 <!-- Campo para el nombre de capa de texto -->
                 <div class="form-field" style="margin-bottom: 20px;">

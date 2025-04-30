@@ -48,7 +48,7 @@ class NM_Form_To_Map
             foreach ($form_data['fields'] as $field) {
                 if (in_array($field['type'], ['select', 'radio', 'checkbox'])) {
                     $select_fields[] = $field;
-                } elseif ($field['type'] === 'text') {
+                } elseif (in_array($field['type'], ['text', 'textarea'])) {
                     $text_fields[] = $field;
                 }
             }
