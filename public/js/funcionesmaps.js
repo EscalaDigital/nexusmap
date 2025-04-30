@@ -92,7 +92,7 @@ function showModal(properties) {
     // Crear un mapa de nombres de campo a labels usando nmFormStructure
     var fieldLabels = {};
     if (typeof nmFormStructure !== 'undefined' && nmFormStructure.fields) {
-        nmFormStructure.fields.forEach(function(field) {
+        nmFormStructure.fields.forEach(function (field) {
             fieldLabels['nm_' + field.name] = field.label;
         });
     }
@@ -110,7 +110,7 @@ function showModal(properties) {
             }
 
             // Usar el label del formulario si está disponible, si no, formatear el nombre del campo
-            var label = fieldLabels[key] || key.substring(3).charAt(0).toUpperCase() + key.substring(4).replace(/_/g, ' ');
+            var label = getFieldLabel(key);
             var value = properties[key];
 
             // Verificar si el valor es una URL de archivo
@@ -315,26 +315,20 @@ function isImage(extension) {
     return imageExtensions.includes(extension);
 }
 
-// Función para verificar la estructura del formulario
-function checkFormStructure() {
-    console.log('Comprobando estructura del formulario...');
-    
-    if (typeof nmFormStructure === 'undefined') {
-        console.error('Error: La variable nmFormStructure no está definida');
-        return false;
+// Mapa de nombres de campo -> etiquetas legibles
+var fieldLabels = {};
+function getFieldLabel(field) {
+    // Cachea las etiquetas solo una vez
+    if (Object.keys(fieldLabels).length === 0 && typeof nmFormStructure !== 'undefined') {
+        nmFormStructure.fields.forEach(function (f) {
+            fieldLabels['nm_' + f.name] = f.label;
+        });
     }
-    
-    console.log('nmFormStructure encontrada:', nmFormStructure);
-    
-    if (!nmFormStructure.fields || !Array.isArray(nmFormStructure.fields)) {
-        console.error('Error: nmFormStructure.fields no es un array válido');
-        return false;
-    }
-    
-    console.log('Número de campos encontrados:', nmFormStructure.fields.length);
-    console.log('Estructura de campos:', nmFormStructure.fields);
-    
-    return true;
+
+    // Soporta tanto 'field' como 'nm_field'
+    var key = field.startsWith('nm_') ? field : 'nm_' + field;
+    return fieldLabels[key] || field.replace(/^nm_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
+
 
 

@@ -358,7 +358,7 @@ jQuery(document).ready(function ($) {
 
                         // Si el feature tiene capas de texto o textarea
                         if (feature.properties && feature.properties.text_layers) {
-                            feature.properties.text_layers.forEach(function(textLayer) {
+                            feature.properties.text_layers.forEach(function (textLayer) {
                                 var marker = L.circleMarker([
                                     feature.geometry.coordinates[1],
                                     feature.geometry.coordinates[0]
@@ -370,12 +370,12 @@ jQuery(document).ready(function ($) {
                                     opacity: 1,
                                     fillOpacity: 0.8
                                 });
-                    
+
                                 marker.feature = feature;
                                 marker.on('click', function () {
                                     showModal(feature.properties);
                                 });
-                    
+
                                 textLayerGroup.addLayer(marker);
                                 allMarkers.push(marker);
                             });
@@ -428,7 +428,7 @@ jQuery(document).ready(function ($) {
                         } else if (layerConfig.type === 'select' && layerConfig.colors) {
                             // Para cada campo con colores, crear una etiqueta con el color correspondiente
                             var labelHtml = '<div class="layer-color-indicator" style="background-color: ' +
-                                Object.values(layerConfig.colors)[0] + '"></div>' + layerConfig.label;
+                                Object.values(layerConfig.colors)[0] + '"></div>' + getFieldLabel(layerConfig.field);
                             overlays[labelHtml] = layerGroups[layerConfig.field];
                             if (isFirstLayer) {
                                 layerGroups[layerConfig.field].addTo(map);
@@ -494,7 +494,7 @@ jQuery(document).ready(function ($) {
                         response.layer_settings.forEach(function (layerConfig) {
                             if (layerConfig.type === 'select' && layerConfig.colors) {
                                 content += '<div class="legend-group">';
-                                content += '<strong>' + layerConfig.label + '</strong>';
+                                content += '<strong>' + getFieldLabel(layerConfig.field) + '</strong>';
                                 Object.entries(layerConfig.colors).forEach(function ([value, color]) {
                                     content += '<div class="legend-item">';
                                     content += '<div class="legend-color" style="background-color: ' + color + '"></div>';
@@ -515,7 +515,7 @@ jQuery(document).ready(function ($) {
                                 if (layerConfig.type === 'text') {
                                     content += '<div class="legend-item">';
                                     content += '<div class="legend-color" style="background-color: ' + layerConfig.colors[0] + '"></div>';
-                                    content += '<span class="legend-label">' + layerConfig.label + '</span>';
+                                    content += '<span class="legend-label">' + getFieldLabel(layerConfig.field) + '</span>';
                                     content += '</div>';
                                 }
                             });
