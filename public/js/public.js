@@ -289,8 +289,7 @@ jQuery(document).ready(function ($) {
             allMarkers.forEach(function (marker) {
                 let visible = true;
 
-                // Debug para ver las propiedades del marcador
-                console.log('Marker properties:', marker.feature.properties);
+               
 
                 for (const field in activeFilters) {
                     if (activeFilters[field].size > 0) {
@@ -298,8 +297,7 @@ jQuery(document).ready(function ($) {
                         const fieldName = 'nm_' + field;
                         const fieldValue = marker.feature.properties[fieldName];
 
-                        console.log('Checking field:', fieldName, 'Value:', fieldValue, 'Active values:', Array.from(activeFilters[field]));
-
+                        
                         if (!fieldValue || !activeFilters[field].has(fieldValue.toString())) {
                             visible = false;
                             break;
@@ -313,7 +311,7 @@ jQuery(document).ready(function ($) {
                 }
             });
 
-            console.log('Visible points:', visibleCount);
+         
             const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
@@ -343,7 +341,7 @@ jQuery(document).ready(function ($) {
 
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
-                    console.log('Layer settings found:', response.layer_settings);
+                    
 
                     // Crear un grupo de capa para cada campo configurado (excepto texto)
                     response.layer_settings.forEach(function (layerConfig) {
@@ -354,7 +352,7 @@ jQuery(document).ready(function ($) {
 
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
-                        console.log('Processing feature:', feature);
+                       
 
                         // Si el feature tiene capas de texto o textarea
                         if (feature.properties && feature.properties.text_layers) {
@@ -712,7 +710,7 @@ jQuery(document).ready(function ($) {
             }
         }
 
-        console.log('Datos procesados para el gráfico:', data);
+        
         return data;
     }
     function createChart(canvas, chartConfig, data) {
