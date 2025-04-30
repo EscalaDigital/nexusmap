@@ -62,20 +62,19 @@ class NM_Chart_Manager
          */
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
             foreach ($form_data['fields'] as $field) {
-                // Ajusta estas validaciones a tu estructura real: 
-                // hay sitios donde "type" podría venir con otro nombre o forma.
                 if (isset($field['type'])) {
-                    // Campos que pueden ser contados
-                    if (in_array($field['type'], ['select', 'radio', 'checkbox', 'text', 'textarea'])) {
+                    // Campos que pueden ser contados o usados como categoría
+                    if (in_array($field['type'], ['select', 'radio', 'checkbox', 'text', 'textarea', 'number'])) {
                         $category_fields[] = $field;
                     }
-                    // Campos numéricos para sumas tradicionales
+                    // Campos numéricos para sumas
                     if ($field['type'] === 'number') {
                         $numeric_fields[] = $field;
                     }
                 }
             }
         }
+        
 
       
         if (empty($category_fields)) {

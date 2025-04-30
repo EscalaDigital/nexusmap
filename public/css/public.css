@@ -261,30 +261,29 @@
 
 /* Contenedor de gráficos con scroll horizontal */
 #nm-charts-container {
-    display: flex;
-    overflow-x: auto;
-    gap: 30px;
-    padding: 20px;
-    height: calc(100% - 40px);
-    align-items: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  gap: 30px;
+  padding: 20px;
+  height: calc(100% - 40px);
+  overflow-y: auto;
 }
-
 /* Contenedor individual de cada gráfico */
 #nm-charts-container > div {
-    flex: 0 0 auto;
-    min-width: 500px;
-    height: 100%;
-    background: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+  min-height: 400px;
 }
-
 /* Ajuste para los canvas de los gráficos */
 #nm-charts-container canvas {
-    width: 100% !important;
-    height: calc(100% - 40px) !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 600px;
 }
+
 
 /* Estilos para el scroll horizontal */
 #nm-charts-container::-webkit-scrollbar {
@@ -359,6 +358,14 @@
   #nm-charts-container canvas {
     height: 400px !important;
   }
+
+  #nm-charts-container {
+    grid-template-columns: 1fr;
+}
+
+#nm-charts-container > div {
+    min-height: 300px;
+}
 }
 
 

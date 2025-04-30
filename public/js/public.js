@@ -289,7 +289,7 @@ jQuery(document).ready(function ($) {
             allMarkers.forEach(function (marker) {
                 let visible = true;
 
-               
+
 
                 for (const field in activeFilters) {
                     if (activeFilters[field].size > 0) {
@@ -297,7 +297,7 @@ jQuery(document).ready(function ($) {
                         const fieldName = 'nm_' + field;
                         const fieldValue = marker.feature.properties[fieldName];
 
-                        
+
                         if (!fieldValue || !activeFilters[field].has(fieldValue.toString())) {
                             visible = false;
                             break;
@@ -311,7 +311,7 @@ jQuery(document).ready(function ($) {
                 }
             });
 
-         
+
             const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
@@ -341,7 +341,7 @@ jQuery(document).ready(function ($) {
 
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
-                    
+
 
                     // Crear un grupo de capa para cada campo configurado (excepto texto)
                     response.layer_settings.forEach(function (layerConfig) {
@@ -352,7 +352,7 @@ jQuery(document).ready(function ($) {
 
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
-                       
+
 
                         // Si el feature tiene capas de texto o textarea
                         if (feature.properties && feature.properties.text_layers) {
@@ -620,73 +620,74 @@ jQuery(document).ready(function ($) {
         // Agrupar datos por categoría
         const groupedData = {};
         const isCountMode = !chartConfig.numeric_field1;
+        const categoryFieldName = `nm_${chartConfig.category_field}`;
 
         features.forEach(feature => {
-            const categoryFieldName = `nm_${chartConfig.category_field}`;
-            const categoryFieldName2 = chartConfig.category_field_2 ? `nm_${chartConfig.category_field_2}` : null;
+            let categoryValue = feature.properties[categoryFieldName];
 
-            const rawCategoryValue = feature.properties[categoryFieldName];
-            const rawCategoryValue2 = categoryFieldName2 ? feature.properties[categoryFieldName2] : null;
+            // Convertir a número si el campo de categoría es numérico
+            if (typeof categoryValue === 'number' || !isNaN(categoryValue)) {
+                categoryValue = parseFloat(categoryValue);
+            }
 
-            if (!rawCategoryValue) return;
+            // Convertir a string para usar como clave
+            const categoryKey = categoryValue?.toString() || '';
 
-            const categoryValue = Array.isArray(rawCategoryValue) ? rawCategoryValue[0] : rawCategoryValue;
-
-            // Inicializar la estructura de datos para esta categoría
-            if (!groupedData[categoryValue]) {
-                groupedData[categoryValue] = {
+            if (!groupedData[categoryKey]) {
+                groupedData[categoryKey] = {
                     count: 0,
                     numeric1: [],
                     numeric2: [],
-                    category2: rawCategoryValue2
+                    rawValue: categoryValue // guardamos el valor original
                 };
             }
 
-            // Incrementar contador para modo conteo
-            groupedData[categoryValue].count++;
+            // Incrementar contador
+            groupedData[categoryKey].count++;
 
-            // Procesar campos numéricos si no estamos en modo conteo
+            // Procesar campos numéricos
             if (!isCountMode) {
-                const numericFieldName = `nm_${chartConfig.numeric_field1.replace(/\s+/g, '_')}`;
+                const numericFieldName = `nm_${chartConfig.numeric_field1}`;
                 const numeric1Value = parseFloat(feature.properties[numericFieldName]);
-
                 if (!isNaN(numeric1Value)) {
-                    groupedData[categoryValue].numeric1.push(numeric1Value);
+                    groupedData[categoryKey].numeric1.push(numeric1Value);
                 }
 
                 if (chartConfig.numeric_field2) {
-                    const numeric2FieldName = `nm_${chartConfig.numeric_field2.replace(/\s+/g, '_')}`;
+                    const numeric2FieldName = `nm_${chartConfig.numeric_field2}`;
                     const numeric2Value = parseFloat(feature.properties[numeric2FieldName]);
                     if (!isNaN(numeric2Value)) {
-                        groupedData[categoryValue].numeric2.push(numeric2Value);
+                        groupedData[categoryKey].numeric2.push(numeric2Value);
                     }
                 }
             }
         });
 
-        // Generar labels
-        data.labels = Object.keys(groupedData).map(key => {
-            if (chartConfig.category_field_2 && groupedData[key].category2) {
-                return `${key} (${groupedData[key].category2})`;
+        // Ordenar las claves si son numéricas
+        const sortedKeys = Object.keys(groupedData).sort((a, b) => {
+            const aNum = parseFloat(a);
+            const bNum = parseFloat(b);
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return aNum - bNum;
             }
-            return key;
+            return a.localeCompare(b);
         });
 
-        // Crear datasets según el modo
+        // Generar labels y datasets ordenados
+        data.labels = sortedKeys;
+
         if (isCountMode) {
-            // Dataset para modo conteo
             data.datasets.push({
                 label: 'Número de casos',
-                data: Object.keys(groupedData).map(key => groupedData[key].count),
+                data: sortedKeys.map(key => groupedData[key].count),
                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
             });
         } else {
-            // Dataset para primer campo numérico
             data.datasets.push({
                 label: chartConfig.numeric_field1,
-                data: Object.keys(groupedData).map(key => {
+                data: sortedKeys.map(key => {
                     const values = groupedData[key].numeric1;
                     return values.length ? values.reduce((a, b) => a + b) : 0;
                 }),
@@ -695,11 +696,10 @@ jQuery(document).ready(function ($) {
                 borderWidth: 1
             });
 
-            // Dataset para segundo campo numérico si existe
             if (chartConfig.numeric_field2) {
                 data.datasets.push({
                     label: chartConfig.numeric_field2,
-                    data: Object.keys(groupedData).map(key => {
+                    data: sortedKeys.map(key => {
                         const values = groupedData[key].numeric2;
                         return values.length ? values.reduce((a, b) => a + b) : 0;
                     }),
@@ -710,15 +710,14 @@ jQuery(document).ready(function ($) {
             }
         }
 
-        
         return data;
     }
     function createChart(canvas, chartConfig, data) {
         const ctx = canvas.getContext('2d');
 
-          // Destruir cualquier gráfico anterior dibujado sobre este canvas
-          const old = Chart.getChart(canvas);
-          if (old) old.destroy();
+        // Destruir cualquier gráfico anterior dibujado sobre este canvas
+        const old = Chart.getChart(canvas);
+        if (old) old.destroy();
 
         // Configuración base para las opciones
         const options = {
@@ -727,11 +726,20 @@ jQuery(document).ready(function ($) {
             plugins: {
                 title: {
                     display: true,
-                    text: chartConfig.title
+                    text: chartConfig.title,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: 20
                 },
                 legend: {
                     display: true,
-                    position: 'bottom'
+                    position: chartConfig.chart_type === 'pie' ? 'right' : 'bottom',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 12
+                    }
                 }
             },
             scales: {
@@ -740,11 +748,36 @@ jQuery(document).ready(function ($) {
                     position: 'left',
                     title: {
                         display: true,
-                        text: chartConfig.numeric_field1
+                        text: chartConfig.numeric_field1 || 'Cantidad',
+                        font: {
+                            weight: 'bold'
+                        }
                     }
+                }
+            },
+            layout: {
+                padding: {
+                    left: 10,
+                    right: chartConfig.chart_type === 'pie' ? 50 : 10,
+                    top: 10,
+                    bottom: 10
                 }
             }
         };
+
+        // Ajustes específicos según el tipo de gráfico
+        if (chartConfig.chart_type === 'pie') {
+            options.aspectRatio = 1.5;
+        } else if (chartConfig.chart_type === 'bar') {
+            options.aspectRatio = 2;
+            if (data.labels.length > 10) {
+                options.indexAxis = 'y'; // Barras horizontales si hay muchos datos
+            }
+        } else if (chartConfig.chart_type === 'line') {
+            options.aspectRatio = 2.5;
+        } else if (chartConfig.chart_type === 'mixed') {
+            options.aspectRatio = 2;
+        }
 
         // Si es tipo mixto, configurar datasets específicamente
         if (chartConfig.chart_type === 'mixed') {
@@ -792,7 +825,7 @@ jQuery(document).ready(function ($) {
             };
         }
 
-      
+
 
         // Crear el gráfico
         new Chart(ctx, {
@@ -802,30 +835,30 @@ jQuery(document).ready(function ($) {
         });
     }
 
-/**
- * Devuelve un array de features sin duplicados usando las
- * coordenadas [lon, lat] como clave única.
+    /**
+     * Devuelve un array de features sin duplicados usando las
+     * coordenadas [lon, lat] como clave única.
+    
+     */
+    function getUniqueFeatures(markers) {
+        const vistos = new Set();
+        const unicos = [];
 
- */
-function getUniqueFeatures(markers) {
-    const vistos = new Set();
-    const unicos = [];
-
-    markers.forEach(m => {
-        const coords = m.feature.geometry?.coordinates;
-        if (!Array.isArray(coords)) return;       
+        markers.forEach(m => {
+            const coords = m.feature.geometry?.coordinates;
+            if (!Array.isArray(coords)) return;
 
 
-        const key = coords.join(',');                        
+            const key = coords.join(',');
 
-        if (!vistos.has(key)) {
-            vistos.add(key);
-            unicos.push(m.feature);
-        }
-    });
+            if (!vistos.has(key)) {
+                vistos.add(key);
+                unicos.push(m.feature);
+            }
+        });
 
-    return unicos;
-}
+        return unicos;
+    }
 
 });
 
