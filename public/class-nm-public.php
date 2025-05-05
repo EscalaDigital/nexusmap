@@ -57,18 +57,47 @@ class NM_Public
         // Check if the [nm_map] shortcode is used in the content
         if (has_shortcode($post->post_content, 'nm_map')) {
             // Enqueue Leaflet CSS and JS
-            wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
-            wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);
+            // wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
+            //   wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);
 
-
+            wp_enqueue_style(
+                'nm-leaflet-css',
+                'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css',
+                array(),
+                '1.7.1'
+            );
+            wp_enqueue_script(
+                'nm-leaflet-js',
+                'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js',
+                array(),
+                '1.7.1',
+                true
+            );
 
             // Enqueue Leaflet Control Geocoder
             wp_enqueue_style('leaflet-geocoder-css', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css', array(), '1.13.0');
             wp_enqueue_script('leaflet-geocoder-js', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js', array('nm-leaflet-js'), '1.13.0', true);
-
+            /*
+            wp_enqueue_style(
+                'leaflet-geocoder-css',
+                'https://cdnjs.cloudflare.com/ajax/libs/leaflet-control-geocoder/2.4.0/Control.Geocoder.css',
+                array(),
+                '2.4.0'
+            );
+            wp_enqueue_script(
+                'leaflet-geocoder-js',
+                'https://cdnjs.cloudflare.com/ajax/libs/leaflet-control-geocoder/2.4.0/Control.Geocoder.min.js',
+                array('nm-leaflet-js'),
+                '2.4.0',
+                true
+            );
+*/
             // Enqueue functions related to the map
             wp_enqueue_script('nm-funcionesmaps-js', NM_PLUGIN_URL . 'public/js/funcionesmaps.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), NM_VERSION, true);
             wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);
+
+            // Para gráficos Chart.js
+            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
         }
 
         // Check if the [nm_form] shortcode is used in the content
@@ -107,6 +136,33 @@ class NM_Public
             'zoom'   => '2',
         ), $atts, 'nm_map');
 
+        // Obtener la configuración de capas
+        $layer_settings = get_option('nm_layer_settings', array());
+
+        // Obtener configuración de gráficos
+        $chart_settings = get_option('nm_chart_settings', array());
+
+        // Obtener la estructura del formulario
+        $form_data = $this->model->get_form(0); // Obtiene el formulario principal
+        $form_structure = array();
+        
+        if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+            foreach ($form_data['fields'] as $field) {
+                if (!empty($field['name'])) {
+                    $form_structure[] = array(
+                        'name' => $field['name'],
+                        'label' => $field['label'],
+                        'type' => $field['type']
+                    );
+                }
+            }
+        }
+
+        // Convertir la estructura del formulario a JSON para pasarla al frontend
+        wp_localize_script('nm-public-js', 'nmFormStructure', array(
+            'fields' => $form_structure
+        ));
+
         ob_start();
         include NM_PLUGIN_DIR . 'public/views/main-map.php';
         return ob_get_clean();
@@ -118,7 +174,7 @@ class NM_Public
             return 'You must be logged in to view this form.';
         }
 
-     
+
 
         // Check if the A/B option is enabled
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
@@ -148,7 +204,7 @@ class NM_Public
      * Get map geometries via AJAX
      */
 
- 
+
 
     /**
      * Get map points via AJAX
@@ -159,37 +215,131 @@ class NM_Public
         $entries = $this->model->get_entries('approved');
         $features = array();
 
+        // Obtener configuración de capas
+        $layer_settings = get_option('nm_layer_settings', array());
+        $has_layers = !empty($layer_settings);
+
         foreach ($entries as $entry) {
             $entry_data = maybe_unserialize($entry->entry_data);
             if (isset($entry_data['map_data'])) {
-                $map_data = json_decode(stripslashes($entry_data['map_data']), true);
+
+
+                $raw_json = wp_unslash($entry_data['map_data']);
+
+
+                try {
+                    // ② Intenta decodificar: si falla lanzará JsonException
+                    $map_data = json_decode($raw_json, true, 512, JSON_THROW_ON_ERROR);
+                } catch (\JsonException $e) {
+
+                    // ③ Apunta en el log la razón exacta y salta al siguiente registro
+                    error_log(sprintf(
+                        'JSON ERROR (entry_id %d): %s',
+                        $entry->id,
+                        $e->getMessage()          // ej.: "Syntax error"
+                    ));
+
+                    continue;                     // no añadas esta feature a $features
+                }
+
+
+
                 if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
                     foreach ($map_data as $feature) {
-                        // Verificar si la geometría es de tipo "Point"
                         if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
+                            // Inicializar array de capas
+                            if (!isset($feature['properties']['layers'])) {
+                                $feature['properties']['layers'] = array();
+                            }
+
                             // Agregar todas las propiedades del entry_data al properties
                             foreach ($entry_data as $key => $value) {
-                                if ($key !== 'map_data') { // Excluir 'map_data' si está
-                                    $feature['properties'][$key] = esc_html($value);
+                                if ($key !== 'map_data') {
+                                    $feature['properties'][$key] = $value;
                                 }
                             }
+
                             // Agregar el entry_id
                             $feature['properties']['entry_id'] = $entry->id;
+                            $feature['properties']['has_layer'] = false;
+
+                            // Si hay configuración de capas, buscar coincidencias
+                            if ($has_layers) {
+                                foreach ($layer_settings as $field_name => $layer_config) {
+                                    $field_key = 'nm_' . $field_name;
+
+                                    // Comprobar si existe la propiedad en feature properties
+                                    if (isset($feature['properties'][$field_key])) {
+                                        // Si es un campo de tipo texto
+                                        if ($layer_config['type'] === 'text') {
+                                            $value = $feature['properties'][$field_key];
+                                            if (!empty($value)) {
+                                                if (!isset($feature['properties']['text_layers'])) {
+                                                    $feature['properties']['text_layers'] = array();
+                                                }
+                                                $feature['properties']['text_layers'][] = array(
+                                                    'field_name' => $field_name,
+                                                    'value' => $value,
+                                                    'color' => $layer_config['color'],
+                                                    'label' => $layer_config['label']
+                                                );
+                                                $feature['properties']['has_layer'] = true;
+                                            }
+                                        }
+                                        // Si es un campo select/radio/checkbox
+                                        else {
+                                            $value = is_array($feature['properties'][$field_key])
+                                                ? $feature['properties'][$field_key][0]
+                                                : $feature['properties'][$field_key];
+
+                                            // Convertir índices numéricos a strings para la comparación
+                                            $colors = array_combine(
+                                                array_map('strval', array_keys($layer_config['colors'])),
+                                                $layer_config['colors']
+                                            );
+
+                                            if (isset($colors[$value])) {
+                                                $feature['properties']['layers'][] = array(
+                                                    'layer_field' => $field_name,
+                                                    'layer_value' => $value,
+                                                    'layer_color' => $colors[$value],
+                                                    'layer_type' => 'select'
+                                                );
+                                                $feature['properties']['has_layer'] = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
                             $features[] = $feature;
                         }
                     }
-                } else {
-                    error_log('Error decoding map_data for entry ID ' . $entry->id . ': ' . json_last_error_msg());
                 }
             }
         }
 
-        wp_send_json($features);
+        // Preparar respuesta con configuración de capas
+        $formatted_layer_settings = array();
+        foreach ($layer_settings as $field_name => $config) {
+            $formatted_layer_settings[] = array(
+                'field' => $field_name,
+                'label' => isset($config['label']) ? $config['label'] : $field_name,
+                'type' => $config['type'],
+                'colors' => isset($config['colors']) ? array_combine(
+                    array_map('strval', array_keys($config['colors'])),
+                    $config['colors']
+                ) : ($config['type'] === 'text' ? array($config['color']) : array())
+            );
+        }
+
+        $response = array(
+            'features' => $features,
+            'layer_settings' => $formatted_layer_settings
+        );
+
+        wp_send_json($response);
     }
-
-
-
     // Método para obtener detalles de la entrada
     public function get_entry_details()
     {
@@ -220,113 +370,196 @@ class NM_Public
 
     public function submit_form()
     {
-        // Verify nonce for security
+        /* ───────── Seguridad ───────── */
         check_ajax_referer('nm_public_nonce', 'nonce');
 
-        // Collect form fields (excluding 'action', 'nonce', 'map_data')
-        $form_fields = array();
         $form_type = isset($_POST['nm_form_type']) ? intval($_POST['nm_form_type']) : 0;
-        foreach ($_POST as $key => $value) {
-     
-            if (in_array($key, array('action', 'nonce', 'map_data', 'nm_form_nonce', '_wp_http_referer', 'nm_submit_form', 'nm_form_type'))) {
-                continue;
+        $form_fields          = array();   // propiedades finales, en orden
+        $already_processed    = array();   // names tratados para no duplicar
+
+        /* ────── 1. Cargar la definición del formulario (orden “oficial”) ────── */
+        $form_data  = $this->model->get_form($form_type);
+        $field_defs = isset($form_data['fields']) && is_array($form_data['fields'])
+            ? $form_data['fields']
+            : array();
+
+        /* Función de normalización: coincide con cómo generas el atributo name="" */
+        $normalize = static function ($raw) {
+            // 1) quita tildes, 2) reemplaza espacios por '_' , 3) quita caracteres raros
+            $no_accents = remove_accents($raw);
+            return preg_replace('/[^A-Za-z0-9_\-]/', '_', str_replace(' ', '_', $no_accents));
+        };
+
+        /* ────── 2. Recorrer los campos tal cual están en la definición ────── */
+        foreach ($field_defs as $field) {
+            if (empty($field['name'])) {
+                continue;                             // headers, etc.
             }
-       
-            if (is_array($value)) {
-                $sanitized_value = array_map('sanitize_text_field', $value);
-                $form_fields['nm_' . $key] = $sanitized_value;
-            } else {
-                $form_fields['nm_' . $key] = sanitize_text_field($value);
+
+            $orig_name   = $field['name'];            // ej: "Imagen principal"
+            $html_name   = $normalize($orig_name);  // ej: "Imagen_principal"
+            $store_key   = 'nm_' . $orig_name;        // mantenemos nombre original en BD
+
+            $already_processed[] = $html_name;        // marcarlo
+
+            /* ---- FILE ---- */
+            if (
+                $field['type'] === 'file' && isset($_FILES[$html_name])
+                && $_FILES[$html_name]['error'] === UPLOAD_ERR_OK
+            ) {
+
+                $allowed = array(
+                    'jpg|jpeg|jpe' => 'image/jpeg',
+                    'png'          => 'image/png',
+                    'gif'          => 'image/gif',
+                    'pdf'          => 'application/pdf',
+                );
+
+                $up = wp_handle_upload($_FILES[$html_name], array(
+                    'test_form' => false,
+                    'mimes'     => $allowed,
+                ));
+
+                if ($up && ! isset($up['error'])) {
+                    $form_fields[$store_key] = esc_url_raw(
+                        str_replace('http://', 'https://', $up['url'])
+                    );
+                } else {
+                    wp_send_json_error('Error al subir "' . esc_html($orig_name) . '": ' . $up['error']);
+                    wp_die();
+                }
             }
+
+            /* ---- INPUT NORMAL ---- */ elseif (isset($_POST[$html_name])) {
+                $val = $_POST[$html_name];
+                $form_fields[$store_key] = is_array($val)
+                    ? array_map('sanitize_text_field', $val)
+                    : sanitize_text_field($val);
+            }
+            // si es file sin subir nada → simplemente se omite
         }
 
-        // Handle file uploads
-        if (!empty($_FILES)) {
-            foreach ($_FILES as $file_key => $file_array) {
-                // Verify if the file was uploaded without errors
-                if ($file_array['error'] === UPLOAD_ERR_OK) {
-                    // Specify allowed file types
-                    $allowed_types = array(
+        /* ────── 3. Pasada de “rescate” ──────
+               Por si el frontend añadió campos que no están en la definición      */
+        $incoming_keys = array_keys(array_merge($_POST, $_FILES));
+
+        foreach ($incoming_keys as $inkey) {
+
+            if (
+                in_array($inkey, $already_processed, true) ||
+                in_array($inkey, array(
+                    'action',
+                    'nonce',
+                    'map_data',
+                    'nm_form_nonce',
+                    '_wp_http_referer',
+                    'nm_submit_form',
+                    'nm_form_type'
+                ), true)
+            ) {
+                continue;
+            }
+
+            $store_key = 'nm_' . $inkey;
+
+            /* file suelto */
+            if (isset($_FILES[$inkey]) && $_FILES[$inkey]['error'] === UPLOAD_ERR_OK) {
+
+                $up = wp_handle_upload($_FILES[$inkey], array(
+                    'test_form' => false,
+                    'mimes'     => array(
                         'jpg|jpeg|jpe' => 'image/jpeg',
                         'png'          => 'image/png',
                         'gif'          => 'image/gif',
                         'pdf'          => 'application/pdf',
-                        // Add other file types if necessary
+                    ),
+                ));
+
+                if ($up && ! isset($up['error'])) {
+                    $form_fields[$store_key] = esc_url_raw(
+                        str_replace('http://', 'https://', $up['url'])
                     );
-
-                    // Handle file upload
-                    $uploaded_file = wp_handle_upload($file_array, array(
-                        'test_form' => false,
-                        'mimes'     => $allowed_types,
-                    ));
-
-                    if ($uploaded_file && !isset($uploaded_file['error'])) {
-                        // Upload was successful, get the file URL
-                        $file_url = $uploaded_file['url'];
-                        // Add the file URL to $form_fields
-                        $form_fields['nm_' . $file_key] = esc_url_raw($file_url);
-                    } else {
-                        // Handle upload error
-                        wp_send_json_error('Error al subir el archivo: ' . $uploaded_file['error']);
-                        wp_die();
-                    }
-                } elseif ($file_array['error'] !== UPLOAD_ERR_NO_FILE) {
-                    // Handle other upload errors
-                    wp_send_json_error('Código de error al subir el archivo: ' . $file_array['error']);
+                } else {
+                    wp_send_json_error('Error al subir "' . esc_html($inkey) . '": ' . $up['error']);
                     wp_die();
                 }
-                // If UPLOAD_ERR_NO_FILE, no file was uploaded for this field; you can skip it
+            } elseif (isset($_POST[$inkey])) {
+                $v = $_POST[$inkey];
+                $form_fields[$store_key] = is_array($v)
+                    ? array_map('sanitize_text_field', $v)
+                    : sanitize_text_field($v);
             }
         }
 
-        // Get 'map_data' from $_POST
-        if (isset($_POST['map_data'])) {
-            $map_data_json = stripslashes($_POST['map_data']);
-            $map_data = json_decode($map_data_json, true);
-            if ($map_data === null && json_last_error() !== JSON_ERROR_NONE) {
-                wp_send_json_error('Datos JSON inválidos para map_data.');
-                wp_die();
-            }
-        } else {
+        /* ────── 4. Procesar map_data ────── */
+        if (empty($_POST['map_data'])) {
             wp_send_json_error('No se proporcionó map_data.');
             wp_die();
         }
 
-        // Assign the form_fields to the 'properties' of the Feature
-        $map_data['properties'] = $form_fields;
+        $map_raw = stripslashes($_POST['map_data']);
+        $map_arr = json_decode($map_raw, true);
 
-        // Ensure 'geometry' comes before 'properties' in the JSON
-        $ordered_map_data = array(
-            'type' => $map_data['type'],
-            'geometry' => $map_data['geometry'],
-            'properties' => $map_data['properties']
+        if ($map_arr === null && json_last_error() !== JSON_ERROR_NONE) {
+            wp_send_json_error('Datos JSON inválidos para map_data.');
+            wp_die();
+        }
+
+        $map_arr['properties'] = $form_fields;
+
+        $feature = array(
+            'type'       => $map_arr['type'],
+            'geometry'   => $map_arr['geometry'],
+            'properties' => $map_arr['properties'],
         );
 
-        // Re-encode the JSON without escaping unicode and slashes
-        $final_map_data_json = json_encode([$ordered_map_data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        /* ────── 5. Guardar la entrada ────── */
+        $entry_data = array(
+            'map_data' => wp_slash(wp_json_encode(array($feature), JSON_UNESCAPED_UNICODE)),
+            'form_type' => $form_type,
+        );
 
-        // Escape the JSON string
-        $final_map_data_json_escaped = addslashes($final_map_data_json);
+        $this->model->save_entry($entry_data, get_current_user_id());
 
-        // Prepare the data to be saved
-        $entry_data = array();
-        $entry_data['map_data'] = $final_map_data_json_escaped;
-        $entry_data['form_type'] = isset($form_type) ? $form_type : 0;
+        wp_mail(
+            get_option('admin_email'),
+            'Nueva presentación de formulario',
+            'Se ha enviado un nuevo formulario y está pendiente de aprobación.'
+        );
 
-
-        // Save the data using your model's save_entry method
-        $user_id = get_current_user_id();
-        $this->model->save_entry($entry_data, $user_id);
-
-        // Send notification to the administrator
-        wp_mail(get_option('admin_email'), 'Nueva presentación de formulario', 'Se ha enviado un nuevo formulario y está pendiente de aprobación.');
-
-        // Send success response
         wp_send_json_success('Formulario enviado exitosamente.');
     }
 
 
 
+    public function get_filter_settings()
+    {
+        $filter_settings = get_option('nm_filter_settings', array());
+        $formatted_filters = array();
+
+        if (!empty($filter_settings)) {
+            $form_data = $this->model->get_form(0);
+
+            foreach ($filter_settings as $field_key => $settings) {
+                if ($settings['active']) {
+                    // Buscar el campo en el formulario para obtener sus opciones
+                    foreach ($form_data['fields'] as $field) {
+                        if ($field['name'] === $field_key && isset($field['options'])) {
+                            $formatted_filters[] = array(
+                                'field' => $field_key,
+                                'button_text' => $settings['button_text'],
+                                'options' => $field['options'],
+                                'style' => $settings['style']
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $formatted_filters;
+    }
 
 
 

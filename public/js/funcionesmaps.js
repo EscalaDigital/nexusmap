@@ -1,5 +1,3 @@
-
-
 //funcion para descargar datos en formato geojson
 // Manejar el botón de descarga
 function downloadGeoJson() {
@@ -48,14 +46,39 @@ function performSearch(query) {
         return;
     }
 
-    // Usar el geocodificador para obtener las coordenadas
-    var geocoder = L.Control.Geocoder.nominatim(); // O el geocodificador que estés utilizando
-    geocoder.geocode(query, function (results) {
-        if (results && results.length > 0) {
-            var result = results[0];
-            map.setView(result.center, 18); // Ajusta el nivel de zoom según sea necesario
-        } else {
-            alert('No se encontraron resultados para: ' + query);
+    // Usar el servicio de Nominatim directamente
+    var nominatimUrl = 'https://nominatim.openstreetmap.org/search';
+
+    jQuery.ajax({
+        url: nominatimUrl,
+        data: {
+            q: query,
+            format: 'json',
+            limit: 1
+        },
+        jsonp: false,
+        success: function (results) {
+            if (results && results.length > 0) {
+                var result = results[0];
+                var latlng = [parseFloat(result.lat), parseFloat(result.lon)];
+
+                // Eliminar marcador anterior si existe
+                if (window.searchMarker) {
+                    map.removeLayer(window.searchMarker);
+                }
+
+
+                // Centrar el mapa en la ubicación
+                map.setView(latlng, 16);
+
+                // Mostrar popup con el nombre del lugar
+                window.searchMarker.bindPopup(result.display_name).openPopup();
+            } else {
+                alert('No se encontraron resultados para: ' + query);
+            }
+        },
+        error: function () {
+            alert('Error al realizar la búsqueda. Por favor, inténtelo de nuevo.');
         }
     });
 }
@@ -66,38 +89,42 @@ function performSearch(query) {
 function showModal(properties) {
     var modalContent = '<div class="nm-modal-content">';
 
+    // Crear un mapa de nombres de campo a labels usando nmFormStructure
+    var fieldLabels = {};
+    if (typeof nmFormStructure !== 'undefined' && nmFormStructure.fields) {
+        nmFormStructure.fields.forEach(function (field) {
+            fieldLabels['nm_' + field.name] = field.label;
+        });
+    }
+
     for (var key in properties) {
         if (properties.hasOwnProperty(key)) {
-            // Omitir el 'entry_id' si aún está presente
-            if (key === 'entry_id') {
+            // Omitir campos especiales
+            if (key === 'entry_id' || key === 'layers' || key === 'has_layer' || key === 'text_layers') {
                 continue;
             }
 
-            // Remover el prefijo 'nm_' si existe (si no lo has hecho ya en el servidor)
-            var cleanKey = key.startsWith('nm_') ? key.substring(3) : key;
+            // Mostrar solo campos que empiecen por 'nm_'
+            if (!key.startsWith('nm_')) {
+                continue;
+            }
 
-            // Formatear la clave para mostrarla como etiqueta
-            var label = cleanKey.charAt(0).toUpperCase() + cleanKey.slice(1).replace(/_/g, ' ');
-
+            // Usar el label del formulario si está disponible, si no, formatear el nombre del campo
+            var label = getFieldLabel(key);
             var value = properties[key];
 
             // Verificar si el valor es una URL de archivo
             if (isValidURL(value) && isFile(value)) {
-                // Determinar el tipo de archivo por la extensión
                 var fileType = getFileExtension(value).toLowerCase();
 
                 if (isImage(fileType)) {
-                    // Mostrar la imagen
                     modalContent += '<p><strong>' + label + ':</strong><br><img src="' + value + '" alt="' + label + '" style="max-width:100%; height:auto;"></p>';
                 } else if (fileType === 'pdf') {
-                    // Mostrar un enlace al PDF
                     modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" target="_blank">Ver documento PDF</a></p>';
                 } else {
-                    // Para otros tipos de archivos, mostrar un enlace de descarga
                     modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" download>Descargar archivo</a></p>';
                 }
             } else {
-                // Mostrar el valor como texto
                 modalContent += '<p><strong>' + label + ':</strong> ' + value + '</p>';
             }
         }
@@ -105,24 +132,35 @@ function showModal(properties) {
 
     modalContent += '</div>';
 
-    // Insertar el contenido en el cuerpo del modal
+    var $mapContainer = jQuery('#nm-main-map');
+    var $modal = jQuery('#nm-modal');
+
+    if ($modal.length === 0) {
+        $modal = jQuery('<div id="nm-modal" class="nm-modal"><span id="nm-modal-close" class="nm-modal-close">&times;</span><div id="nm-modal-body"></div></div>');
+        $mapContainer.append($modal);
+    }
+
     jQuery('#nm-modal-body').html(modalContent);
+    $modal.css('display', 'block');
+    void $modal[0].offsetWidth;
+    $modal.addClass('active');
 
-    // Mostrar el modal
-    jQuery('#nm-modal').css('display', 'block');
-
-    // Manejar el cierre del modal
-    jQuery('#nm-modal-close').on('click', function () {
-        jQuery('#nm-modal').css('display', 'none');
+    jQuery('#nm-modal-close').off('click').on('click', function () {
+        $modal.removeClass('active');
+        setTimeout(function () {
+            $modal.css('display', 'none');
+        }, 300);
     });
 
-    jQuery(window).on('click', function (event) {
+    jQuery(window).off('click.modal').on('click.modal', function (event) {
         if (jQuery(event.target).is('#nm-modal')) {
-            jQuery('#nm-modal').css('display', 'none');
+            $modal.removeClass('active');
+            setTimeout(function () {
+                $modal.css('display', 'none');
+            }, 300);
         }
     });
 }
-
 
 /// Función para mostrar el formulario de añadir WMS
 function showAddWmsForm() {
@@ -276,4 +314,21 @@ function isImage(extension) {
     var imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
     return imageExtensions.includes(extension);
 }
+
+// Mapa de nombres de campo -> etiquetas legibles
+var fieldLabels = {};
+function getFieldLabel(field) {
+    // Cachea las etiquetas solo una vez
+    if (Object.keys(fieldLabels).length === 0 && typeof nmFormStructure !== 'undefined') {
+        nmFormStructure.fields.forEach(function (f) {
+            fieldLabels['nm_' + f.name] = f.label;
+        });
+    }
+
+    // Soporta tanto 'field' como 'nm_field'
+    var key = field.startsWith('nm_') ? field : 'nm_' + field;
+    return fieldLabels[key] || field.replace(/^nm_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+
 

@@ -134,54 +134,66 @@ jQuery(document).ready(function ($) {
     jQuery(document).on('click', '.remove-option', function () {
         jQuery(this).closest('.select-option').remove();
     });
+    
 
+    // Función de normalización de nombres de campos
+function normalizeFieldName(rawName) {
+    return rawName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+        .replace(/[^a-z0-9]+/g, '_')     // Caracteres especiales a guiones bajos
+        .replace(/_+/g, '_')             // Eliminar guiones bajos múltiples
+        .replace(/^_|_$/g, '');          // Quitar guiones al inicio/final
+}
     // Modificar la función de guardar formulario para incluir checkboxes
-    // Function to collect form fields and send to server
-    function saveForm(formSelector, formType) {
-        var formFields = [];
-        jQuery(formSelector + ' .nm-form-field').each(function () {
-            var fieldType = jQuery(this).data('type');
-            var fieldLabel = jQuery(this).find('.field-label').val() || '';
-            var fieldName = jQuery(this).find('.field-name').val() || '';
-            var fieldOptions = [];
+    // Modificar la función saveForm existente
+function saveForm(formSelector, formType) {
+    var formFields = [];
+    jQuery(formSelector + ' .nm-form-field').each(function () {
+        var fieldType = jQuery(this).data('type');
+        var fieldLabel = jQuery(this).find('.field-label').val() || '';
+        var rawName = jQuery(this).find('.field-name').val() || fieldLabel;
+        var fieldName = normalizeFieldName(rawName);
+        var fieldOptions = [];
 
-            // Collect options if the field has them
-            if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
-                jQuery(this).find('.field-option').each(function () {
-                    var optionValue = jQuery(this).val();
-                    if (optionValue) {
-                        fieldOptions.push(optionValue);
-                    }
-                });
-            }
+        // Collect options if the field has them
+        if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
+            jQuery(this).find('.field-option').each(function () {
+                var optionValue = jQuery(this).val();
+                if (optionValue) {
+                    fieldOptions.push(optionValue);
+                }
+            });
+        }
 
-            var fieldData = {
-                type: fieldType,
-                label: fieldLabel,
-                name: fieldName
-            };
+        var fieldData = {
+            type: fieldType,
+            label: fieldLabel,
+            name: fieldName
+        };
 
-            if (fieldOptions.length > 0) {
-                fieldData.options = fieldOptions;
-            }
+        if (fieldOptions.length > 0) {
+            fieldData.options = fieldOptions;
+        }
 
-            formFields.push(fieldData);
-        });
+        formFields.push(fieldData);
+    });
 
-        // Send formFields to the server via AJAX
-        $.post(nmAdmin.ajax_url, {
-            action: 'nm_save_form',
-            form_type: formType,
-            form_data: { fields: formFields },
-            nonce: nmAdmin.nonce
-        }, function (response) {
-            if (response.success) {
-                alert('Form saved successfully.');
-            } else {
-                alert('Error saving form.');
-            }
-        });
-    }
+    // Send formFields to the server via AJAX
+    $.post(nmAdmin.ajax_url, {
+        action: 'nm_save_form',
+        form_type: formType,
+        form_data: { fields: formFields },
+        nonce: nmAdmin.nonce
+    }, function (response) {
+        if (response.success) {
+            alert('Form saved successfully.');
+        } else {
+            alert('Error saving form.');
+        }
+    });
+}
 
     // Function to validate if all fields are filled
     function validateForm(formId) {
@@ -248,4 +260,154 @@ jQuery(document).ready(function ($) {
             }
         });
     }
+
+    $('#nm-layer-settings').on('submit', function (e) {
+        e.preventDefault();
+        
+        var $form = $(this);
+        var $submitButton = $form.find('button[type="submit"]');
+        var originalText = $submitButton.text();
+        
+        // Recopilar datos del formulario
+        var settings = {
+            layers: {},
+            text_layers: {},
+            nm_text_layer_name: $('#nm_text_layer_name').val() // Añadir el nombre de la capa de texto
+        };
+        
+        // Procesar campos de capas (layers)
+        $form.find('input[name^="layers["]').each(function() {
+            var $input = $(this);
+            var name = $input.attr('name');
+            var matches = name.match(/layers\[([^\]]+)\]\[([^\]]+)\]/);
+            
+            if (matches) {
+                var fieldKey = matches[1];
+                var propertyName = matches[2];
+                var value = $input.val();
+                
+                if ($input.attr('type') === 'checkbox') {
+                    value = $input.prop('checked') ? 'on' : 'off';
+                }
+                
+                if (!settings.layers[fieldKey]) {
+                    settings.layers[fieldKey] = {};
+                }
+                
+                if (propertyName === 'colors' || propertyName === 'labels') {
+                    if (!settings.layers[fieldKey][propertyName]) {
+                        settings.layers[fieldKey][propertyName] = [];
+                    }
+                    settings.layers[fieldKey][propertyName].push(value);
+                } else {
+                    settings.layers[fieldKey][propertyName] = value;
+                }
+            }
+        });
+        
+        // Procesar campos de texto (text_layers)
+        $form.find('input[name^="text_layers["]').each(function() {
+            var $input = $(this);
+            var name = $input.attr('name');
+            var matches = name.match(/text_layers\[([^\]]+)\]\[([^\]]+)\]/);
+            
+            if (matches) {
+                var fieldKey = matches[1];
+                var propertyName = matches[2];
+                var value = $input.val();
+                
+                if ($input.attr('type') === 'checkbox') {
+                    value = $input.prop('checked') ? 'on' : 'off';
+                }
+                
+                if (!settings.text_layers[fieldKey]) {
+                    settings.text_layers[fieldKey] = {};
+                }
+                
+                settings.text_layers[fieldKey][propertyName] = value;
+            }
+        });
+        
+        // Debug: Ver datos recopilados
+        console.log('Datos recopilados:', settings);
+        
+        // Deshabilitar formulario durante el envío
+        $form.find('input, select, button').prop('disabled', true);
+        $submitButton.text('Guardando...');
+    
+        $.ajax({
+            url: nmAdmin.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'nm_save_layer_settings',
+                nonce: nmAdmin.nonce,
+                settings: settings
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message);
+                } else {
+                    alert(response.data);
+                }
+            },
+            error: function() {
+                alert('Error en la comunicación con el servidor');
+            },
+            complete: function() {
+                // Restaurar estado del formulario
+                $form.find('input, select, button').prop('disabled', false);
+                $submitButton.text(originalText);
+            }
+        });
+    });
+
+    /****************************************************
+     * Chart Manager
+     ****************************************************/
+    var chartIndex = $('.chart-box').length;
+    
+    console.log(chartIndex);
+
+    // Al hacer clic en "Añadir Gráfico"
+    jQuery('#add-chart').on('click', function () {
+        alert('Añadir Gráfico');
+        var template = $('#chart-template').html();
+        template = template.replace(/{index}/g, chartIndex++);
+        jQuery('#chart-container').append(template);
+    });
+
+    // Al hacer clic en "Eliminar Gráfico"
+    $(document).on('click', '.remove-chart', function () {
+        $(this).closest('.chart-box').remove();
+    });
+
+    // Manejo del Submit
+    $('#nm-chart-settings').on('submit', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: nmAdmin.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'nm_save_chart_settings',
+                nonce: nmAdmin.nonce,
+                settings: $(this).serialize()
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert('¡Configuración de gráficos guardada correctamente!');
+                } else {
+                    alert('Error al guardar la configuración de gráficos');
+                }
+            },
+            error: function () {
+                alert('Error en la comunicación con el servidor');
+            }
+        });
+    });
+
+
 });
+
+
+

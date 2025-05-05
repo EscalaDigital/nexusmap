@@ -49,22 +49,29 @@
   
   /* Estilo para el label que contiene el checkbox y el texto */
   .leaflet-control-layers-overlays label {
-    display: block; /* Forzar el label a ocupar toda la línea */
-    padding: 5px; /* Espaciado interno */
-    cursor: pointer; /* Cambiar el cursor al pasar por encima */
-    transition: background-color 0.3s ease; /* Transición suave para hover */
+    display: flex !important;
+    align-items: center;
+    padding: 5px;
+    margin: 0;
+  }
+  
+  /* Ocultar los indicadores de color */
+  .layer-color-indicator {
+    display: none !important;
+  }
+
+  /* Mostrar el texto de las capas */
+  .leaflet-control-layers-overlays label span {
+    display: inline-block !important;
+    font-size: 14px; /* Tamaño de fuente */
+    color: #333; /* Color del texto */
+    margin-left: 8px;
   }
   
   /* Estilo para el checkbox */
   .leaflet-control-layers-selector {
     margin-right: 8px; /* Separación entre el checkbox y el texto */
     vertical-align: middle; /* Alinear el checkbox con el texto */
-  }
-  
-  /* Estilo del texto junto al checkbox */
-  .leaflet-control-layers-overlays label span {
-    font-size: 14px; /* Tamaño de fuente */
-    color: #333; /* Color del texto */
   }
   
   /* Efecto hover para el label */
@@ -76,6 +83,22 @@
   .leaflet-control-layers-selector:checked + span {
     font-weight: bold; /* Negrita para el texto cuando está seleccionado */
   }
+
+  .leaflet-control-layers-expanded {
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  /* Estilo para los grupos de capas */
+  .layer-group-title {
+    font-weight: bold;
+    margin: 10px 0 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+  }
   
   /* Ajustes para pantallas pequeñas */
   @media (max-width: 600px) {
@@ -86,62 +109,265 @@
   }
   
 
-
-
-/* Estilos para el modal */
+/* Estilos para el modal lateral */
 .nm-modal {
-    display: none; /* Oculto por defecto */
-    position: fixed;
+  display: none;
+  position: absolute; /* Mantenemos absolute para que se posicione respecto al mapa */
+  z-index: 1000;
+  right: 0;
+  top: 0;
+  width: 400px;
+  height: 100%;
+  background-color: #fff;
+  box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  max-height: 100%;
+}
+
+.nm-modal.active {
+  transform: translateX(0);
+}
+
+.nm-modal-content {
+  padding: 25px;
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Estilos mejorados para el contenido */
+.nm-modal-content p {
+  background: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.nm-modal-content p:last-child {
+  margin-bottom: 0;
+}
+
+.nm-modal-content strong {
+  display: block;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nm-modal-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-top: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nm-modal-content a {
+  display: inline-block;
+  color: #0073aa;
+  text-decoration: none;
+  padding: 8px 15px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  margin-top: 5px;
+  transition: all 0.3s ease;
+}
+
+.nm-modal-content a:hover {
+  background: #0073aa;
+  color: #fff;
+}
+
+/* Estilos para el scroll */
+.nm-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.nm-modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.nm-modal-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.nm-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Botón de cierre mejorado */
+.nm-modal-close {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-size: 24px;
+  cursor: pointer;
+  background: #333;
+  color: white;
+  border-radius: 50%;
+  z-index: 1001;
+}
+
+.nm-modal-close:hover {
+  background: #555;
+}
+
+
+/* Ajustes responsive */
+@media screen and (max-width: 600px) {
+  .nm-modal {
+      width: 100%;
+
+  }
+}
+
+/* Estilos para el modal de gráficos */
+
+/* Estilos específicos para el modal de gráficos */
+#nm-charts-modal {
+    display: none;
+    position: absolute;
     z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(255, 255, 255, 0.95);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
 }
 
-.nm-modal-content {
-    background-color: #fff;
-    margin: 10% auto;
+#nm-charts-modal.active {
+    transform: translateY(0);
+}
+
+#nm-charts-modal .nm-modal-content {
     padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
+    height: 100%;
+    box-sizing: border-box;
+    position: relative;
 }
 
-.nm-modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
+/* Contenedor de gráficos con scroll horizontal */
+#nm-charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  gap: 30px;
+  padding: 20px;
+  height: calc(100% - 40px);
+  overflow-y: auto;
 }
-
-.nm-modal-close:hover,
-.nm-modal-close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.nm-modal-content h3 {
-  margin-top: 0;
-}
-
-.nm-modal-content label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.nm-modal-content input {
+/* Contenedor individual de cada gráfico */
+#nm-charts-container > div {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   width: 100%;
-  margin-bottom: 10px;
-  padding: 5px;
+  min-height: 400px;
+}
+/* Ajuste para los canvas de los gráficos */
+#nm-charts-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 600px;
 }
 
-.nm-modal-content button {
-  margin-right: 5px;
+
+/* Estilos para el scroll horizontal */
+#nm-charts-container::-webkit-scrollbar {
+  height: 8px;
 }
+
+#nm-charts-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+#nm-charts-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+#nm-charts-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Botón de cierre */
+#nm-charts-modal .nm-modal-close {
+  position: absolute;
+  right: 20px;
+  top: 10px;
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+#nm-charts-modal .nm-modal-close:hover {
+  background: #e5e5e5;
+  color: #333;
+}
+
+/* Ajustes responsivos */
+@media screen and (max-width: 768px) {
+  #nm-charts-modal {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 100vw;
+    transform: translateY(100%);
+  }
+
+  #nm-charts-modal.active {
+    transform: translateY(0);
+  }
+
+  #nm-charts-container {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 15px;
+  }
+
+  #nm-charts-container > div {
+    min-width: 100%;
+    height: auto;
+    margin-bottom: 20px;
+  }
+
+  #nm-charts-container canvas {
+    height: 400px !important;
+  }
+
+  #nm-charts-container {
+    grid-template-columns: 1fr;
+}
+
+#nm-charts-container > div {
+    min-height: 300px;
+}
+}
+
 
 /* Contenedor de los controles superiores */
 
@@ -200,6 +426,223 @@
 .nm-search-input:focus {
     outline: none;
     border-color: #aaa;
+}
+
+/* Estilos para el panel de filtros flotante */
+/* Estilos para el panel de filtros */
+.nm-filters-container {
+  position: relative;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  z-index: 1000;
+}
+
+.nm-filters-toggle {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  cursor: pointer;
+  margin: 10px;
+  z-index: 998;
+}
+
+/* Estilos para el panel de filtros */
+.nm-filters-panel {
+  position: absolute;
+  left: 50px;
+  top: 10px;
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  width: 280px;
+  max-height: 60vh; /* Altura máxima del 80% del viewport */
+  overflow-y: auto; /* Habilita el scroll vertical */
+  z-index: 9999;
+}
+
+/* Estilos para el scroll */
+.nm-filters-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.nm-filters-panel.collapsed {
+  display: none;
+}
+
+.nm-filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.nm-filters-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.nm-close-filters {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.nm-filter-group {
+  margin-bottom: 15px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.nm-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.nm-filter-button {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.nm-filter-button.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+/* Estilos para el botón y el panel de la leyenda */
+.map-legend-control {
+    background-color: white;
+    padding: 8px 10px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.map-legend-control:hover {
+    background-color: #f4f4f4;
+}
+
+.map-legend-control:active {
+    background-color: #e6e6e6;
+}
+
+.map-legend-panel {
+    display: none;
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    z-index: 1000;
+    max-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.map-legend-panel.visible {
+    display: block;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+
+.legend-label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Estilos para el nuevo botón de leyenda personalizado */
+.legend-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    padding: 8px 12px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 99999; /* Aumentar el z-index para estar por encima de los controles de Leaflet */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.legend-button:hover {
+    background-color: #f4f4f4;
+}
+
+.legend-panel {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    right: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1500; /* Mismo z-index que el botón */
+    max-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.legend-panel.visible {
+    display: block;
+}
+
+.legend-group {
+    margin-bottom: 15px;
+}
+
+.legend-group strong {
+    display: block;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
 }
 
 

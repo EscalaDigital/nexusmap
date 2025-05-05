@@ -14,6 +14,7 @@ class NM {
         require_once NM_PLUGIN_DIR . 'includes/class-nm-loader.php';
         require_once NM_PLUGIN_DIR . 'admin/class-nm-admin.php';
         require_once NM_PLUGIN_DIR . 'public/class-nm-public.php';
+        require_once NM_PLUGIN_DIR . 'admin/NM_Chart_Manager.php';
 
         $this->loader = new NM_Loader();
     }
