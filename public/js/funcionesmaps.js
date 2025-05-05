@@ -1,5 +1,17 @@
-//funcion para descargar datos en formato geojson
-// Manejar el botón de descarga
+/**
+ * Conjunto de funciones para la gestión del mapa interactivo de NexusMap
+ * Este archivo contiene todas las funcionalidades relacionadas con:
+ * - Descarga de datos en formato GeoJSON
+ * - Búsqueda de ubicaciones
+ * - Visualización de datos en modales
+ * - Gestión de capas WMS
+ * - Utilidades para manejo de archivos y URLs
+ */
+
+/**
+ * Descarga los datos del mapa en formato GeoJSON
+ * Realiza una petición AJAX para obtener los datos y crear un archivo descargable
+ */
 function downloadGeoJson() {
     jQuery.ajax({
         url: nmMapData.ajax_url,
@@ -30,7 +42,10 @@ function downloadGeoJson() {
     });
 }
 
-//funcion para abrir el control de busqueda
+/**
+ * Muestra/oculta el campo de búsqueda en el mapa
+ * Gestiona la visibilidad del input de búsqueda y le da foco cuando se muestra
+ */
 function toggleSearchInput() {
     var $searchInput = jQuery('.nm-search-input');
     $searchInput.toggle();
@@ -39,7 +54,10 @@ function toggleSearchInput() {
     }
 }
 
-
+/**
+ * Realiza una búsqueda de ubicación utilizando OpenStreetMap Nominatim
+ * @param {string} query - El texto a buscar (dirección, lugar, etc.)
+ */
 function performSearch(query) {
     if (!query) {
         alert('Por favor, ingrese una ubicación para buscar.');
@@ -67,7 +85,6 @@ function performSearch(query) {
                     map.removeLayer(window.searchMarker);
                 }
 
-
                 // Centrar el mapa en la ubicación
                 map.setView(latlng, 16);
 
@@ -83,9 +100,13 @@ function performSearch(query) {
     });
 }
 
-
-//funciones para mostrar datos de elementos puntuales
-// Función para mostrar un modal con las propiedades de un elemento
+/**
+ * Muestra un modal con la información detallada de un punto del mapa
+ * Procesa los datos según el tipo de contenido (texto, imágenes, archivos)
+ * y los muestra en un modal interactivo
+ * 
+ * @param {Object} properties - Propiedades del punto a mostrar
+ */
 function showModal(properties) {
     var modalContent = '<div class="nm-modal-content">';
 
@@ -162,7 +183,11 @@ function showModal(properties) {
     });
 }
 
-/// Función para mostrar el formulario de añadir WMS
+/**
+ * Muestra el formulario para añadir una nueva capa WMS al mapa
+ * Crea un formulario modal que permite al usuario introducir la URL
+ * y el nombre de la capa WMS que desea agregar
+ */
 function showAddWmsForm() {
     if (jQuery('#nm-wms-form').length === 0) {
         var $wmsForm = jQuery('<div>', { id: 'nm-wms-form', class: 'nm-modal' });
@@ -279,9 +304,11 @@ function showAddWmsForm() {
     jQuery('#nm-wms-form').show();
 }
 
-
-
-// Función para validar si una cadena es una URL
+/**
+ * Comprueba si una cadena es una URL válida
+ * @param {string} string - La cadena a validar
+ * @returns {boolean} - true si es una URL válida, false en caso contrario
+ */
 function isValidURL(string) {
     try {
         new URL(string);
@@ -291,13 +318,21 @@ function isValidURL(string) {
     }
 }
 
-// Función para verificar si una URL es de un archivo (por ejemplo, si termina con una extensión de archivo)
+/**
+ * Verifica si una URL corresponde a un archivo
+ * @param {string} url - La URL a verificar
+ * @returns {boolean} - true si es un archivo, false en caso contrario
+ */
 function isFile(url) {
     var extension = getFileExtension(url);
     return extension !== '';
 }
 
-// Función para obtener la extensión del archivo de una URL
+/**
+ * Extrae la extensión de un archivo desde su URL
+ * @param {string} url - La URL del archivo
+ * @returns {string} - La extensión del archivo o cadena vacía si no tiene
+ */
 function getFileExtension(url) {
     var parsedUrl = new URL(url);
     var pathname = parsedUrl.pathname;
@@ -309,14 +344,29 @@ function getFileExtension(url) {
     return '';
 }
 
-// Función para verificar si una extensión es de imagen
+/**
+ * Verifica si una extensión corresponde a un formato de imagen
+ * @param {string} extension - La extensión a verificar
+ * @returns {boolean} - true si es una imagen, false en caso contrario
+ */
 function isImage(extension) {
     var imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
     return imageExtensions.includes(extension);
 }
 
-// Mapa de nombres de campo -> etiquetas legibles
+/**
+ * Sistema de caché para las etiquetas de los campos del formulario
+ * Almacena y recupera las etiquetas para evitar procesarlas múltiples veces
+ */
 var fieldLabels = {};
+
+/**
+ * Obtiene la etiqueta legible para un campo del formulario
+ * Si no existe una etiqueta definida, formatea el nombre del campo
+ * 
+ * @param {string} field - El nombre del campo
+ * @returns {string} - La etiqueta legible del campo
+ */
 function getFieldLabel(field) {
     // Cachea las etiquetas solo una vez
     if (Object.keys(fieldLabels).length === 0 && typeof nmFormStructure !== 'undefined') {
