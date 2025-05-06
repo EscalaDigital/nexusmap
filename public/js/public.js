@@ -282,12 +282,22 @@ jQuery(document).ready(function ($) {
         function updateVisiblePoints(activeFilters) {
             let visibleCount = 0;
 
-            // Primero, limpiar todas las capas
-            markersLayer.clearLayers();
+            // Limpiar el contenido de todos los LayerGroup definidos en la variable global 'overlays'
+
+            for (const overlayName in overlays) {
+                if (overlays.hasOwnProperty(overlayName)) {
+                    const layerGroup = overlays[overlayName];
+                    // Asegurarse de que es un LayerGroup y no otro tipo de capa (ej. TileLayer si se mezclaran)
+                    if (layerGroup && typeof layerGroup.clearLayers === 'function') {
+                        layerGroup.clearLayers();
+                    }
+                }
+            }
+
 
             // Recorrer todos los marcadores guardados
             allMarkers.forEach(function (marker) {
-                let visible = true;
+                let isVisibleByFilter = true;
 
 
 
@@ -297,17 +307,22 @@ jQuery(document).ready(function ($) {
                         const fieldName = 'nm_' + field;
                         const fieldValue = marker.feature.properties[fieldName];
 
-
                         if (!fieldValue || !activeFilters[field].has(fieldValue.toString())) {
-                            visible = false;
+                            isVisibleByFilter = false;
                             break;
                         }
                     }
                 }
 
-                if (visible) {
-                    markersLayer.addLayer(marker);
-                    visibleCount++;
+                if (isVisibleByFilter && marker.originalLayerGroup) {
+                    // Añadir el marcador a su grupo de capa original si pasa el filtro
+                    marker.originalLayerGroup.addLayer(marker);
+
+                    // Si el grupo de capa original del marcador está actualmente visible en el mapa,
+                    // contar este marcador.
+                    if (map.hasLayer(marker.originalLayerGroup)) {
+                        visibleCount++;
+                    }
                 }
             });
 
@@ -375,6 +390,7 @@ jQuery(document).ready(function ($) {
                                 });
 
                                 textLayerGroup.addLayer(marker);
+                                marker.originalLayerGroup = textLayerGroup;
                                 allMarkers.push(marker);
                             });
                         }
@@ -402,6 +418,7 @@ jQuery(document).ready(function ($) {
 
                                     if (layerGroups[layerDef.layer_field]) {
                                         layerGroups[layerDef.layer_field].addLayer(marker);
+                                        marker.originalLayerGroup = layerGroups[layerDef.layer_field];
                                     }
                                     allMarkers.push(marker);
                                 }
