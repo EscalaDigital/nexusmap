@@ -636,23 +636,52 @@
     background-color: #f4f4f4;
 }
 
+/* Estilos para el panel de leyenda */
 .legend-panel {
-    display: none;
-    position: absolute;
-    bottom: 70px;
-    right: 20px;
-    background: white;
-    padding: 15px;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1500; /* Mismo z-index que el botón */
-    max-width: 250px;
-    max-height: 400px;
-    overflow-y: auto;
+  display: none;
+  position: absolute;
+  bottom: 70px; /* Posición desde abajo */
+  right: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
+  max-width: 250px;
+  max-height: calc(100% - 100px); /* Altura máxima adaptativa */
+  overflow-y: auto;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
 }
 
 .legend-panel.visible {
-    display: block;
+  display: block;
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media screen and (max-width: 768px) {
+  .legend-panel {
+      right: 10px;
+      left: 10px;
+      max-width: calc(100% - 20px);
+      bottom: 60px;
+  }
+  
+  .legend-button {
+      right: 10px;
+      bottom: 10px;
+  }
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media screen and (max-height: 500px) {
+  .legend-panel {
+      max-height: calc(100% - 80px);
+      bottom: 50px;
+  }
 }
 
 .legend-group {
