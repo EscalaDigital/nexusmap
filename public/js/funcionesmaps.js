@@ -109,80 +109,141 @@ function performSearch(query) {
  */
 function showModal(properties) {
     var modalContent = '<div class="nm-modal-content">';
+    var currentSection = null;
+    var sectionContent = {};
 
-    // Crear un mapa de nombres de campo a labels usando nmFormStructure
-    var fieldLabels = {};
+    // Organizar campos por secciones usando nmFormStructure
     if (typeof nmFormStructure !== 'undefined' && nmFormStructure.fields) {
-        nmFormStructure.fields.forEach(function (field) {
-            fieldLabels['nm_' + field.name] = field.label;
-        });
-    }
-
-    for (var key in properties) {
-        if (properties.hasOwnProperty(key)) {
-            // Omitir campos especiales
-            if (key === 'entry_id' || key === 'layers' || key === 'has_layer' || key === 'text_layers') {
-                continue;
-            }
-
-            // Mostrar solo campos que empiecen por 'nm_'
-            if (!key.startsWith('nm_')) {
-                continue;
-            }
-
-            // Usar el label del formulario si está disponible, si no, formatear el nombre del campo
-            var label = getFieldLabel(key);
-            var value = properties[key];
-
-            // Verificar si el valor es una URL de archivo
-            if (isValidURL(value) && isFile(value)) {
-                var fileType = getFileExtension(value).toLowerCase();
-
-                if (isImage(fileType)) {
-                    modalContent += '<p><strong>' + label + ':</strong><br><img src="' + value + '" alt="' + label + '" style="max-width:100%; height:auto;"></p>';
-                } else if (fileType === 'pdf') {
-                    modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" target="_blank">Ver documento PDF</a></p>';
-                } else {
-                    modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" download>Descargar archivo</a></p>';
-                }
+        nmFormStructure.fields.forEach(function(field) {
+            if (field.type === 'header') {
+                currentSection = field.label;
+                sectionContent[currentSection] = [];
             } else {
-                modalContent += '<p><strong>' + label + ':</strong> ' + value + '</p>';
+                const fieldKey = 'nm_' + field.name;
+                // Solo procesar si existe el valor en properties
+                if (properties.hasOwnProperty(fieldKey)) {
+                    const value = properties[fieldKey];
+                    
+                    // Crear el contenido HTML del campo
+                    let fieldHtml = '';
+                    if (isValidURL(value) && isFile(value)) {
+                        const fileType = getFileExtension(value).toLowerCase();
+                        if (isImage(fileType)) {
+                            fieldHtml = `<p class="nm-modal-field">
+                                <strong>${field.label}:</strong><br>
+                                <img src="${value}" alt="${field.label}" style="max-width:100%; height:auto;">
+                            </p>`;
+                        } else if (fileType === 'pdf') {
+                            fieldHtml = `<p class="nm-modal-field">
+                                <strong>${field.label}:</strong> 
+                                <a href="${value}" target="_blank">Ver documento PDF</a>
+                            </p>`;
+                        } else {
+                            fieldHtml = `<p class="nm-modal-field">
+                                <strong>${field.label}:</strong> 
+                                <a href="${value}" download>Descargar archivo</a>
+                            </p>`;
+                        }
+                    } else {
+                        fieldHtml = `<p class="nm-modal-field">
+                            <strong>${field.label}:</strong> ${value}
+                        </p>`;
+                    }
+
+                    // Añadir el campo a la sección correspondiente
+                    if (currentSection) {
+                        sectionContent[currentSection].push(fieldHtml);
+                    } else {
+                        // Si no hay sección actual, crear una sección "General"
+                        if (!sectionContent['General']) {
+                            sectionContent['General'] = [];
+                        }
+                        sectionContent['General'].push(fieldHtml);
+                    }
+                }
+            }
+        });
+
+        // Construir el contenido del modal con las secciones
+        Object.keys(sectionContent).forEach(function(sectionName) {
+            if (sectionContent[sectionName].length > 0) {
+                modalContent += `<div class="nm-modal-section">
+                    <h3 class="nm-modal-header">${sectionName}</h3>
+                    ${sectionContent[sectionName].join('')}
+                </div>`;
+            }
+        });
+    } else {
+        // Fallback: si no existe nmFormStructure, mostrar todos los campos sin secciones
+        for (var key in properties) {
+            if (properties.hasOwnProperty(key) &&
+                key !== 'entry_id' && 
+                key !== 'layers' && 
+                key !== 'has_layer' && 
+                key !== 'text_layers' &&
+                key.startsWith('nm_')) {
+
+                const label = getFieldLabel(key);
+                const value = properties[key];
+
+                if (isValidURL(value) && isFile(value)) {
+                    const fileType = getFileExtension(value).toLowerCase();
+                    if (isImage(fileType)) {
+                        modalContent += `<p><strong>${label}:</strong><br>
+                            <img src="${value}" alt="${label}" style="max-width:100%; height:auto;">
+                        </p>`;
+                    } else if (fileType === 'pdf') {
+                        modalContent += `<p><strong>${label}:</strong> 
+                            <a href="${value}" target="_blank">Ver documento PDF</a>
+                        </p>`;
+                    } else {
+                        modalContent += `<p><strong>${label}:</strong> 
+                            <a href="${value}" download>Descargar archivo</a>
+                        </p>`;
+                    }
+                } else {
+                    modalContent += `<p><strong>${label}:</strong> ${value}</p>`;
+                }
             }
         }
     }
 
     modalContent += '</div>';
 
+    // Crear o actualizar el modal
     var $mapContainer = jQuery('#nm-main-map');
     var $modal = jQuery('#nm-modal');
 
     if ($modal.length === 0) {
-        $modal = jQuery('<div id="nm-modal" class="nm-modal"><span id="nm-modal-close" class="nm-modal-close">&times;</span><div id="nm-modal-body"></div></div>');
+        $modal = jQuery('<div id="nm-modal" class="nm-modal">' +
+            '<span id="nm-modal-close" class="nm-modal-close">&times;</span>' +
+            '<div id="nm-modal-body"></div></div>');
         $mapContainer.append($modal);
     }
 
+    // Actualizar contenido y mostrar modal
     jQuery('#nm-modal-body').html(modalContent);
     $modal.css('display', 'block');
     void $modal[0].offsetWidth;
     $modal.addClass('active');
 
-    jQuery('#nm-modal-close').off('click').on('click', function () {
+    // Eventos de cierre
+    jQuery('#nm-modal-close').off('click').on('click', function() {
         $modal.removeClass('active');
-        setTimeout(function () {
+        setTimeout(function() {
             $modal.css('display', 'none');
         }, 300);
     });
 
-    jQuery(window).off('click.modal').on('click.modal', function (event) {
+    jQuery(window).off('click.modal').on('click.modal', function(event) {
         if (jQuery(event.target).is('#nm-modal')) {
             $modal.removeClass('active');
-            setTimeout(function () {
+            setTimeout(function() {
                 $modal.css('display', 'none');
             }, 300);
         }
     });
 }
-
 /**
  * Muestra el formulario para añadir una nueva capa WMS al mapa
  * Crea un formulario modal que permite al usuario introducir la URL
