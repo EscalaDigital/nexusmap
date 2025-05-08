@@ -28,6 +28,8 @@
                 <li data-type="date">Date Picker</li>
                 <li data-type="url">URL Field</li>
                 <li data-type="range">Range Slider</li>
+                <li data-type="conditional-select">Conditional Dropdown</li>
+
             </ul>
         </div>
 

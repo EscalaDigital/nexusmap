@@ -45,6 +45,23 @@ class NM_Model {
         dbDelta( $sql );
     }
 
+    public static function create_conditional_fields_table() {
+        global $wpdb;
+        $charset_collate = $wpdb->get_charset_collate();
+        $table_name = $wpdb->prefix . 'nm_conditional_fields';
+    
+        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            select_id varchar(100) NOT NULL,
+            option_id varchar(100) NOT NULL,
+            fields_json longtext NOT NULL,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+    
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+    }
+
     // Methods to handle form data
  
     public function save_form($form_data, $form_type) {

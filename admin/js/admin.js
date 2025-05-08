@@ -109,16 +109,136 @@ jQuery(document).ready(function ($) {
         $optionsContainer.append(newOption);
     });
 
-    // Añadir nueva opción de select
+    // Manejador para select normal
     jQuery(document).on('click', '.add-select-option', function () {
         var $field = jQuery(this).closest('.nm-form-field');
-        var $optionsContainer = $field.find('.select-options');
-        var newOption = '<div class="select-option">' +
-            '<input type="text" class="option-value field-option" placeholder="Option Value">' +
-            '<span class="remove-option">Remove</span>' +
-            '</div>';
-        $optionsContainer.append(newOption);
+        // Solo proceder si es un select normal
+        if ($field.data('type') === 'select') {
+            var $optionsContainer = $field.find('.select-options');
+            var newOption = '<div class="select-option">' +
+                '<input type="text" class="option-value field-option" placeholder="Option Value">' +
+                '<span class="remove-option">Remove</span>' +
+                '</div>';
+            $optionsContainer.append(newOption);
+        }
     });
+
+    // Función para inicializar droppable en contenedores condicionales
+    function initializeConditionalDroppable($container) {
+        $container.find('.conditional-fields').droppable({
+            accept: '.conditional-fields-menu li',
+            drop: function (event, ui) {
+                var fieldType = ui.draggable.data('type');
+                var $dropZone = jQuery(this);
+
+                // Obtener plantilla del campo
+                jQuery.post(nmAdmin.ajax_url, {
+                    action: 'nm_get_field_template',
+                    field_type: fieldType,
+                    nonce: nmAdmin.nonce
+                }, function (response) {
+                    if (response.success) {
+                        $dropZone.append(response.data);
+                    }
+                });
+            }
+        }).sortable({
+            items: '.nm-form-field',
+            placeholder: 'field-placeholder'
+        });
+    }
+
+    // Manejador separado para select condicional
+    jQuery(document).on('click', '.add-conditional-option', function () {
+        var $field = jQuery(this).closest('.nm-form-field');
+        if ($field.data('type') !== 'conditional-select') return;
+
+        var optionId = 'opt_' + Date.now();
+
+        // Agregar opción
+        var $optionsContainer = $field.find('.select-options');
+        var newOption = `
+        <div class="select-option" data-option-id="${optionId}">
+            <input type="text" class="option-value field-option" placeholder="Option Value">
+            <span class="remove-option">Remove</span>
+        </div>`;
+        $optionsContainer.append(newOption);
+
+        // Agregar contenedor condicional
+        var $conditionalsContainer = $field.find('.conditional-containers');
+        var newContainer = `
+        <div class="conditional-container" data-option-id="${optionId}">
+            <h4>Fields for option: <span class="option-label"></span></h4>
+            <div class="conditional-fields"></div>
+            <button type="button" class="show-fields-menu">Add Field</button>
+        </div>`;
+        var $newContainer = jQuery(newContainer);
+        $conditionalsContainer.append($newContainer);
+
+        // Inicializar droppable en el nuevo contenedor
+        initializeConditionalDroppable($newContainer);
+
+        // Actualizar el texto de la opción cuando cambie
+        $field.find(`.select-option[data-option-id="${optionId}"] input`).on('input', function () {
+            $field.find(`.conditional-container[data-option-id="${optionId}"] .option-label`)
+                .text(jQuery(this).val());
+        });
+    });
+
+    // Modificar el manejador del menú de campos condicionales
+    jQuery(document).on('click', '.show-fields-menu', function (e) {
+        e.stopPropagation();
+        jQuery('.conditional-fields-menu-active').remove();
+
+        var $container = jQuery(this).closest('.conditional-container');
+        var $menu = $container.closest('.nm-form-field').find('.conditional-fields-menu')
+            .clone()
+            .addClass('conditional-fields-menu-active');
+
+        $menu.css({
+            position: 'absolute',
+            top: jQuery(this).offset().top + jQuery(this).outerHeight() + 'px',
+            left: jQuery(this).offset().left + 'px',
+            zIndex: 1000,
+            background: '#fff',
+            border: '1px solid #ccc',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            display: 'block'
+        });
+
+        // Hacer los elementos del menú draggables
+        $menu.find('li').draggable({
+            helper: 'clone',
+            connectToSortable: $container.find('.conditional-fields'),
+            revert: 'invalid'
+        });
+
+        jQuery('body').append($menu);
+    });
+
+    // Manejador para eliminar opciones normales
+    jQuery(document).on('click', '.remove-option', function () {
+        var $field = jQuery(this).closest('.nm-form-field');
+        var fieldType = $field.data('type');
+
+        if (fieldType === 'select') {
+            jQuery(this).closest('.select-option').remove();
+        } else if (fieldType === 'radio') {
+            jQuery(this).closest('.radio-option').remove();
+        } else if (fieldType === 'checkbox') {
+            jQuery(this).closest('.checkbox-option').remove();
+        }
+    });
+
+    // Manejador separado para eliminar opciones condicionales
+    jQuery(document).on('click', '.conditional-select .remove-option', function () {
+        var $option = jQuery(this).closest('.select-option');
+        var optionId = $option.data('option-id');
+
+        // Eliminar la opción y su contenedor condicional asociado
+        $option.closest('.nm-form-field').find(`.conditional-container[data-option-id="${optionId}"]`).remove();
+        $option.remove();
+    });;
 
     // Eliminar opción de radio
     jQuery(document).on('click', '.remove-option', function () {
@@ -134,67 +254,196 @@ jQuery(document).ready(function ($) {
     jQuery(document).on('click', '.remove-option', function () {
         jQuery(this).closest('.select-option').remove();
     });
-    
+
+
+
+
+    // Cerrar el menú al hacer clic fuera
+    jQuery(document).on('click', function (e) {
+        if (!jQuery(e.target).closest('.show-fields-menu, .conditional-fields-menu-active').length) {
+            jQuery('.conditional-fields-menu-active').remove();
+        }
+    });
+
+    // Hacer que los campos del menú sean arrastrables
+    jQuery(document).on('mouseenter', '.conditional-fields-menu li', function () {
+        jQuery(this).draggable({
+            helper: 'clone',
+            connectToSortable: '.conditional-fields'
+        });
+    });
+
 
     // Función de normalización de nombres de campos
-function normalizeFieldName(rawName) {
-    return rawName
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-        .replace(/[^a-z0-9]+/g, '_')     // Caracteres especiales a guiones bajos
-        .replace(/_+/g, '_')             // Eliminar guiones bajos múltiples
-        .replace(/^_|_$/g, '');          // Quitar guiones al inicio/final
-}
+    function normalizeFieldName(rawName) {
+        return rawName
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+            .replace(/[^a-z0-9]+/g, '_')     // Caracteres especiales a guiones bajos
+            .replace(/_+/g, '_')             // Eliminar guiones bajos múltiples
+            .replace(/^_|_$/g, '');          // Quitar guiones al inicio/final
+    }
     // Modificar la función de guardar formulario para incluir checkboxes
     // Modificar la función saveForm existente
-function saveForm(formSelector, formType) {
-    var formFields = [];
-    jQuery(formSelector + ' .nm-form-field').each(function () {
-        var fieldType = jQuery(this).data('type');
-        var fieldLabel = jQuery(this).find('.field-label').val() || '';
-        var rawName = jQuery(this).find('.field-name').val() || fieldLabel;
-        var fieldName = normalizeFieldName(rawName);
-        var fieldOptions = [];
+    function saveForm(formSelector, formType) {
+        var formFields = [];
+        var conditionalFields = [];
 
-        // Collect options if the field has them
-        if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
-            jQuery(this).find('.field-option').each(function () {
-                var optionValue = jQuery(this).val();
-                if (optionValue) {
-                    fieldOptions.push(optionValue);
+        jQuery(formSelector + ' .nm-form-field').each(function () {
+            var $field = jQuery(this);
+            var fieldType = $field.data('type');
+            var fieldLabel = $field.find('.field-label').val() || '';
+            var rawName = $field.find('.field-name').val() || fieldLabel;
+            var fieldName = normalizeFieldName(rawName);
+            var fieldOptions = [];
+
+            // Manejar campos condicionales
+            if (fieldType === 'conditional-select') {
+                var selectId = 'select_' + Date.now();
+                console.log('Iniciando procesamiento de campo condicional:', selectId);
+
+                var fieldOptions = [];
+                var optionsWithIds = []; // Array para almacenar opciones con sus IDs
+
+                // Recopilar opciones para el select principal
+                $field.find('.select-option').each(function () {
+                    var $option = jQuery(this);
+                    var optionId = $option.data('option-id');
+                    var optionValue = $option.find('.field-option').val();
+
+                    console.log('Procesando opción:', {
+                        optionId: optionId,
+                        optionValue: optionValue
+                    });
+
+                    if (optionValue) {
+                        fieldOptions.push(optionValue);
+                        // Guardar la opción con su ID
+                        optionsWithIds.push({
+                            id: optionId,
+                            value: optionValue
+                        });
+
+                        // Recopilar campos condicionales para esta opción
+                        var $conditionalContainer = $field.find(`.conditional-container[data-option-id="${optionId}"]`);
+
+                        console.log('Contenedor encontrado:', $conditionalContainer.length > 0);
+
+                        var conditionalFormFields = [];
+
+                        // Buscar campos dentro del contenedor específico
+                        $conditionalContainer.find('.conditional-fields > *').each(function () {
+                            var $condField = jQuery(this);
+
+                            var condFieldType = $condField.is('li') ? $condField.data('type') : $condField.find('.field-type').val();
+                            var condFieldLabel = $condField.is('li') ? $condField.text() : $condField.find('.field-label').val() || '';
+                            var condFieldName = normalizeFieldName(condFieldLabel);
+
+                            var condFieldData = {
+                                type: condFieldType,
+                                label: condFieldLabel,
+                                name: condFieldName
+                            };
+
+                            if (['select', 'radio', 'checkbox'].includes(condFieldType)) {
+                                var condFieldOptions = [];
+                                if (!$condField.is('li')) {
+                                    $condField.find('.field-option').each(function () {
+                                        var optValue = jQuery(this).val();
+                                        if (optValue) {
+                                            condFieldOptions.push(optValue);
+                                        }
+                                    });
+                                    if (condFieldOptions.length > 0) {
+                                        condFieldData.options = condFieldOptions;
+                                    }
+                                }
+                            }
+
+                            conditionalFormFields.push(condFieldData);
+                        });
+
+                        console.log('Campos condicionales encontrados para opción ' + optionId + ':', conditionalFormFields);
+
+                        conditionalFields.push({
+                            select_id: selectId,
+                            option_id: optionId,
+                            fields_json: conditionalFormFields
+                        });
+
+                        console.log('Agregado a conditional fields:', {
+                            select_id: selectId,
+                            option_id: optionId,
+                            fields_count: conditionalFormFields.length
+                        });
+                    }
+                });
+
+                // Agregar el campo select condicional como un campo normal
+                var fieldData = {
+                    type: fieldType,
+                    label: fieldLabel,
+                    name: fieldName,
+                    select_id: selectId,
+                    options: optionsWithIds // Incluir las opciones con sus IDs
+                };
+                formFields.push(fieldData);
+            } else {
+                // Manejar campos normales (comportamiento existente)
+                if (['select', 'checkbox', 'radio'].includes(fieldType)) {
+                    jQuery(this).find('.field-option').each(function () {
+                        var optionValue = jQuery(this).val();
+                        if (optionValue) {
+                            fieldOptions.push(optionValue);
+                        }
+                    });
                 }
-            });
-        }
 
-        var fieldData = {
-            type: fieldType,
-            label: fieldLabel,
-            name: fieldName
-        };
+                var fieldData = {
+                    type: fieldType,
+                    label: fieldLabel,
+                    name: fieldName
+                };
 
-        if (fieldOptions.length > 0) {
-            fieldData.options = fieldOptions;
-        }
+                if (fieldOptions.length > 0) {
+                    fieldData.options = fieldOptions;
+                }
 
-        formFields.push(fieldData);
-    });
+                formFields.push(fieldData);
+            }
+        });
 
-    // Send formFields to the server via AJAX
-    $.post(nmAdmin.ajax_url, {
-        action: 'nm_save_form',
-        form_type: formType,
-        form_data: { fields: formFields },
-        nonce: nmAdmin.nonce
-    }, function (response) {
-        if (response.success) {
-            alert('Form saved successfully.');
-        } else {
-            alert('Error saving form.');
-        }
-    });
-}
-
+        // Primero guardamos el formulario normal usando el manejador existente
+        $.post(nmAdmin.ajax_url, {
+            action: 'nm_save_form',
+            form_type: formType,
+            form_data: { fields: formFields },
+            nonce: nmAdmin.nonce
+        }, function (response) {
+            if (response.success) {
+                // Si hay campos condicionales, los guardamos después
+                if (conditionalFields.length > 0) {
+                    $.post(nmAdmin.ajax_url, {
+                        action: 'nm_save_conditional_fields',
+                        conditional_data: conditionalFields,
+                        nonce: nmAdmin.nonce
+                    }, function (condResponse) {
+                        console.log('Conditional Fields Response:', condResponse);
+                        if (condResponse.success) {
+                            alert('Formulario guardado correctamente');
+                        } else {
+                            alert('Error al guardar los campos condicionales');
+                        }
+                    });
+                } else {
+                    alert('Formulario guardado correctamente');
+                }
+            } else {
+                alert('Error al guardar el formulario');
+            }
+        });
+    }
     // Function to validate if all fields are filled
     function validateForm(formId) {
         let isValid = true;
@@ -263,37 +512,37 @@ function saveForm(formSelector, formType) {
 
     $('#nm-layer-settings').on('submit', function (e) {
         e.preventDefault();
-        
+
         var $form = $(this);
         var $submitButton = $form.find('button[type="submit"]');
         var originalText = $submitButton.text();
-        
+
         // Recopilar datos del formulario
         var settings = {
             layers: {},
             text_layers: {},
             nm_text_layer_name: $('#nm_text_layer_name').val() // Añadir el nombre de la capa de texto
         };
-        
+
         // Procesar campos de capas (layers)
-        $form.find('input[name^="layers["]').each(function() {
+        $form.find('input[name^="layers["]').each(function () {
             var $input = $(this);
             var name = $input.attr('name');
             var matches = name.match(/layers\[([^\]]+)\]\[([^\]]+)\]/);
-            
+
             if (matches) {
                 var fieldKey = matches[1];
                 var propertyName = matches[2];
                 var value = $input.val();
-                
+
                 if ($input.attr('type') === 'checkbox') {
                     value = $input.prop('checked') ? 'on' : 'off';
                 }
-                
+
                 if (!settings.layers[fieldKey]) {
                     settings.layers[fieldKey] = {};
                 }
-                
+
                 if (propertyName === 'colors' || propertyName === 'labels') {
                     if (!settings.layers[fieldKey][propertyName]) {
                         settings.layers[fieldKey][propertyName] = [];
@@ -304,37 +553,37 @@ function saveForm(formSelector, formType) {
                 }
             }
         });
-        
+
         // Procesar campos de texto (text_layers)
-        $form.find('input[name^="text_layers["]').each(function() {
+        $form.find('input[name^="text_layers["]').each(function () {
             var $input = $(this);
             var name = $input.attr('name');
             var matches = name.match(/text_layers\[([^\]]+)\]\[([^\]]+)\]/);
-            
+
             if (matches) {
                 var fieldKey = matches[1];
                 var propertyName = matches[2];
                 var value = $input.val();
-                
+
                 if ($input.attr('type') === 'checkbox') {
                     value = $input.prop('checked') ? 'on' : 'off';
                 }
-                
+
                 if (!settings.text_layers[fieldKey]) {
                     settings.text_layers[fieldKey] = {};
                 }
-                
+
                 settings.text_layers[fieldKey][propertyName] = value;
             }
         });
-        
+
         // Debug: Ver datos recopilados
         console.log('Datos recopilados:', settings);
-        
+
         // Deshabilitar formulario durante el envío
         $form.find('input, select, button').prop('disabled', true);
         $submitButton.text('Guardando...');
-    
+
         $.ajax({
             url: nmAdmin.ajax_url,
             method: 'POST',
@@ -343,17 +592,17 @@ function saveForm(formSelector, formType) {
                 nonce: nmAdmin.nonce,
                 settings: settings
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     alert(response.data.message);
                 } else {
                     alert(response.data);
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Error en la comunicación con el servidor');
             },
-            complete: function() {
+            complete: function () {
                 // Restaurar estado del formulario
                 $form.find('input, select, button').prop('disabled', false);
                 $submitButton.text(originalText);
@@ -365,7 +614,7 @@ function saveForm(formSelector, formType) {
      * Chart Manager
      ****************************************************/
     var chartIndex = $('.chart-box').length;
-    
+
     console.log(chartIndex);
 
     // Al hacer clic en "Añadir Gráfico"

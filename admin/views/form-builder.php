@@ -15,7 +15,9 @@
                 <li data-type="number">Number Field</li>
                 <li data-type="date">Date Picker</li>
                 <li data-type="url">URL Field</li>
-                <!-- Agrega más tipos de campos si es necesario -->
+                <li data-type="conditional-select">Conditional Select</li>
+
+          
             </ul>
             <hr>
 

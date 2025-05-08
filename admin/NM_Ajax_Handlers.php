@@ -18,6 +18,7 @@ class NM_Ajax_Handlers
         $this->loader->add_action('wp_ajax_nm_save_ab_option', $this, 'save_ab_option');
         $this->loader->add_action('wp_ajax_nm_save_option_texts', $this, 'save_option_texts');
         $this->loader->add_action('wp_ajax_nm_get_form', $this, 'get_form_html');
+        $this->loader->add_action('wp_ajax_nm_save_conditional_fields', $this, 'save_conditional_fields');
     }
     // Compare this snippet from admin/NM_Ajax_Handlers.php:
     public function save_ab_option()
@@ -101,6 +102,60 @@ class NM_Ajax_Handlers
             wp_send_json_success(__('Entry status updated', 'nexusmap'));
         } else {
             wp_send_json_error(__('Entry ID or status is missing', 'nexusmap'));
+        }
+    }
+
+    // Agregar nuevo método
+    
+    public function save_conditional_fields() {
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+    
+        global $wpdb;
+        $conditional_data = isset($_POST['conditional_data']) ? $_POST['conditional_data'] : [];
+    
+        // Depurar los datos recibidos
+        error_log('Conditional Data: ' . print_r($conditional_data, true));
+    
+        if (empty($conditional_data)) {
+            wp_send_json_error('No conditional fields to save');
+            return;
+        }
+    
+        $table_name = $wpdb->prefix . 'nm_conditional_fields';
+        $success = true;
+    
+        foreach ($conditional_data as $data) {
+            // Verificar si fields_json existe y no es null
+            if (!isset($data['fields_json']) || empty($data['fields_json'])) {
+                error_log('fields_json is empty or null for select_id: ' . $data['select_id']);
+                continue;
+            }
+    
+            $result = $wpdb->insert(
+                $table_name,
+                array(
+                    'select_id' => sanitize_text_field($data['select_id']),
+                    'option_id' => sanitize_text_field($data['option_id']),
+                    'fields_json' => wp_json_encode($data['fields_json'])
+                ),
+                array('%s', '%s', '%s')
+            );
+    
+            if ($result === false) {
+                error_log('wpdb error: ' . $wpdb->last_error);
+                $success = false;
+                break;
+            }
+        }
+    
+        if ($success) {
+            wp_send_json_success('Conditional fields saved successfully');
+        } else {
+            wp_send_json_error('Error saving conditional fields');
         }
     }
 }

@@ -315,3 +315,79 @@
     margin-bottom: 20px;
     margin-right: 10px;
 }
+
+/* Estilos para campos condicionales */
+
+.conditional-containers {
+    margin-top: 20px;
+}
+
+.conditional-container {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    background: #f9f9f9;
+}
+
+.conditional-container h4 {
+    margin: 0 0 10px 0;
+}
+
+.conditional-fields {
+    min-height: 100px;
+    border: 2px dashed #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    background: #f9f9f9;
+}
+
+.field-placeholder {
+    border: 2px dashed #666;
+    margin: 5px 0;
+    height: 30px;
+    background: #f0f0f0;
+}
+
+.conditional-fields-menu-active {
+    min-width: 150px;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.conditional-fields-menu-active li {
+    padding: 8px;
+    margin: 4px 0;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    cursor: move;
+}
+
+.conditional-container {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    background: #fff;
+}
+
+.conditional-fields-menu {
+    float: right;
+    width: 150px;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.conditional-fields-menu ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.conditional-fields-menu li {
+    padding: 5px;
+    margin: 2px 0;
+    cursor: move;
+    background: #f1f1f1;
+}
+
