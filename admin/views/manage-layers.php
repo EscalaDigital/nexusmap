@@ -6,7 +6,7 @@
 
 <!-- Formulario para añadir una nueva capa base -->
 <h2><?php esc_html_e('Add New Base Layer', 'nexusmap'); ?></h2>
-<form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>">
+<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
     <input type="hidden" name="action" value="nm_add_base_layer_action">
     <?php wp_nonce_field('nm_add_base_layer', 'nm_nonce'); ?>
     <table class="form-table">
@@ -50,7 +50,7 @@ if (! empty($base_layers)) : ?>
                     <td><?php echo esc_html($layer['attribution']); ?></td>
                     <td>
                         <!-- Enlace para eliminar -->
-                        <a href="<?php echo esc_url( wp_nonce_url(admin_url('admin-post.php?action=nm_delete_base_layer_action&index=' . $index), 'nm_delete_base_layer_' . $index) ); ?>"><?php esc_html_e('Delete', 'nexusmap'); ?></a>
+                        <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=nm_delete_base_layer_action&index=' . $index), 'nm_delete_base_layer_' . $index)); ?>"><?php esc_html_e('Delete', 'nexusmap'); ?></a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -60,7 +60,7 @@ if (! empty($base_layers)) : ?>
 
 <!-- Formulario para añadir una nueva capa overlay -->
 <h2><?php esc_html_e('Add New Overlay Layer', 'nexusmap'); ?></h2>
-<form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>">
+<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
     <input type="hidden" name="action" value="nm_add_overlay_layer_action">
     <?php wp_nonce_field('nm_add_overlay_layer', 'nm_nonce'); ?>
     <table class="form-table">
@@ -86,6 +86,92 @@ if (! empty($base_layers)) : ?>
             <th scope="row"><label for="wms_layer_name"><?php esc_html_e('WMS Layer Name', 'nexusmap'); ?></label></th>
             <td><input name="wms_layer_name" type="text" id="wms_layer_name" class="regular-text"></td>
         </tr>
+        <tr>
+            <th scope="row"><label for="overlay_color"><?php esc_html_e('Fill Color', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="color"
+                    name="overlay_color"
+                    id="overlay_color"
+                    value="#ff0000"
+                    class="regular-text">
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="overlay_border_color"><?php esc_html_e('Border Color', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="color"
+                    name="overlay_border_color"
+                    id="overlay_border_color"
+                    value="#000000"
+                    class="regular-text">
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="overlay_border_width"><?php esc_html_e('Border Width', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="number"
+                    name="overlay_border_width"
+                    id="overlay_border_width"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value="1"
+                    class="small-text">
+                <span class="description"><?php esc_html_e('px', 'nexusmap'); ?></span>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="overlay_bg_opacity"><?php esc_html_e('Background Opacity', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="range"
+                    name="overlay_bg_opacity"
+                    id="overlay_bg_opacity"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value="0.5">
+                <span class="value-display">0.5</span>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="overlay_opacity"><?php esc_html_e('Opacity', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="range"
+                    name="overlay_opacity"
+                    id="overlay_opacity"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value="0.5">
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="overlay_fill"><?php esc_html_e('Show Fill', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="checkbox"
+                    name="overlay_fill"
+                    id="overlay_fill"
+                    value="1"
+                    checked>
+                <p class="description"><?php esc_html_e('Mostrar el relleno del polígono. Si se desmarca, solo se mostrará el borde.', 'nexusmap'); ?></p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="overlay_active"><?php esc_html_e('Active by Default', 'nexusmap'); ?></label></th>
+            <td>
+                <input
+                    type="checkbox"
+                    name="overlay_active"
+                    id="overlay_active"
+                    value="1">
+            </td>
+        </tr>
         <!-- Puedes agregar más campos para opciones adicionales -->
     </table>
     <p class="submit">
@@ -95,7 +181,7 @@ if (! empty($base_layers)) : ?>
 
 <script type="text/javascript">
     // Mostrar u ocultar el campo de WMS Layer Name según el tipo seleccionado
-    document.getElementById('overlay_type').addEventListener('change', function () {
+    document.getElementById('overlay_type').addEventListener('change', function() {
         var wmsRow = document.getElementById('wms_layer_name_row');
         if (this.value === 'wms') {
             wmsRow.style.display = '';
@@ -105,7 +191,7 @@ if (! empty($base_layers)) : ?>
     });
 
     // Ejecutar al cargar la página para establecer el estado inicial
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         var overlayType = document.getElementById('overlay_type').value;
         var wmsRow = document.getElementById('wms_layer_name_row');
         if (overlayType === 'wms') {
@@ -113,6 +199,9 @@ if (! empty($base_layers)) : ?>
         } else {
             wmsRow.style.display = 'none';
         }
+    });
+    document.getElementById('overlay_bg_opacity').addEventListener('input', function() {
+        this.nextElementSibling.textContent = this.value;
     });
 </script>
 
@@ -127,6 +216,12 @@ if (! empty($overlay_layers)) : ?>
                 <th><?php esc_html_e('Layer Type', 'nexusmap'); ?></th>
                 <th><?php esc_html_e('Layer URL', 'nexusmap'); ?></th>
                 <th><?php esc_html_e('WMS Layer Name', 'nexusmap'); ?></th>
+                <th><?php esc_html_e('Fill Color', 'nexusmap'); ?></th>
+                <th><?php esc_html_e('Border Color', 'nexusmap'); ?></th>
+                <th><?php esc_html_e('Border Width', 'nexusmap'); ?></th>
+                <th><?php esc_html_e('Background Opacity', 'nexusmap'); ?></th>
+                <th><?php esc_html_e('Layer Opacity', 'nexusmap'); ?></th>
+                <th><?php esc_html_e('Active', 'nexusmap'); ?></th>
                 <th><?php esc_html_e('Actions', 'nexusmap'); ?></th>
             </tr>
         </thead>
@@ -138,12 +233,28 @@ if (! empty($overlay_layers)) : ?>
                     <td><?php echo esc_html($layer['url']); ?></td>
                     <td><?php echo isset($layer['wms_layer_name']) ? esc_html($layer['wms_layer_name']) : ''; ?></td>
                     <td>
+                        <div style="
+                            width: 25px; 
+                            height: 25px; 
+                            background-color: <?php echo esc_attr($layer['color'] ?? '#ff0000'); ?>;
+                            opacity: <?php echo esc_attr($layer['bg_opacity'] ?? '0.5'); ?>;
+                            border: <?php echo esc_attr($layer['border_width'] ?? '1'); ?>px solid <?php echo esc_attr($layer['border_color'] ?? '#000000'); ?>;
+                        "></div>
+                    </td>
+                    <td><?php echo esc_html($layer['border_width'] ?? '1'); ?>px</td>
+                    <td><?php echo esc_html($layer['bg_opacity'] ?? '0.5'); ?></td>
+                    <td>
+                        <div style="width: 25px; height: 25px; background-color: <?php echo esc_attr($layer['border_color'] ?? '#000000'); ?>"></div>
+                    </td>
+                    <td><?php echo esc_html($layer['opacity'] ?? '0.5'); ?></td>
+                    <td><?php echo isset($layer['active']) && $layer['active'] ? '✓' : '✗'; ?></td>
+
+                    <td>
                         <!-- Enlace para eliminar -->
-                        <a href="<?php echo esc_url( wp_nonce_url(admin_url('admin-post.php?action=nm_delete_overlay_layer_action&index=' . $index), 'nm_delete_overlay_layer_' . $index) ); ?>"><?php esc_html_e('Delete', 'nexusmap'); ?></a>
+                        <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=nm_delete_overlay_layer_action&index=' . $index), 'nm_delete_overlay_layer_' . $index)); ?>"><?php esc_html_e('Delete', 'nexusmap'); ?></a>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 <?php endif; ?>
-
