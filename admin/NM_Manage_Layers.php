@@ -101,12 +101,19 @@ class NM_Manage_Layers
 
         $overlay_layers = get_option('nm_overlay_layers', array());
 
-        $overlay_layers[] = array(
-            'name' => $overlay_name,
-            'type' => $overlay_type,
-            'url'  => $overlay_url,
-            'wms_layer_name' => $wms_layer_name,
-        );
+     $overlay_layers[] = array(
+        'name' => sanitize_text_field($_POST['overlay_name']),
+        'type' => sanitize_text_field($_POST['overlay_type']),
+        'url'  => nm_sanitize_tile_url($_POST['overlay_url']),
+        'wms_layer_name' => isset($_POST['wms_layer_name']) ? sanitize_text_field($_POST['wms_layer_name']) : '',
+        'color' => sanitize_hex_color($_POST['overlay_color']),
+        'border_color' => sanitize_hex_color($_POST['overlay_border_color']),
+        'fill' => isset($_POST['overlay_fill']) ? true : false,
+        'border_width' => (int) $_POST['overlay_border_width'],
+        'bg_opacity' => (float) $_POST['overlay_bg_opacity'],
+        'opacity' => (float) $_POST['overlay_opacity'],
+        'active' => isset($_POST['overlay_active']) ? true : false
+    );
 
         update_option('nm_overlay_layers', $overlay_layers);
         wp_cache_flush();

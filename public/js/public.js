@@ -144,21 +144,36 @@ jQuery(document).ready(function ($) {
             nmMapData.overlay_layers.forEach(function (layer) {
 
                 if (layer.type === 'geojson') {
-                    // Cargar la capa GeoJSON
-                    overlay = L.geoJSON(null); // Inicialmente vacía
-                    // Cargar los datos GeoJSON desde la URL
+                    overlay = L.geoJSON(null, {
+                        style: {
+                            color: layer.border_color || '#000000',
+                            fillColor: layer.color || '#ff0000',
+                            weight: layer.border_width || 2,
+                            opacity: layer.opacity || 1,
+                            fillOpacity: layer.fill ? (layer.bg_opacity || 0.5) : 0, // Si fill es false, fillOpacity será 0
+                            fill: layer.fill // Nueva propiedad
+                        }
+                    });
+
+                    // Cargar los datos GeoJSON
                     $.getJSON(layer.url, function (data) {
                         overlay.addData(data);
                     });
+
+                    if (layer.active) {
+                        overlay.addTo(map);
+                    }
                 } else if (layer.type === 'wms') {
-                    // Agregar capa WMS
                     overlay = L.tileLayer.wms(layer.url, {
-                        layers: layer.wms_layer_name, // Nombre de la capa WMS especificada
+                        layers: layer.wms_layer_name,
                         format: 'image/png',
                         transparent: true,
-                        attribution: layer.attribution || ''
-                        // Puedes agregar más opciones aquí
+                        opacity: layer.opacity || 1
                     });
+
+                    if (layer.active) {
+                        overlay.addTo(map);
+                    }
                 }
                 overlays[layer.name] = overlay;
 
@@ -403,7 +418,7 @@ jQuery(document).ready(function ($) {
                                         feature.geometry.coordinates[1],
                                         feature.geometry.coordinates[0]
                                     ], {
-                                        radius: 8,
+                                        radius: 5,
                                         fillColor: layerDef.layer_color,
                                         color: "#000",
                                         weight: 1,
@@ -640,39 +655,30 @@ jQuery(document).ready(function ($) {
         const categoryFieldName = `nm_${chartConfig.category_field}`;
 
         features.forEach(feature => {
-            let categoryValue = feature.properties[categoryFieldName];
-
-            // Convertir a número si el campo de categoría es numérico
-            if (typeof categoryValue === 'number' || !isNaN(categoryValue)) {
-                categoryValue = parseFloat(categoryValue);
-            }
-
-            // Convertir a string para usar como clave
-            const categoryKey = categoryValue?.toString() || '';
+            const categoryValue = feature.properties[categoryFieldName];
+            // Usar el valor como string para la clave, para asegurar consistencia con las opciones del filtro
+            const categoryKey = categoryValue !== undefined && categoryValue !== null ? categoryValue.toString() : '';
 
             if (!groupedData[categoryKey]) {
                 groupedData[categoryKey] = {
                     count: 0,
                     numeric1: [],
-                    numeric2: [],
-                    rawValue: categoryValue // guardamos el valor original
+                    numeric2: []
                 };
             }
 
-            // Incrementar contador
             groupedData[categoryKey].count++;
 
-            // Procesar campos numéricos
             if (!isCountMode) {
-                const numericFieldName = `nm_${chartConfig.numeric_field1}`;
-                const numeric1Value = parseFloat(feature.properties[numericFieldName]);
+                const numericFieldName1 = `nm_${chartConfig.numeric_field1}`;
+                const numeric1Value = parseFloat(feature.properties[numericFieldName1]);
                 if (!isNaN(numeric1Value)) {
                     groupedData[categoryKey].numeric1.push(numeric1Value);
                 }
 
                 if (chartConfig.numeric_field2) {
-                    const numeric2FieldName = `nm_${chartConfig.numeric_field2}`;
-                    const numeric2Value = parseFloat(feature.properties[numeric2FieldName]);
+                    const numericFieldName2 = `nm_${chartConfig.numeric_field2}`;
+                    const numeric2Value = parseFloat(feature.properties[numericFieldName2]);
                     if (!isNaN(numeric2Value)) {
                         groupedData[categoryKey].numeric2.push(numeric2Value);
                     }
@@ -680,48 +686,68 @@ jQuery(document).ready(function ($) {
             }
         });
 
-        // Ordenar las claves si son numéricas
-        const sortedKeys = Object.keys(groupedData).sort((a, b) => {
-            const aNum = parseFloat(a);
-            const bNum = parseFloat(b);
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return aNum - bNum;
-            }
-            return a.localeCompare(b);
-        });
+        let finalOrderedKeys = [];
 
-        // Generar labels y datasets ordenados
-        data.labels = sortedKeys;
+        // Intentar obtener el orden de las etiquetas desde la configuración de filtros
+        const categoryFilterSetting = nmMapData.filter_settings.find(
+            setting => setting.field === chartConfig.category_field
+        );
+
+        if (categoryFilterSetting && Array.isArray(categoryFilterSetting.options)) {
+            // Usar el orden de las opciones del filtro, incluyendo solo las categorías que tienen datos
+            finalOrderedKeys = categoryFilterSetting.options.filter(
+                option => groupedData.hasOwnProperty(option.toString())
+            );
+        }
+
+        // Si no se pudo determinar un orden desde filter_settings o si resultó en una lista vacía
+        // (y hay datos en groupedData), recurrir al ordenamiento anterior (alfabético/numérico).
+        if (finalOrderedKeys.length === 0 && Object.keys(groupedData).length > 0) {
+            finalOrderedKeys = Object.keys(groupedData).sort((a, b) => {
+                const aNum = parseFloat(a);
+                const bNum = parseFloat(b);
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return aNum - bNum;
+                }
+                return a.localeCompare(b);
+            });
+        }
+
+        data.labels = finalOrderedKeys;
 
         if (isCountMode) {
             data.datasets.push({
-                label: 'Número de casos',
-                data: sortedKeys.map(key => groupedData[key].count),
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                label: chartConfig.title || 'Número de casos',
+                data: finalOrderedKeys.map(key => groupedData[key] ? groupedData[key].count : 0),
+                backgroundColor: chartConfig.chart_color1 || 'rgba(54, 162, 235, 0.5)',
+                borderColor: (chartConfig.chart_color1 ? chartConfig.chart_color1.replace('0.5', '1') : 'rgba(54, 162, 235, 1)'),
                 borderWidth: 1
             });
         } else {
             data.datasets.push({
-                label: chartConfig.numeric_field1,
-                data: sortedKeys.map(key => {
-                    const values = groupedData[key].numeric1;
-                    return values.length ? values.reduce((a, b) => a + b) : 0;
+                label: chartConfig.numeric_field1_label || chartConfig.numeric_field1,
+                data: finalOrderedKeys.map(key => {
+                    const item = groupedData[key];
+                    if (!item) return 0;
+                    const values = item.numeric1;
+                    return values.length ? values.reduce((sum, val) => sum + val, 0) : 0;
                 }),
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: chartConfig.chart_color1 || 'rgba(54, 162, 235, 0.5)',
+                borderColor: (chartConfig.chart_color1 ? chartConfig.chart_color1.replace('0.5', '1') : 'rgba(54, 162, 235, 1)'),
                 borderWidth: 1
             });
 
             if (chartConfig.numeric_field2) {
                 data.datasets.push({
-                    label: chartConfig.numeric_field2,
-                    data: sortedKeys.map(key => {
-                        const values = groupedData[key].numeric2;
-                        return values.length ? values.reduce((a, b) => a + b) : 0;
+                    label: chartConfig.numeric_field2_label || chartConfig.numeric_field2,
+                    data: finalOrderedKeys.map(key => {
+                        const item = groupedData[key];
+                        if (!item) return 0;
+                        const values = item.numeric2;
+                        return values.length ? values.reduce((sum, val) => sum + val, 0) : 0;
                     }),
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: chartConfig.chart_color2 || 'rgba(255, 99, 132, 0.5)',
+                    borderColor: (chartConfig.chart_color2 ? chartConfig.chart_color2.replace('0.5', '1') : 'rgba(255, 99, 132, 1)'),
                     borderWidth: 1
                 });
             }
