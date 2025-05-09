@@ -403,7 +403,7 @@ jQuery(document).ready(function ($) {
                                         feature.geometry.coordinates[1],
                                         feature.geometry.coordinates[0]
                                     ], {
-                                        radius: 8,
+                                        radius: 4,
                                         fillColor: layerDef.layer_color,
                                         color: "#000",
                                         weight: 1,

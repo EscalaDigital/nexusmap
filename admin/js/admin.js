@@ -123,30 +123,50 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    // Función para inicializar droppable en contenedores condicionales
-    function initializeConditionalDroppable($container) {
-        $container.find('.conditional-fields').droppable({
-            accept: '.conditional-fields-menu li',
-            drop: function (event, ui) {
-                var fieldType = ui.draggable.data('type');
-                var $dropZone = jQuery(this);
+// Función para inicializar droppable en contenedores condicionales
+function initializeConditionalDroppable($container) {
+    $container.find('.conditional-fields').sortable({
+        // items: '.nm-form-field', // Asegúrate que las plantillas tengan esta clase raíz
+        placeholder: 'field-placeholder', // Clase para el marcador de posición visual
+        // connectWith: '.conditional-fields', // Descomenta si quieres arrastrar entre diferentes .conditional-fields
+        receive: function(event, ui) {
+            // ui.item es el jQuery object del <li> que fue arrastrado y soltado (un clon del helper).
+            // ui.sender es el sortable de origen si se arrastra desde otro sortable, o null/undefined si es de un draggable.
+            
+            var fieldType = ui.item.data('type'); // Obtener el tipo del atributo data-type del <li>
+            var $droppedLi = ui.item; // Guardar referencia al <li> que se acaba de soltar
 
-                // Obtener plantilla del campo
-                jQuery.post(nmAdmin.ajax_url, {
-                    action: 'nm_get_field_template',
-                    field_type: fieldType,
-                    nonce: nmAdmin.nonce
-                }, function (response) {
-                    if (response.success) {
-                        $dropZone.append(response.data);
-                    }
-                });
-            }
-        }).sortable({
-            items: '.nm-form-field',
-            placeholder: 'field-placeholder'
-        });
-    }
+            // Obtener plantilla del campo vía AJAX
+            jQuery.post(nmAdmin.ajax_url, {
+                action: 'nm_get_field_template',
+                field_type: fieldType,
+                nonce: nmAdmin.nonce
+            }, function (response) {
+                if (response.success && response.data) {
+                    // Crear el nuevo elemento de campo desde la plantilla HTML recibida
+                    var $newFieldTemplate = jQuery(response.data);
+                    // Reemplazar el <li> que se soltó con la plantilla del campo completa
+                    $droppedLi.replaceWith($newFieldTemplate);
+                    
+                    // Si tus plantillas de campo requieren alguna inicialización de JS (ej. datepickers),
+                    // deberías hacerlo aquí sobre $newFieldTemplate
+                } else {
+                    // Si la carga de la plantilla falla o no devuelve datos,
+                    // es mejor eliminar el <li> que se soltó para no dejar basura.
+                    $droppedLi.remove();
+                    alert('Error: Could not load field template or template is empty.');
+                }
+            }).fail(function() {
+                // Si la petición AJAX falla completamente
+                $droppedLi.remove();
+                alert('Error: Failed to communicate with server to load field template.');
+            });
+        }
+    });
+    // El .droppable() que tenías antes para aceptar '.conditional-fields-menu li'
+    // ya no es necesario aquí porque el evento 'receive' del sortable maneja la lógica
+    // cuando se usa 'connectToSortable' en los elementos 'draggable'.
+}
 
     // Manejador separado para select condicional
     jQuery(document).on('click', '.add-conditional-option', function () {
