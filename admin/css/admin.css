@@ -333,6 +333,11 @@
     margin: 0 0 10px 0;
 }
 
+.conditional-fields .nm-form-field{
+    width: 100% !important;
+    height: auto !important;   
+}
+
 .conditional-fields {
     min-height: 100px;
     border: 2px dashed #ccc;

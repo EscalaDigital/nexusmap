@@ -1,4 +1,20 @@
 jQuery(document).ready(function ($) {
+
+    const fieldTpl = {};
+
+    ['header', 'text', 'textarea', 'checkbox', 'radio',
+        'select', 'file', 'number', 'date', 'url'].forEach(function (type) {
+            $.post(nmAdmin.ajax_url, {
+                action: 'nm_get_field_template',
+                field_type: type,
+                nonce: nmAdmin.nonce
+            }).done(function (res) {
+                if (res.success) {
+                    fieldTpl[type] = res.data;   // guardamos la plantilla
+                }
+            });
+        });
+
     // Toggle visibility of A/B options when checkbox is changed
     jQuery('#nm-ab-option').change(function () {
         if (jQuery(this).is(':checked')) {
@@ -123,50 +139,21 @@ jQuery(document).ready(function ($) {
         }
     });
 
-// Función para inicializar droppable en contenedores condicionales
-function initializeConditionalDroppable($container) {
-    $container.find('.conditional-fields').sortable({
-        // items: '.nm-form-field', // Asegúrate que las plantillas tengan esta clase raíz
-        placeholder: 'field-placeholder', // Clase para el marcador de posición visual
-        // connectWith: '.conditional-fields', // Descomenta si quieres arrastrar entre diferentes .conditional-fields
-        receive: function(event, ui) {
-            // ui.item es el jQuery object del <li> que fue arrastrado y soltado (un clon del helper).
-            // ui.sender es el sortable de origen si se arrastra desde otro sortable, o null/undefined si es de un draggable.
-            
-            var fieldType = ui.item.data('type'); // Obtener el tipo del atributo data-type del <li>
-            var $droppedLi = ui.item; // Guardar referencia al <li> que se acaba de soltar
+    // Función para inicializar droppable en contenedores condicionales
+    function initializeConditionalDroppable($scope) {
+        $scope.find('.conditional-fields').sortable({
+            placeholder: 'field-placeholder',
 
-            // Obtener plantilla del campo vía AJAX
-            jQuery.post(nmAdmin.ajax_url, {
-                action: 'nm_get_field_template',
-                field_type: fieldType,
-                nonce: nmAdmin.nonce
-            }, function (response) {
-                if (response.success && response.data) {
-                    // Crear el nuevo elemento de campo desde la plantilla HTML recibida
-                    var $newFieldTemplate = jQuery(response.data);
-                    // Reemplazar el <li> que se soltó con la plantilla del campo completa
-                    $droppedLi.replaceWith($newFieldTemplate);
-                    
-                    // Si tus plantillas de campo requieren alguna inicialización de JS (ej. datepickers),
-                    // deberías hacerlo aquí sobre $newFieldTemplate
-                } else {
-                    // Si la carga de la plantilla falla o no devuelve datos,
-                    // es mejor eliminar el <li> que se soltó para no dejar basura.
-                    $droppedLi.remove();
-                    alert('Error: Could not load field template or template is empty.');
-                }
-            }).fail(function() {
-                // Si la petición AJAX falla completamente
-                $droppedLi.remove();
-                alert('Error: Failed to communicate with server to load field template.');
-            });
-        }
-    });
-    // El .droppable() que tenías antes para aceptar '.conditional-fields-menu li'
-    // ya no es necesario aquí porque el evento 'receive' del sortable maneja la lógica
-    // cuando se usa 'connectToSortable' en los elementos 'draggable'.
-}
+            stop: function (event, ui) {
+                ui.item.css({             // 👈  limpiamos lo que sortable añadió
+                    width: '',
+                    height: ''
+                });
+            }
+        });
+    }
+
+    initializeConditionalDroppable($('.conditional-container'));
 
     // Manejador separado para select condicional
     jQuery(document).on('click', '.add-conditional-option', function () {
@@ -228,53 +215,37 @@ function initializeConditionalDroppable($container) {
 
         // Hacer los elementos del menú draggables
         $menu.find('li').draggable({
-            helper: 'clone',
-            connectToSortable: $container.find('.conditional-fields'),
-            revert: 'invalid'
+            appendTo: 'body',
+            connectToSortable: '.conditional-fields',
+            revert: 'invalid',
+
+            helper: function () {
+                const type = $(this).data('type');
+                // Si ya está en caché devolvemos la plantilla,
+                // si no, usamos el <li> de siempre (nunca se quedará vacío)
+                return $(fieldTpl[type] || `<li>${$(this).text()}</li>`);
+            },
+
+            start: () => $menu.hide(),
+            stop: () => $menu.remove()
         });
 
         jQuery('body').append($menu);
     });
 
-    // Manejador para eliminar opciones normales
-    jQuery(document).on('click', '.remove-option', function () {
-        var $field = jQuery(this).closest('.nm-form-field');
-        var fieldType = $field.data('type');
 
-        if (fieldType === 'select') {
-            jQuery(this).closest('.select-option').remove();
-        } else if (fieldType === 'radio') {
-            jQuery(this).closest('.radio-option').remove();
-        } else if (fieldType === 'checkbox') {
-            jQuery(this).closest('.checkbox-option').remove();
+    // Manejador para eliminar opciones
+    $(document).on('click', '.remove-option', function () {
+        const $option = $(this).closest('.select-option, .radio-option, .checkbox-option');
+        const $field = $(this).closest('.nm-form-field');
+
+        // Si es select condicional hay que borrar también su contenedor
+        if ($field.data('type') === 'conditional-select') {
+            const optionId = $option.data('option-id');
+            $field.find(`.conditional-container[data-option-id="${optionId}"]`).remove();
         }
-    });
-
-    // Manejador separado para eliminar opciones condicionales
-    jQuery(document).on('click', '.conditional-select .remove-option', function () {
-        var $option = jQuery(this).closest('.select-option');
-        var optionId = $option.data('option-id');
-
-        // Eliminar la opción y su contenedor condicional asociado
-        $option.closest('.nm-form-field').find(`.conditional-container[data-option-id="${optionId}"]`).remove();
         $option.remove();
-    });;
-
-    // Eliminar opción de radio
-    jQuery(document).on('click', '.remove-option', function () {
-        jQuery(this).closest('.radio-option').remove();
     });
-
-    // Eliminar opción de checkbox
-    jQuery(document).on('click', '.remove-option', function () {
-        jQuery(this).closest('.checkbox-option').remove();
-    });
-
-    // Eliminar opción de select
-    jQuery(document).on('click', '.remove-option', function () {
-        jQuery(this).closest('.select-option').remove();
-    });
-
 
 
 
@@ -285,13 +256,6 @@ function initializeConditionalDroppable($container) {
         }
     });
 
-    // Hacer que los campos del menú sean arrastrables
-    jQuery(document).on('mouseenter', '.conditional-fields-menu li', function () {
-        jQuery(this).draggable({
-            helper: 'clone',
-            connectToSortable: '.conditional-fields'
-        });
-    });
 
 
     // Función de normalización de nombres de campos
