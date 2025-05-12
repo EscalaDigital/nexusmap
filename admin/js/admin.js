@@ -271,163 +271,143 @@ jQuery(document).ready(function ($) {
     // Modificar la función de guardar formulario para incluir checkboxes
     // Modificar la función saveForm existente
     function saveForm(formSelector, formType) {
-        var formFields = [];
-        var conditionalFields = [];
 
-        jQuery(formSelector + ' .nm-form-field').each(function () {
-            var $field = jQuery(this);
-            var fieldType = $field.data('type');
-            var fieldLabel = $field.find('.field-label').val() || '';
-            var rawName = $field.find('.field-name').val() || fieldLabel;
-            var fieldName = normalizeFieldName(rawName);
-            var fieldOptions = [];
+        const formFields = [];
+        const conditionalFields = [];
 
-            // Manejar campos condicionales
+        jQuery(`${formSelector} .nm-form-field`).each(function () {
+
+            const $field = jQuery(this);
+            if ($field.closest('.conditional-container').length) return;
+            const fieldType = $field.data('type');                      // text, select, checkbox, …
+            const fieldLabel = $field.find('.field-label').val() || '';
+            const rawName = $field.find('.field-name').val() || fieldLabel;
+            const fieldName = normalizeFieldName(rawName);
+            const fieldOptions = [];
+
+            /* ------------------------------------------------------------------
+             * 1. CAMPOS CONDICIONALES  -----------------------------------------
+             * ----------------------------------------------------------------*/
             if (fieldType === 'conditional-select') {
-                var selectId = 'select_' + Date.now();
-                console.log('Iniciando procesamiento de campo condicional:', selectId);
 
-                var fieldOptions = [];
-                var optionsWithIds = []; // Array para almacenar opciones con sus IDs
+                const selectId = 'select_' + Date.now();
+                const optionsWithIds = [];
 
-                // Recopilar opciones para el select principal
                 $field.find('.select-option').each(function () {
-                    var $option = jQuery(this);
-                    var optionId = $option.data('option-id');
-                    var optionValue = $option.find('.field-option').val();
 
-                    console.log('Procesando opción:', {
-                        optionId: optionId,
-                        optionValue: optionValue
+                    const $option = jQuery(this);
+                    const optionId = $option.data('option-id');
+                    const optionValue = $option.find('.field-option').val();
+
+                    if (!optionValue) return;          // siguiente opción
+
+                    // 1a) Lo que irá a nm_form
+                    optionsWithIds.push({ id: optionId, value: optionValue });
+
+                    // 1b) Lo que irá a nm_conditional_fields
+                    const conditionalFormFields = [];
+                    const $container = $field.find(`.conditional-container[data-option-id="${optionId}"]`);
+
+                    /* Recorremos cada sub-campo vinculado a ESTA opción ---------- */
+                    $container.find('.conditional-fields > *').each(function () {
+
+                        const $condField = jQuery(this);
+
+                        /* ——— tipo del sub-campo ——— */
+                        const condFieldType =
+                            $condField.data('type')           // <li data-type="select">
+                            || $condField.find('.field-type').val(); // <input class="field-type">
+
+                        /* ——— label & name ——— */
+                        const condFieldLabel = $condField.find('.field-label').val()
+                            || $condField.text()
+                            || '';
+                        const condFieldName = normalizeFieldName(condFieldLabel);
+
+                        const condFieldData = {
+                            type: condFieldType,
+                            label: condFieldLabel,
+                            name: condFieldName
+                        };
+
+                        /* ——— opciones de campos complejos ——— */
+                        if (['select', 'radio', 'checkbox'].includes(condFieldType)) {
+
+                            const condOptions = [];
+                            $condField.find('.field-option').each(function () {
+                                const optVal = jQuery(this).val();
+                                if (optVal) condOptions.push(optVal);
+                            });
+
+                            if (condOptions.length) {
+                                condFieldData.options = condOptions;
+                            }
+                        }
+
+                        conditionalFormFields.push(condFieldData);
                     });
 
-                    if (optionValue) {
-                        fieldOptions.push(optionValue);
-                        // Guardar la opción con su ID
-                        optionsWithIds.push({
-                            id: optionId,
-                            value: optionValue
-                        });
-
-                        // Recopilar campos condicionales para esta opción
-                        var $conditionalContainer = $field.find(`.conditional-container[data-option-id="${optionId}"]`);
-
-                        console.log('Contenedor encontrado:', $conditionalContainer.length > 0);
-
-                        var conditionalFormFields = [];
-
-                        // Buscar campos dentro del contenedor específico
-                        $conditionalContainer.find('.conditional-fields > *').each(function () {
-                            var $condField = jQuery(this);
-
-                            var condFieldType = $condField.is('li') ? $condField.data('type') : $condField.find('.field-type').val();
-                            var condFieldLabel = $condField.is('li') ? $condField.text() : $condField.find('.field-label').val() || '';
-                            var condFieldName = normalizeFieldName(condFieldLabel);
-
-                            var condFieldData = {
-                                type: condFieldType,
-                                label: condFieldLabel,
-                                name: condFieldName
-                            };
-
-                            if (['select', 'radio', 'checkbox'].includes(condFieldType)) {
-                                var condFieldOptions = [];
-                                if (!$condField.is('li')) {
-                                    $condField.find('.field-option').each(function () {
-                                        var optValue = jQuery(this).val();
-                                        if (optValue) {
-                                            condFieldOptions.push(optValue);
-                                        }
-                                    });
-                                    if (condFieldOptions.length > 0) {
-                                        condFieldData.options = condFieldOptions;
-                                    }
-                                }
-                            }
-
-                            conditionalFormFields.push(condFieldData);
-                        });
-
-                        console.log('Campos condicionales encontrados para opción ' + optionId + ':', conditionalFormFields);
-
-                        conditionalFields.push({
-                            select_id: selectId,
-                            option_id: optionId,
-                            fields_json: conditionalFormFields
-                        });
-
-                        console.log('Agregado a conditional fields:', {
-                            select_id: selectId,
-                            option_id: optionId,
-                            fields_count: conditionalFormFields.length
-                        });
-                    }
+                    /* Una fila por cada combinación select-option ---------------- */
+                    conditionalFields.push({
+                        select_id: selectId,
+                        option_id: optionId,
+                        fields_json: conditionalFormFields      // ← ya viene listo para json_encode
+                    });
                 });
 
-                // Agregar el campo select condicional como un campo normal
-                var fieldData = {
+                /* Guardamos sólo el SELECT principal en nm_form ------------------ */
+                formFields.push({
                     type: fieldType,
                     label: fieldLabel,
                     name: fieldName,
                     select_id: selectId,
-                    options: optionsWithIds // Incluir las opciones con sus IDs
-                };
-                formFields.push(fieldData);
+                    options: optionsWithIds
+                });
+
+                /* ------------------------------------------------------------------
+                 * 2. CAMPOS NORMALES  ----------------------------------------------
+                 * ----------------------------------------------------------------*/
             } else {
-                // Manejar campos normales (comportamiento existente)
+
                 if (['select', 'checkbox', 'radio'].includes(fieldType)) {
-                    jQuery(this).find('.field-option').each(function () {
-                        var optionValue = jQuery(this).val();
-                        if (optionValue) {
-                            fieldOptions.push(optionValue);
-                        }
+                    $field.find('.field-option').each(function () {
+                        const optVal = jQuery(this).val();
+                        if (optVal) fieldOptions.push(optVal);
                     });
                 }
 
-                var fieldData = {
-                    type: fieldType,
-                    label: fieldLabel,
-                    name: fieldName
-                };
-
-                if (fieldOptions.length > 0) {
-                    fieldData.options = fieldOptions;
-                }
-
+                const fieldData = { type: fieldType, label: fieldLabel, name: fieldName };
+                if (fieldOptions.length) fieldData.options = fieldOptions;
                 formFields.push(fieldData);
             }
         });
 
-        // Primero guardamos el formulario normal usando el manejador existente
-        $.post(nmAdmin.ajax_url, {
+        /* ----------------------------------------------------------------------
+         * 3. PETICIONES AJAX (sin cambios) --------------------------------------
+         * -------------------------------------------------------------------- */
+        jQuery.post(nmAdmin.ajax_url, {
             action: 'nm_save_form',
             form_type: formType,
             form_data: { fields: formFields },
             nonce: nmAdmin.nonce
         }, function (response) {
-            if (response.success) {
-                // Si hay campos condicionales, los guardamos después
-                if (conditionalFields.length > 0) {
-                    $.post(nmAdmin.ajax_url, {
-                        action: 'nm_save_conditional_fields',
-                        conditional_data: conditionalFields,
-                        nonce: nmAdmin.nonce
-                    }, function (condResponse) {
-                        console.log('Conditional Fields Response:', condResponse);
-                        if (condResponse.success) {
-                            alert('Formulario guardado correctamente');
-                        } else {
-                            alert('Error al guardar los campos condicionales');
-                        }
-                    });
-                } else {
-                    alert('Formulario guardado correctamente');
-                }
-            } else {
-                alert('Error al guardar el formulario');
-            }
+
+            if (!response.success) { alert('Error al guardar el formulario'); return; }
+
+            if (!conditionalFields.length) { alert('Formulario guardado correctamente'); return; }
+
+            jQuery.post(nmAdmin.ajax_url, {
+                action: 'nm_save_conditional_fields',
+                conditional_data: conditionalFields,
+                nonce: nmAdmin.nonce
+            }, function (condResp) {
+                alert(condResp.success
+                    ? 'Formulario guardado correctamente'
+                    : 'Error al guardar los campos condicionales');
+            });
         });
     }
+
     // Function to validate if all fields are filled
     function validateForm(formId) {
         let isValid = true;
