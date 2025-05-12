@@ -80,23 +80,70 @@ class NM_Model {
         );
     }
 
-    public function get_form($form_type = 0) {
-        global $wpdb;
-        $result = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT * FROM $this->forms_table WHERE form_type = %d ORDER BY id DESC LIMIT 1",
-                $form_type
-            )
-        );
-    
-        if ($result !== null) {
-            return maybe_unserialize($result->form_data);
-        } else {
-            // Handle the null case, e.g., return a default value or throw an exception
-            error_log("Warning: No form data found for form_type $form_type.");
-            return null; // or a default value if applicable
-        }
+   public function get_form($form_type = 0) {
+    global $wpdb;
+    $result = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM $this->forms_table WHERE form_type = %d ORDER BY id DESC LIMIT 1",
+            $form_type
+        )
+    );
+
+    if ($result === null) {
+        error_log("Warning: No form data found for form_type $form_type.");
+        return null;
     }
+
+    $form_data = maybe_unserialize($result->form_data);
+
+    // Si hay campos en el formulario, buscar campos condicionales
+    if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+        foreach ($form_data['fields'] as &$field) {
+            if ($field['type'] === 'conditional-select' && isset($field['select_id'])) {
+                // Para cada opción del select condicional, buscar sus campos asociados
+                foreach ($field['options'] as &$option) {
+                    $conditional_fields = $wpdb->get_var($wpdb->prepare(
+                        "SELECT fields_json FROM {$wpdb->prefix}nm_conditional_fields 
+                         WHERE select_id = %s AND option_id = %s",
+                        $field['select_id'],
+                        $option['id']
+                    ));
+                    
+                    if ($conditional_fields) {
+                        $conditional_fields_array = json_decode($conditional_fields, true);
+                        // Procesar los campos condicionales
+                        foreach ($conditional_fields_array as &$cfield) {
+                            if (isset($cfield['options']) && is_string($cfield['options'])) {
+                                // Si options es una cadena JSON, decodificarla
+                                $cfield['options'] = json_decode($cfield['options'], true);
+                            }
+                            // Si las opciones son un array pero están en formato incorrecto
+                            if (isset($cfield['options']) && is_array($cfield['options']) && !empty($cfield['options'])) {
+                                // Asegurarse de que las opciones estén en el formato correcto
+                                if (!is_array($cfield['options'][0])) {
+                                    $formatted_options = [];
+                                    foreach ($cfield['options'] as $opt) {
+                                        $formatted_options[] = [
+                                            'value' => $opt,
+                                            'label' => $opt
+                                        ];
+                                    }
+                                    $cfield['options'] = $formatted_options;
+                                }
+                            }
+                        }
+                        unset($cfield);
+                        $option['conditional_fields'] = $conditional_fields_array;
+                    }
+                }
+                unset($option);
+            }
+        }
+        unset($field);
+    }
+
+    return $form_data;
+}
     // Methods to handle entries
     public function save_entry( $entry_data, $user_id ) {
         global $wpdb;
