@@ -101,214 +101,216 @@ function performSearch(query) {
 }
 
 /**
- * Muestra un modal con la información detallada de un punto del mapa
- * Procesa los datos según el tipo de contenido (texto, imágenes, archivos)
- * y los muestra en un modal interactivo
+ * Muestra un modal con la información de las propiedades de un elemento
+ * Extrae y organiza la información para mostrarla de manera legible
  * 
- * @param {Object} properties - Propiedades del punto a mostrar
+ * @param {Object} properties - Propiedades del elemento a mostrar
+ */
+/**
+ * Muestra un modal con los datos de una entrada de Ninja Maps / NF.
+ * Combina:
+ *   •  Lógica y flujo del primer script (nm_conditional_groups).
+ *   •  Extras de presentación del segundo script (secciones, CSS, animación, etc.).
+ *
+ * Requiere que existan las utilidades:
+ *   isValidURL(), isFile(), getFileExtension(), isImage(), getFieldLabel()
+ *   y el objeto global nmFormStructure con el formulario original.
  */
 function showModal(properties) {
-    var modalContent = '<div class="nm-modal-content">';
-    var currentSection = null;
-    var sectionContent = {};
+    /* ----------  Preparación y utilidades ---------- */
 
-    // Función auxiliar para procesar campos
-    function processField(field, value, parentField = null) {
-        let fieldHtml = '';
-        const fieldLabel = parentField ?
-            `${parentField.label} - ${field.label}` :
-            field.label;
-
-        if (isValidURL(value) && isFile(value)) {
-            const fileType = getFileExtension(value).toLowerCase();
-            if (isImage(fileType)) {
-                fieldHtml = `<p class="nm-modal-field">
-                    <strong>${fieldLabel}:</strong><br>
-                    <img src="${value}" alt="${fieldLabel}" style="max-width:100%; height:auto;">
-                </p>`;
-            } else if (fileType === 'pdf') {
-                fieldHtml = `<p class="nm-modal-field">
-                    <strong>${fieldLabel}:</strong> 
-                    <a href="${value}" target="_blank">Ver documento PDF</a>
-                </p>`;
-            } else {
-                fieldHtml = `<p class="nm-modal-field">
-                    <strong>${fieldLabel}:</strong> 
-                    <a href="${value}" download>Descargar archivo</a>
-                </p>`;
-            }
-        } else {
-            fieldHtml = `<p class="nm-modal-field ${parentField ? 'nm-conditional-field' : ''}">
-                <strong>${fieldLabel}:</strong> ${value}
-            </p>`;
+    // Parsear nm_conditional_groups (formato del primer script)
+    let conditionalGroups = {};
+    if (properties.nm_conditional_groups) {
+        try {
+            conditionalGroups = typeof properties.nm_conditional_groups === 'string'
+                ? JSON.parse(properties.nm_conditional_groups)
+                : properties.nm_conditional_groups;
+        } catch (e) {
+            console.error('Error parseando nm_conditional_groups:', e);
         }
-
-        return fieldHtml;
     }
 
-    if (typeof nmFormStructure !== 'undefined' && nmFormStructure.fields) {
-        nmFormStructure.fields.forEach(function(field) {
-            if (field.type === 'header') {
-                currentSection = field.label;
-                sectionContent[currentSection] = [];
-            } else {
-                const fieldKey = 'nm_' + field.name;
+    // Acceso rápido a la definición de un campo del formulario
+    const getFieldDef = (name) => {
+        if (typeof nmFormStructure === 'undefined' || !nmFormStructure.fields) return null;
+        return nmFormStructure.fields.find(f => f.name === name) || null;
+    };
 
-                // Procesar campo principal
-                if (properties.hasOwnProperty(fieldKey)) {
-                    const value = properties[fieldKey];
-                    const fieldHtml = processField(field, value);
-
-                    // Verificar campos condicionales
-                    if (field.type === 'conditional-select' && field.select_id) {
-                        const selectedValue = value;
-                        // Usar el ID específico del campo y la opción seleccionada
-                        const conditionalKey = `nm_conditional_fields_${field.select_id}_${selectedValue}`;
-                        
-                        if (properties.hasOwnProperty(conditionalKey)) {
-                            try {
-                                // Decodificar los campos condicionales almacenados
-                                const conditionalFields = JSON.parse(properties[conditionalKey]);
-                                
-                                // Construir HTML para campos condicionales con sus IDs específicos
-                                const conditionalHtml = conditionalFields.map(condField => {
-                                    const condValue = properties[`nm_${condField.name}`];
-                                    const fieldWithIds = {
-                                        ...condField,
-                                        field_id: `${field.select_id}_${condField.name}`,
-                                        parent_id: field.select_id
-                                    };
-                                    return processField(fieldWithIds, condValue, field);
-                                }).join('');
-
-                                // Crear contenedor con IDs específicos
-                                const containerHtml = `
-                                    <div class="nm-conditional-group" data-select-id="${field.select_id}">
-                                        ${fieldHtml}
-                                        <div class="nm-conditional-fields" data-option-value="${selectedValue}">
-                                            ${conditionalHtml}
-                                        </div>
-                                    </div>
-                                `;
-
-                                if (currentSection) {
-                                    sectionContent[currentSection].push(containerHtml);
-                                } else {
-                                    sectionContent['General'] = sectionContent['General'] || [];
-                                    sectionContent['General'].push(containerHtml);
-                                }
-                            } catch (e) {
-                                console.error('Error parsing conditional fields:', e);
-                                // Mostrar solo el campo principal si hay error
-                                if (currentSection) {
-                                    sectionContent[currentSection].push(fieldHtml);
-                                } else {
-                                    sectionContent['General'] = sectionContent['General'] || [];
-                                    sectionContent['General'].push(fieldHtml);
-                                }
-                            }
-                        } else {
-                            // Si no hay campos condicionales, mostrar solo el campo principal
-                            if (currentSection) {
-                                sectionContent[currentSection].push(fieldHtml);
-                            } else {
-                                sectionContent['General'] = sectionContent['General'] || [];
-                                sectionContent['General'].push(fieldHtml);
-                            }
-                        }
-                    } else {
-                        // Campo normal (no condicional)
-                        if (currentSection) {
-                            sectionContent[currentSection].push(fieldHtml);
-                        } else {
-                            sectionContent['General'] = sectionContent['General'] || [];
-                            sectionContent['General'].push(fieldHtml);
-                        }
-                    }
-                }
-            }
-        });
-
-        // Construir el contenido del modal con las secciones
-        Object.keys(sectionContent).forEach(function (sectionName) {
-            if (sectionContent[sectionName].length > 0) {
-                modalContent += `<div class="nm-modal-section">
-                    <h3 class="nm-modal-header">${sectionName}</h3>
-                    ${sectionContent[sectionName].join('')}
-                </div>`;
-            }
-        });
-    } else {
-        // Fallback: si no existe nmFormStructure, mostrar todos los campos sin secciones
-        for (var key in properties) {
-            if (properties.hasOwnProperty(key) &&
-                key !== 'entry_id' &&
-                key !== 'layers' &&
-                key !== 'has_layer' &&
-                key !== 'text_layers' &&
-                key.startsWith('nm_')) {
-
-                const label = getFieldLabel(key);
-                const value = properties[key];
-
-                if (isValidURL(value) && isFile(value)) {
-                    const fileType = getFileExtension(value).toLowerCase();
-                    if (isImage(fileType)) {
-                        modalContent += `<p><strong>${label}:</strong><br>
-                            <img src="${value}" alt="${label}" style="max-width:100%; height:auto;">
+    // Render de un campo (normal o condicional)
+    const renderField = (label, value, extraClass = '') => {
+        // Archivos / URLs
+        if (isValidURL(value) && isFile(value)) {
+            const ext = getFileExtension(value).toLowerCase();
+            if (isImage(ext)) {
+                return `<p class="nm-modal-field ${extraClass}">
+                            <strong>${label}:</strong><br>
+                            <img src="${value}" alt="${label}" style="max-width:100%;height:auto;">
                         </p>`;
-                    } else if (fileType === 'pdf') {
-                        modalContent += `<p><strong>${label}:</strong> 
+            }
+            if (ext === 'pdf') {
+                return `<p class="nm-modal-field ${extraClass}">
+                            <strong>${label}:</strong>
                             <a href="${value}" target="_blank">Ver documento PDF</a>
                         </p>`;
-                    } else {
-                        modalContent += `<p><strong>${label}:</strong> 
-                            <a href="${value}" download>Descargar archivo</a>
-                        </p>`;
-                    }
-                } else {
-                    modalContent += `<p><strong>${label}:</strong> ${value}</p>`;
-                }
             }
+            // Otro tipo de descarga
+            return `<p class="nm-modal-field ${extraClass}">
+                        <strong>${label}:</strong>
+                        <a href="${value}" download>Descargar archivo</a>
+                    </p>`;
+        }
+
+        // Texto simple
+        return `<p class="nm-modal-field ${extraClass}">
+                    <strong>${label}:</strong> ${value}
+                </p>`;
+    };
+
+    /* ----------  Recorremos la estructura del formulario ---------- */
+
+    let currentSection = null;
+    const sectionContent = {};     // { "Nombre sección": [html, html...] }
+
+    if (nmFormStructure && nmFormStructure.fields) {
+        nmFormStructure.fields.forEach((field) => {
+
+            // --- Cabecera -> abre nueva sección --------------------
+            if (field.type === 'header') {
+                currentSection = field.label || 'Sección';
+                sectionContent[currentSection] = [];
+                return;
+            }
+
+            const key = 'nm_' + field.name;
+            if (!properties.hasOwnProperty(key)) return;  // no se envió valor
+
+            const value = properties[key];
+
+            // --- Campo condicional basado en select (segundo script) -------------
+            if (field.type === 'conditional-select' && field.select_id) {
+                const selectedValue = value;
+                const baseHtml = renderField(field.label, value);
+
+                // Los campos dependientes vienen serializados en:
+                // nm_conditional_fields_{select_id}_{selectedValue}
+                const condKey = `nm_conditional_fields_${field.select_id}_${selectedValue}`;
+                let condHtml = '';
+
+                if (properties.hasOwnProperty(condKey)) {
+                    try {
+                        const condFields = JSON.parse(properties[condKey]);
+                        condHtml = condFields.map(cf => {
+                            const cfKey = 'nm_' + cf.name;
+                            const cfValue = properties[cfKey];
+                            const cfLabel = `${field.label} - ${cf.label}`;
+                            return renderField(cfLabel, cfValue, 'nm-conditional-field');
+                        }).join('');
+                    } catch (e) {
+                        console.error('Error parseando campos condicionales:', e);
+                    }
+                }
+
+                const groupHtml = `
+                    <div class="nm-conditional-group" data-select-id="${field.select_id}">
+                        ${baseHtml}
+                        <div class="nm-conditional-fields" data-option-value="${selectedValue}">
+                            ${condHtml}
+                        </div>
+                    </div>`;
+
+                (sectionContent[currentSection] ||= []).push(groupHtml);
+                return;
+            }
+
+            // --- Campo normal -----------------------------------------------------
+            (sectionContent[currentSection] ||= []).push(
+                renderField(field.label, value)
+            );
+        });
+    }
+
+    /* ----------  Grupos condicionales del PRIMER script ------------- */
+
+    Object.entries(conditionalGroups).forEach(([groupId, group]) => {
+        let htmlGroup = `<div class="nm-conditional-group">
+                            <h3 class="nm-modal-header">${group.option_label.trim()}</h3>`;
+
+        Object.entries(group.fields).forEach(([fieldName, fieldValue]) => {
+            const fieldDef = getFieldDef(fieldName);
+            const label = fieldDef ? fieldDef.label : fieldName;
+            htmlGroup += renderField(label, fieldValue, 'nm-conditional-field');
+        });
+
+        htmlGroup += '</div>';
+
+        // Solo añadimos al currentSection si existe, eliminamos el fallback a 'General'
+        if (currentSection) {
+            (sectionContent[currentSection] ||= []).push(htmlGroup);
+        } else {
+            // Si no hay sección, añadimos directamente al contenido sin header
+            (sectionContent[''] ||= []).push(htmlGroup);
+        }
+    });
+
+    /* ----------  Fallback cuando no existe nmFormStructure ---------- */
+
+    if (Object.keys(sectionContent).length === 0) {
+        sectionContent[''] = [];  // Cambiamos 'General' por cadena vacía
+        for (const [key, value] of Object.entries(properties)) {
+            if (!key.startsWith('nm_')) continue;
+            if (['layers', 'has_layer', 'text_layers', 'entry_id'].includes(key)) continue;
+            const label = getFieldLabel(key);
+            sectionContent[''].push(renderField(label, value));
         }
     }
 
-    modalContent += '</div>';
+        /* ----------  Construir el HTML final del modal ---------- */
 
-    // Crear o actualizar el modal
-    var $mapContainer = jQuery('#nm-main-map');
-    var $modal = jQuery('#nm-modal');
+    let modalHtml = '<div class="nm-modal-content">';
+    Object.entries(sectionContent).forEach(([secName, items]) => {
+        if (!items.length) return;
+        modalHtml += `
+            <div class="nm-modal-section">
+                ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
+                ${items.join('')}
+            </div>`;
+    });
+    modalHtml += '</div>';
+
+    /* ----------  Crear o refrescar el modal en el DOM ---------- */
+
+    const $map = jQuery('#nm-main-map');
+    let $modal = jQuery('#nm-modal');
 
     if ($modal.length === 0) {
-        $modal = jQuery('<div id="nm-modal" class="nm-modal">' +
-            '<span id="nm-modal-close" class="nm-modal-close">&times;</span>' +
-            '<div id="nm-modal-body"></div></div>');
-        $mapContainer.append($modal);
+        $modal = jQuery(`
+            <div id="nm-modal" class="nm-modal">
+                <span id="nm-modal-close" class="nm-modal-close">&times;</span>
+                <div id="nm-modal-body"></div>
+            </div>`);
+        $map.append($modal);
     }
 
-    // Actualizar contenido y mostrar modal
-    jQuery('#nm-modal-body').html(modalContent);
+    // Mostrar contenido y animar
+    jQuery('#nm-modal-body').html(modalHtml);
     $modal.css('display', 'block');
-    void $modal[0].offsetWidth;
+    void $modal[0].offsetWidth; // forzar reflow
     $modal.addClass('active');
 
-    // Eventos de cierre
-    jQuery('#nm-modal-close').off('click').on('click', function () {
-        $modal.removeClass('active');
-        setTimeout(function () {
-            $modal.css('display', 'none');
-        }, 300);
+    /* ----------  Cierre del modal (click X o exterior) ---------- */
+    jQuery('#nm-modal-close').off('click').on('click', closeModal);
+    jQuery(window).off('click.modal').on('click.modal', (e) => {
+        if (jQuery(e.target).is('#nm-modal')) closeModal();
     });
 
-    jQuery(window).off('click.modal').on('click.modal', function (event) {
-        if (jQuery(event.target).is('#nm-modal')) {
-            $modal.removeClass('active');
-            setTimeout(function () {
-                $modal.css('display', 'none');
-            }, 300);
-        }
-    });
+    function closeModal() {
+        $modal.removeClass('active');
+        setTimeout(() => $modal.css('display', 'none'), 300);
+    }
 }
+
+
 /**
  * Muestra el formulario para añadir una nueva capa WMS al mapa
  * Crea un formulario modal que permite al usuario introducir la URL
