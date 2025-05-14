@@ -504,6 +504,29 @@ jQuery(document).ready(function ($) {
                             span.style.alignItems = 'center';
                         }
                     }
+                } else {
+                    // Si no hay capas configuradas, añadir todos los marcadores a un solo grupo
+                    response.features.forEach(function (feature) {
+                        var marker = L.circleMarker([
+                            feature.geometry.coordinates[1],
+                            feature.geometry.coordinates[0]
+                        ], {
+                            radius: 5,
+                            fillColor: '#ff0000',
+                            color: "#000",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+
+                        marker.feature = feature;
+                        marker.on('click', function () {
+                            showModal(feature.properties);
+                        });
+
+                        markersLayer.addLayer(marker);
+                        allMarkers.push(marker);
+                    });
                 }
 
                 // Inicializar el contador de puntos

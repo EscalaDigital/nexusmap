@@ -112,7 +112,40 @@ function showModal(properties) {
     var currentSection = null;
     var sectionContent = {};
 
-    // Organizar campos por secciones usando nmFormStructure
+    // Función auxiliar para procesar campos
+    function processField(field, value, parentField = null) {
+        let fieldHtml = '';
+        const fieldLabel = parentField ?
+            `${parentField.label} - ${field.label}` :
+            field.label;
+
+        if (isValidURL(value) && isFile(value)) {
+            const fileType = getFileExtension(value).toLowerCase();
+            if (isImage(fileType)) {
+                fieldHtml = `<p class="nm-modal-field">
+                    <strong>${fieldLabel}:</strong><br>
+                    <img src="${value}" alt="${fieldLabel}" style="max-width:100%; height:auto;">
+                </p>`;
+            } else if (fileType === 'pdf') {
+                fieldHtml = `<p class="nm-modal-field">
+                    <strong>${fieldLabel}:</strong> 
+                    <a href="${value}" target="_blank">Ver documento PDF</a>
+                </p>`;
+            } else {
+                fieldHtml = `<p class="nm-modal-field">
+                    <strong>${fieldLabel}:</strong> 
+                    <a href="${value}" download>Descargar archivo</a>
+                </p>`;
+            }
+        } else {
+            fieldHtml = `<p class="nm-modal-field ${parentField ? 'nm-conditional-field' : ''}">
+                <strong>${fieldLabel}:</strong> ${value}
+            </p>`;
+        }
+
+        return fieldHtml;
+    }
+
     if (typeof nmFormStructure !== 'undefined' && nmFormStructure.fields) {
         nmFormStructure.fields.forEach(function(field) {
             if (field.type === 'header') {
@@ -120,52 +153,84 @@ function showModal(properties) {
                 sectionContent[currentSection] = [];
             } else {
                 const fieldKey = 'nm_' + field.name;
-                // Solo procesar si existe el valor en properties
+
+                // Procesar campo principal
                 if (properties.hasOwnProperty(fieldKey)) {
                     const value = properties[fieldKey];
-                    
-                    // Crear el contenido HTML del campo
-                    let fieldHtml = '';
-                    if (isValidURL(value) && isFile(value)) {
-                        const fileType = getFileExtension(value).toLowerCase();
-                        if (isImage(fileType)) {
-                            fieldHtml = `<p class="nm-modal-field">
-                                <strong>${field.label}:</strong><br>
-                                <img src="${value}" alt="${field.label}" style="max-width:100%; height:auto;">
-                            </p>`;
-                        } else if (fileType === 'pdf') {
-                            fieldHtml = `<p class="nm-modal-field">
-                                <strong>${field.label}:</strong> 
-                                <a href="${value}" target="_blank">Ver documento PDF</a>
-                            </p>`;
-                        } else {
-                            fieldHtml = `<p class="nm-modal-field">
-                                <strong>${field.label}:</strong> 
-                                <a href="${value}" download>Descargar archivo</a>
-                            </p>`;
-                        }
-                    } else {
-                        fieldHtml = `<p class="nm-modal-field">
-                            <strong>${field.label}:</strong> ${value}
-                        </p>`;
-                    }
+                    const fieldHtml = processField(field, value);
 
-                    // Añadir el campo a la sección correspondiente
-                    if (currentSection) {
-                        sectionContent[currentSection].push(fieldHtml);
-                    } else {
-                        // Si no hay sección actual, crear una sección "General"
-                        if (!sectionContent['General']) {
-                            sectionContent['General'] = [];
+                    // Verificar campos condicionales
+                    if (field.type === 'conditional-select' && field.select_id) {
+                        const selectedValue = value;
+                        // Usar el ID específico del campo y la opción seleccionada
+                        const conditionalKey = `nm_conditional_fields_${field.select_id}_${selectedValue}`;
+                        
+                        if (properties.hasOwnProperty(conditionalKey)) {
+                            try {
+                                // Decodificar los campos condicionales almacenados
+                                const conditionalFields = JSON.parse(properties[conditionalKey]);
+                                
+                                // Construir HTML para campos condicionales con sus IDs específicos
+                                const conditionalHtml = conditionalFields.map(condField => {
+                                    const condValue = properties[`nm_${condField.name}`];
+                                    const fieldWithIds = {
+                                        ...condField,
+                                        field_id: `${field.select_id}_${condField.name}`,
+                                        parent_id: field.select_id
+                                    };
+                                    return processField(fieldWithIds, condValue, field);
+                                }).join('');
+
+                                // Crear contenedor con IDs específicos
+                                const containerHtml = `
+                                    <div class="nm-conditional-group" data-select-id="${field.select_id}">
+                                        ${fieldHtml}
+                                        <div class="nm-conditional-fields" data-option-value="${selectedValue}">
+                                            ${conditionalHtml}
+                                        </div>
+                                    </div>
+                                `;
+
+                                if (currentSection) {
+                                    sectionContent[currentSection].push(containerHtml);
+                                } else {
+                                    sectionContent['General'] = sectionContent['General'] || [];
+                                    sectionContent['General'].push(containerHtml);
+                                }
+                            } catch (e) {
+                                console.error('Error parsing conditional fields:', e);
+                                // Mostrar solo el campo principal si hay error
+                                if (currentSection) {
+                                    sectionContent[currentSection].push(fieldHtml);
+                                } else {
+                                    sectionContent['General'] = sectionContent['General'] || [];
+                                    sectionContent['General'].push(fieldHtml);
+                                }
+                            }
+                        } else {
+                            // Si no hay campos condicionales, mostrar solo el campo principal
+                            if (currentSection) {
+                                sectionContent[currentSection].push(fieldHtml);
+                            } else {
+                                sectionContent['General'] = sectionContent['General'] || [];
+                                sectionContent['General'].push(fieldHtml);
+                            }
                         }
-                        sectionContent['General'].push(fieldHtml);
+                    } else {
+                        // Campo normal (no condicional)
+                        if (currentSection) {
+                            sectionContent[currentSection].push(fieldHtml);
+                        } else {
+                            sectionContent['General'] = sectionContent['General'] || [];
+                            sectionContent['General'].push(fieldHtml);
+                        }
                     }
                 }
             }
         });
 
         // Construir el contenido del modal con las secciones
-        Object.keys(sectionContent).forEach(function(sectionName) {
+        Object.keys(sectionContent).forEach(function (sectionName) {
             if (sectionContent[sectionName].length > 0) {
                 modalContent += `<div class="nm-modal-section">
                     <h3 class="nm-modal-header">${sectionName}</h3>
@@ -177,9 +242,9 @@ function showModal(properties) {
         // Fallback: si no existe nmFormStructure, mostrar todos los campos sin secciones
         for (var key in properties) {
             if (properties.hasOwnProperty(key) &&
-                key !== 'entry_id' && 
-                key !== 'layers' && 
-                key !== 'has_layer' && 
+                key !== 'entry_id' &&
+                key !== 'layers' &&
+                key !== 'has_layer' &&
                 key !== 'text_layers' &&
                 key.startsWith('nm_')) {
 
@@ -228,17 +293,17 @@ function showModal(properties) {
     $modal.addClass('active');
 
     // Eventos de cierre
-    jQuery('#nm-modal-close').off('click').on('click', function() {
+    jQuery('#nm-modal-close').off('click').on('click', function () {
         $modal.removeClass('active');
-        setTimeout(function() {
+        setTimeout(function () {
             $modal.css('display', 'none');
         }, 300);
     });
 
-    jQuery(window).off('click.modal').on('click.modal', function(event) {
+    jQuery(window).off('click.modal').on('click.modal', function (event) {
         if (jQuery(event.target).is('#nm-modal')) {
             $modal.removeClass('active');
-            setTimeout(function() {
+            setTimeout(function () {
                 $modal.css('display', 'none');
             }, 300);
         }

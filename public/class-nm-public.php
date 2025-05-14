@@ -31,6 +31,9 @@ class NM_Public
         // Register the AJAX action to get entry details para MOdal
         $this->loader->add_action('wp_ajax_nm_get_entry_details', $this, 'get_entry_details');
         $this->loader->add_action('wp_ajax_nopriv_nm_get_entry_details', $this, 'get_entry_details');
+
+        $this->loader->add_action('wp_ajax_nm_get_conditional_fields',  $this, 'get_conditional_fields');
+        $this->loader->add_action('wp_ajax_nopriv_nm_get_conditional_fields', $this, 'get_conditional_fields');
     }
 
     /**
@@ -91,7 +94,7 @@ class NM_Public
                 '2.4.0',
                 true
             );
-*/
+            */
             // Enqueue functions related to the map
             wp_enqueue_script('nm-funcionesmaps-js', NM_PLUGIN_URL . 'public/js/funcionesmaps.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), NM_VERSION, true);
             wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);
@@ -145,7 +148,7 @@ class NM_Public
         // Obtener la estructura del formulario
         $form_data = $this->model->get_form(0); // Obtiene el formulario principal
         $form_structure = array();
-        
+
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
             foreach ($form_data['fields'] as $field) {
                 if (!empty($field['name'])) {
@@ -505,7 +508,31 @@ class NM_Public
             wp_die();
         }
 
-        $map_arr['properties'] = $form_fields;
+        // Lista de campos a excluir
+        $excluded_fields = array(
+            'nm_map_data',
+            'nm_nm_form_type',
+            'nm_nm_form_nonce',
+            'nm__wp_http_referer'
+        );
+
+        // Limpiar propiedades existentes
+        $existing_props = isset($map_arr['properties']) ? $map_arr['properties'] : array();
+        foreach ($excluded_fields as $field) {
+            if (isset($existing_props[$field])) {
+                unset($existing_props[$field]);
+            }
+        }
+
+        // Limpiar form_fields antes de fusionar
+        foreach ($excluded_fields as $field) {
+            if (isset($form_fields[$field])) {
+                unset($form_fields[$field]);
+            }
+        }
+
+        // Fusionar propiedades limpias
+        $map_arr['properties'] = array_merge($existing_props, $form_fields);
 
         $feature = array(
             'type'       => $map_arr['type'],
@@ -592,5 +619,41 @@ class NM_Public
         );
 
         wp_send_json_success($geojson);
+    }
+
+
+    public function get_conditional_fields()
+    {
+
+        check_ajax_referer('nm_public_nonce', 'nonce');
+
+        global $wpdb;
+        $table     = $wpdb->prefix . 'nm_conditional_fields';
+        $select_id = sanitize_text_field($_POST['select_id'] ?? '');
+        $option_id = sanitize_text_field($_POST['option_id'] ?? '');
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT fields_json FROM $table WHERE select_id=%s AND option_id=%s",
+                $select_id,
+                $option_id
+            ),
+            ARRAY_A
+        );
+
+        if (! $row) {
+            wp_send_json_success('');
+        }
+
+        $fields = json_decode($row['fields_json'], true);
+        if (! $fields) {
+            wp_send_json_success('');
+        }
+
+        ob_start();
+        foreach ($fields as $subfield) {
+            nm_render_conditional_field($subfield);   // misma función del paso 1
+        }
+        wp_send_json_success(ob_get_clean());
     }
 }

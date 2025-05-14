@@ -695,4 +695,18 @@
     border-bottom: 1px solid #eee;
 }
 
+.nm-conditional-group {
+    border-left: 3px solid #198754;
+    margin: 15px 0;
+    padding: 10px 0 10px 15px;
+}
 
+.nm-conditional-fields {
+    margin-left: 20px;
+    padding-top: 10px;
+}
+
+.nm-conditional-field {
+    color: #666;
+    font-size: 0.95em;
+}
