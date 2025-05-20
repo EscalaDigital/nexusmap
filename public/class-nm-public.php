@@ -57,6 +57,16 @@ class NM_Public
         wp_enqueue_style('nm-public-css', NM_PLUGIN_URL . 'public/css/public.css', array(), NM_VERSION);
         wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
+        // Obtener el tema seleccionado de las opciones y cargarlo
+        $selected_theme = get_option('nm_selected_theme', 'default');
+        // Cargar el CSS del tema seleccionado después del CSS base
+        if ($selected_theme === 'default') {
+            wp_enqueue_style('nm-theme-css', NM_PLUGIN_URL . 'public/css/themes/theme1.css', array('nm-public-css'), NM_VERSION);
+        } else {
+            wp_enqueue_style('nm-theme-css', NM_PLUGIN_URL . 'public/css/themes/theme' . $selected_theme . '.css', array('nm-public-css'), NM_VERSION);
+        }
+
+
         // Check if the [nm_map] shortcode is used in the content
         if (has_shortcode($post->post_content, 'nm_map')) {
             // Enqueue Leaflet CSS and JS
@@ -112,8 +122,16 @@ class NM_Public
             wp_enqueue_style('nm-leaflet-draw-css', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css', array('nm-leaflet-css'), '1.0.4');
             wp_enqueue_script('nm-leaflet-draw-js', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js', array('nm-leaflet-js'), '1.0.4', true);
 
-            // Enqueue styles and scripts for the form
-            wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/form.css', array(), NM_VERSION);
+            // Obtener el tema seleccionado de las opciones
+            $selected_theme_form = get_option('nm_selected_theme_form', 'default');
+
+            // Cargar el CSS del tema seleccionado
+            if ($selected_theme_form === 'default') {
+                wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form1.css', array(), NM_VERSION);
+            } else {
+                wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form' . $selected_theme_form  . '.css', array(), NM_VERSION);
+            }
+
 
             wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);
 
