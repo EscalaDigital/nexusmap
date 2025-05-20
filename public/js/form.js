@@ -58,117 +58,137 @@ jQuery(document).ready(function ($) {
             L.DomEvent.disableScrollPropagation(searchControl.getContainer());
 
             // Variable para almacenar el marcador de búsqueda
-            var searchMarker = null;
+            var searchCircle = null;
 
-            // Función de búsqueda
-            function performSearch(query) {
-                if (!query) {
-                    showMessage('Por favor, ingrese una ubicación o coordenadas para buscar.', 'error');
-                    return;
-                }
+function performSearch(query) {
+    if (!query) {
+        showMessage('Por favor, ingrese una ubicación o coordenadas para buscar.', 'error');
+        return;
+    }
 
-                // Comprobar si son coordenadas (formato: latitud,longitud)
-                const coordsRegex = /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/;
-                const coordsMatch = query.match(coordsRegex);
+    // Comprobar si son coordenadas (formato: latitud,longitud)
+    const coordsRegex = /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/;
+    const coordsMatch = query.match(coordsRegex);
 
-                if (coordsMatch) {
-                    const lat = parseFloat(coordsMatch[1]);
-                    const lng = parseFloat(coordsMatch[2]);
+    if (coordsMatch) {
+        const lat = parseFloat(coordsMatch[1]);
+        const lng = parseFloat(coordsMatch[2]);
 
-                    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                        if (searchMarker) {
-                            drawMap.removeLayer(searchMarker);
-                        }
-                        searchMarker = L.marker([lat, lng]).addTo(drawMap);
-                        drawMap.setView([lat, lng], 16);
-                        searchMarker.bindPopup(`Latitud: ${lat}<br>Longitud: ${lng}`).openPopup();
-                    } else {
-                        showMessage('Coordenadas fuera de rango. La latitud debe estar entre -90 y 90, y la longitud entre -180 y 180.', 'error');
-                    }
-                    return;
-                }
-
-                // Si no son coordenadas, buscar por nombre usando Nominatim
-                $.ajax({
-                    url: 'https://nominatim.openstreetmap.org/search',
-                    data: {
-                        q: query,
-                        format: 'json',
-                        limit: 5
-                    },
-                    success: function (results) {
-                        if (results && results.length > 0) {
-                            if (searchMarker) {
-                                drawMap.removeLayer(searchMarker);
-                            }
-
-                            if (results.length > 1) {
-                                // Crear modal para múltiples resultados
-                                const $modal = $('<div>').addClass('search-results-modal').css({
-                                    'position': 'fixed',
-                                    'top': '50%',
-                                    'left': '50%',
-                                    'transform': 'translate(-50%, -50%)',
-                                    'background': 'white',
-                                    'padding': '20px',
-                                    'border-radius': '5px',
-                                    'z-index': '1000',
-                                    'max-height': '80vh',
-                                    'overflow-y': 'auto'
-                                });
-
-                                const $list = $('<ul>').css({
-                                    'list-style': 'none',
-                                    'padding': '0'
-                                });
-
-                                results.forEach(result => {
-                                    $('<li>')
-                                        .text(result.display_name)
-                                        .css({
-                                            'padding': '10px',
-                                            'cursor': 'pointer',
-                                            'border-bottom': '1px solid #eee'
-                                        })
-                                        .hover(
-                                            function () { $(this).css('background-color', '#f0f0f0'); },
-                                            function () { $(this).css('background-color', 'transparent'); }
-                                        )
-                                        .on('click', function () {
-                                            const latlng = [parseFloat(result.lat), parseFloat(result.lon)];
-                                            searchMarker = L.marker(latlng).addTo(drawMap);
-                                            drawMap.setView(latlng, 16);
-                                            searchMarker.bindPopup(result.display_name).openPopup();
-                                            $modal.remove();
-                                        })
-                                        .appendTo($list);
-                                });
-
-                                $modal.append($list);
-                                $('body').append($modal);
-
-                                // Cerrar modal al hacer clic fuera
-                                $(document).on('click', function (e) {
-                                    if (!$(e.target).closest('.search-results-modal').length) {
-                                        $modal.remove();
-                                    }
-                                });
-                            } else {
-                                const result = results[0];
-                                const latlng = [parseFloat(result.lat), parseFloat(result.lon)];
-                                searchMarker = L.marker(latlng).addTo(drawMap);
-                                drawMap.setView(latlng, 16);
-                                searchMarker.bindPopup(result.display_name).openPopup();
-                            }
-                        } else {
-                            showMessage('No se encontraron resultados para: ' + query, 'error');
-                        }
-                    },
-                    error: function () {
-                        showMessage('Error al realizar la búsqueda. Por favor, inténtelo de nuevo.', 'error');
-                    }
-                });
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            if (searchCircle) {
+                drawMap.removeLayer(searchCircle);
             }
+            // Crear círculo con radio de 100 metros
+            searchCircle = L.circle([lat, lng], {
+                radius: 100,
+                color: '#3388ff',
+                fillColor: '#3388ff',
+                fillOpacity: 0.2
+            }).addTo(drawMap);
+            
+            drawMap.setView([lat, lng], 16);
+            searchCircle.bindPopup(`Latitud: ${lat}<br>Longitud: ${lng}`).openPopup();
+        } else {
+            showMessage('Coordenadas fuera de rango. La latitud debe estar entre -90 y 90, y la longitud entre -180 y 180.', 'error');
+        }
+        return;
+    }
+
+    // Si no son coordenadas, buscar por nombre usando Nominatim
+    $.ajax({
+        url: 'https://nominatim.openstreetmap.org/search',
+        data: {
+            q: query,
+            format: 'json',
+            limit: 5
+        },
+        success: function (results) {
+            if (results && results.length > 0) {
+                if (searchCircle) {
+                    drawMap.removeLayer(searchCircle);
+                }
+
+                if (results.length > 1) {
+                    // Crear modal para múltiples resultados
+                    const $modal = $('<div>').addClass('search-results-modal').css({
+                        'position': 'fixed',
+                        'top': '50%',
+                        'left': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'background': 'white',
+                        'padding': '20px',
+                        'border-radius': '5px',
+                        'z-index': '1000',
+                        'max-height': '80vh',
+                        'overflow-y': 'auto'
+                    });
+
+                    const $list = $('<ul>').css({
+                        'list-style': 'none',
+                        'padding': '0'
+                    });
+
+                    results.forEach(result => {
+                        $('<li>')
+                            .text(result.display_name)
+                            .css({
+                                'padding': '10px',
+                                'cursor': 'pointer',
+                                'border-bottom': '1px solid #eee'
+                            })
+                            .hover(
+                                function () { $(this).css('background-color', '#f0f0f0'); },
+                                function () { $(this).css('background-color', 'transparent'); }
+                            )
+                            .on('click', function () {
+                                const latlng = [parseFloat(result.lat), parseFloat(result.lon)];
+                                // Crear círculo con radio de 100 metros
+                                searchCircle = L.circle(latlng, {
+                                    radius: 100,
+                                    color: '#3388ff',
+                                    fillColor: '#3388ff',
+                                    fillOpacity: 0.2
+                                }).addTo(drawMap);
+                                
+                                drawMap.setView(latlng, 16);
+                                searchCircle.bindPopup(result.display_name).openPopup();
+                                $modal.remove();
+                            })
+                            .appendTo($list);
+                    });
+
+                    $modal.append($list);
+                    $('body').append($modal);
+
+                    // Cerrar modal al hacer clic fuera
+                    $(document).on('click', function (e) {
+                        if (!$(e.target).closest('.search-results-modal').length) {
+                            $modal.remove();
+                        }
+                    });
+                } else {
+                    const result = results[0];
+                    const latlng = [parseFloat(result.lat), parseFloat(result.lon)];
+                    // Crear círculo con radio de 100 metros
+                    searchCircle = L.circle(latlng, {
+                        radius: 100,
+                        color: '#3388ff',
+                        fillColor: '#3388ff',
+                        fillOpacity: 0.2
+                    }).addTo(drawMap);
+                    
+                    drawMap.setView(latlng, 16);
+                    searchCircle.bindPopup(result.display_name).openPopup();
+                }
+            } else {
+                showMessage('No se encontraron resultados para: ' + query, 'error');
+            }
+        },
+        error: function () {
+            showMessage('Error al realizar la búsqueda. Por favor, inténtelo de nuevo.', 'error');
+        }
+    });
+}
 
             // Manejar evento de búsqueda
             $('#search-button').on('click', function () {
