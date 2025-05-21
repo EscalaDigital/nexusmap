@@ -430,8 +430,8 @@
 }
 
 /* Ajustes del control de zoom */
-.leaflet-control-container .leaflet-left {
-    position: static;*/
+.leaflet-control-container .leaflet-left {    
+  position: static;
 }
 
 .leaflet-control-container .leaflet-top {
