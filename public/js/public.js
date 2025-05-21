@@ -12,27 +12,35 @@ var allMarkers = [];
 jQuery(document).ready(function ($) {
     if (jQuery('#nm-main-map').length) {
 
-        map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
+        map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);        // Crear el contenedor de controles si aún no existe
+        if (jQuery('#nm-top-controls').length === 0) {
+            jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
+        }
 
-        // Crear botón y panel de leyenda personalizado
-        var legendButton = document.createElement('button');
-        legendButton.className = 'legend-button';
-        legendButton.innerHTML = '📊 Leyenda';
-        legendButton.style.zIndex = 1000; // Asegurarse de que el botón esté por encima de otros elementos
+        // Referencia al contenedor de controles
+        var $topControls = jQuery('#nm-top-controls');
 
+        // Crear botón de leyenda
+        var $legendButton = jQuery('<button>', {
+            class: 'nm-control-button',
+            title: 'Leyenda',
+            html: '<i class="fa fa-list"></i>'
+        });
+
+        // Crear panel de leyenda
         var legendPanel = document.createElement('div');
         legendPanel.className = 'legend-panel';
-        legendPanel.style.zIndex = 1000; // Asegurarse de que el panel esté por encima de otros elementos
+        legendPanel.style.zIndex = 1000;
 
         // Asegurarse de que el contenedor del mapa tenga posición relativa
         jQuery('#nm-main-map').css('position', 'relative');
 
-        // Agregar el botón y panel directamente al contenedor del mapa
-        document.querySelector('#nm-main-map').appendChild(legendButton);
+        // Agregar el botón al contenedor de controles y el panel al mapa
+        $topControls.append($legendButton);
         document.querySelector('#nm-main-map').appendChild(legendPanel);
 
         // Manejar el clic en el botón de leyenda
-        legendButton.addEventListener('click', function (e) {
+        $legendButton.on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             legendPanel.classList.toggle('visible');
@@ -42,19 +50,10 @@ jQuery(document).ready(function ($) {
         });
 
         // Cerrar la leyenda al hacer clic fuera de ella
-        document.addEventListener('click', function (e) {
-            if (!legendButton.contains(e.target) && !legendPanel.contains(e.target)) {
+        document.addEventListener('click', function(e) {
+            if (!$legendButton[0].contains(e.target) && !legendPanel.contains(e.target)) {
                 legendPanel.classList.remove('visible');
-            }
-        });
-
-        // Crear el contenedor de controles si aún no existe
-        if (jQuery('#nm-top-controls').length === 0) {
-            jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
-        }
-
-        // Referencia al contenedor de controles
-        var $topControls = jQuery('#nm-top-controls');
+            }        });
 
         // Botón de descarga de GeoJSON
         if (nmMapData.enable_geojson_download) {
@@ -192,107 +191,100 @@ jQuery(document).ready(function ($) {
                 return;
             }
 
-            // Crear el control personalizado de Leaflet
-            const FilterControl = L.Control.extend({
-                options: {
+            // Crear el contenedor de filtros
+            var $filterContainer = jQuery('<div>', { class: 'nm-filters-container' });
+            
+            // Crear botón de filtros
+            var $filterButton = jQuery('<button>', {
+                class: 'nm-control-button',
+                title: 'Filtros',
+                html: '<i class="fa fa-filter"></i>'
+            });
+            $filterContainer.append($filterButton);
 
-                    position: 'topleft' // Cambiamos la posición del botón a topright
-                },
-
-                onAdd: function (map) {
-                    const container = L.DomUtil.create('div', 'nm-filters-container');
-
-                    // Crear el botón de toggle
-                    const toggleButton = L.DomUtil.create('div', 'nm-filters-toggle', container);
-                    toggleButton.innerHTML = 'Filtros';
-
-                    // Crear el panel de filtros con posición absoluta
-                    const filterPanel = L.DomUtil.create('div', 'nm-filters-panel collapsed', container);
-
-
-
-                    // Crear el encabezado
-                    const header = `
-                        <div class="nm-filters-header">
-                            <h3 class="nm-filters-title">Filtros disponibles</h3>
-                            <button class="nm-close-filters">×</button>
-                        </div>
-                    `;
-
-                    // Crear el contenido de filtros
-                    let filterContent = '';
-                    nmMapData.filter_settings.forEach(filter => {
-                        filterContent += `
-                            <div class="nm-filter-group" data-field="${filter.field}">
-                                <span class="nm-filter-label">${filter.button_text}</span>
-                                <div class="nm-filter-options">
-                                    ${filter.options.map(option => `
-                                        <button class="nm-filter-button" 
-                                                data-field="${filter.field}" 
-                                                data-value="${option}"
-                                                style="background-color: ${filter.style?.background || '#fff'}; 
-                                                       color: ${filter.style?.color || '#000'}">${option}</button>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    // Agregar contador
-                    filterContent += `
-                        <div class="nm-filter-count">
-                            Puntos mostrados: <span id="nm-points-count">0</span>
-                        </div>
-                    `;
-
-                    filterPanel.innerHTML = header + filterContent;
-
-                    // Prevenir que los clicks en el control se propaguen al mapa
-                    L.DomEvent.disableClickPropagation(container);
-                    L.DomEvent.disableScrollPropagation(container);
-
-                    // Eventos
-                    toggleButton.addEventListener('click', () => {
-                        filterPanel.classList.toggle('collapsed');
-                    });
-
-                    container.querySelector('.nm-close-filters').addEventListener('click', () => {
-                        filterPanel.classList.add('collapsed');
-                    });
-
-                    // Manejar clicks en los filtros
-                    const activeFilters = {};
-                    container.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('nm-filter-button')) {
-                            const button = e.target;
-                            const field = button.dataset.field;
-                            const value = button.dataset.value;
-
-                            button.classList.toggle('active');
-
-                            if (!activeFilters[field]) {
-                                activeFilters[field] = new Set();
-                            }
-
-                            if (button.classList.contains('active')) {
-                                activeFilters[field].add(value);
-                            } else {
-                                activeFilters[field].delete(value);
-                                if (activeFilters[field].size === 0) {
-                                    delete activeFilters[field];
-                                }
-                            }
-
-                            updateVisiblePoints(activeFilters);
-                        }
-                    });
-
-                    return container;
-                }
+            // Crear el panel de filtros
+            var $filterPanel = jQuery('<div>', { 
+                class: 'nm-filters-panel collapsed',
+                css: { zIndex: 1000 }
             });
 
-            // Añadir el control al mapa
-            map.addControl(new FilterControl());
+            // Crear el encabezado
+            var header = `
+                <div class="nm-filters-header">
+                    <h3 class="nm-filters-title">Filtros disponibles</h3>
+                    <button class="nm-close-filters">×</button>
+                </div>
+            `;
+
+            // Crear el contenido de filtros
+            var filterContent = '';
+            nmMapData.filter_settings.forEach(filter => {
+                filterContent += `
+                    <div class="nm-filter-group" data-field="${filter.field}">
+                        <span class="nm-filter-label">${filter.button_text}</span>
+                        <div class="nm-filter-options">
+                            ${filter.options.map(option => `
+                                <button class="nm-filter-button" 
+                                        data-field="${filter.field}" 
+                                        data-value="${option}"
+                                        style="background-color: ${filter.style?.background || '#fff'}; 
+                                               color: ${filter.style?.color || '#000'}">${option}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Agregar contador
+            filterContent += `
+                <div class="nm-filter-count">
+                    Puntos mostrados: <span id="nm-points-count">0</span>
+                </div>
+            `;
+
+            $filterPanel.html(header + filterContent);
+
+            // Agregar el panel al mapa
+            jQuery('#nm-main-map').append($filterPanel);
+
+            // Eventos
+            $filterButton.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $filterPanel.toggleClass('collapsed');
+            });
+
+            $filterPanel.on('click', '.nm-close-filters', function(e) {
+                $filterPanel.addClass('collapsed');
+            });
+
+            // Manejar clicks en los filtros
+            const activeFilters = {};
+            $filterPanel.on('click', '.nm-filter-button', function(e) {
+                const $button = jQuery(this);
+                const field = $button.data('field');
+                const value = $button.data('value');
+
+                $button.toggleClass('active');
+
+                if (!activeFilters[field]) {
+                    activeFilters[field] = new Set();
+                }
+
+                if ($button.hasClass('active')) {
+                    activeFilters[field].add(value);
+                } else {
+                    activeFilters[field].delete(value);
+                    if (activeFilters[field].size === 0) {
+                        delete activeFilters[field];
+                    }
+                }
+
+                updateVisiblePoints(activeFilters);
+            });
+
+            // Agregar el contenedor de filtros al contenedor de controles
+            $topControls.append($filterContainer);
         }
 
 
