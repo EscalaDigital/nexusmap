@@ -18,9 +18,11 @@ jQuery(document).ready(function ($) {
         var legendButton = document.createElement('button');
         legendButton.className = 'legend-button';
         legendButton.innerHTML = '📊 Leyenda';
+        legendButton.style.zIndex = 1000; // Asegurarse de que el botón esté por encima de otros elementos
 
         var legendPanel = document.createElement('div');
         legendPanel.className = 'legend-panel';
+        legendPanel.style.zIndex = 1000; // Asegurarse de que el panel esté por encima de otros elementos
 
         // Asegurarse de que el contenedor del mapa tenga posición relativa
         jQuery('#nm-main-map').css('position', 'relative');
