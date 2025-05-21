@@ -202,19 +202,43 @@
 /* Estilos para el panel de filtros */
 .nm-filters-panel {
   position: absolute !important;
-  left: 70px !important;
+  left: 60px !important; /* Alineado con nm-top-controls */
   top: 0 !important;
   height: 100% !important;
   margin: 0;
   border-radius: 0;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   padding: 20px;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
   width: 300px;
   background: white;
   overflow-y: auto;
   z-index: 999;
+  display: none; /* Oculto por defecto */
+}
+
+.nm-filters-panel:not(.collapsed) {
+  display: block; /* Se muestra cuando no tiene la clase collapsed */
+}
+
+/* Estilos para el nuevo panel de leyenda */
+.legend-panel {
+  position: absolute;
+  left: 60px; /* Alineado con nm-top-controls */
+  top: 0;
+  height: 100%;
+  margin: 0;
+  background: white;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 999;
+  width: 300px;
+  overflow-y: auto;
+  display: none;
+  border-radius: 0;
+}
+
+.legend-panel.visible {
+  display: block;
 }
 
 /* Estilos para el scroll */
@@ -382,7 +406,6 @@
 /* Ajustes para pantallas muy pequeñas */
 @media screen and (max-width: 480px) {
     .nm-filters-panel,
-    .leaflet-control-layers-list,
     .legend-panel {
         width: calc(100% - 60px);
     }
