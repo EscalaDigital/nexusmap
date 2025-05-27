@@ -119,13 +119,27 @@ function performSearch(query) {
 function showModal(properties) {
     /* ----------  Preparación y utilidades ---------- */
 
+    //Limpiar escapes excesivos
+    const cleanValue = (value) => {
+        if (typeof value === 'string') {
+            return value
+                .replace(/\\\\'/g, "'") 
+                .replace(/\\\\"/g, '"')     // Reemplazar \\\\' con '
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")        // Reemplazar \\" con "
+                .replace(/\\\\/g, '\\');  // Reemplazar \\\\ con \
+        }
+        return value;
+    };
+
     // Parsear nm_conditional_groups (formato del primer script)
-    let conditionalGroups = {};
+     let conditionalGroups = {};
     if (properties.nm_conditional_groups) {
         try {
-            conditionalGroups = typeof properties.nm_conditional_groups === 'string'
-                ? JSON.parse(properties.nm_conditional_groups)
-                : properties.nm_conditional_groups;
+            const cleanedGroups = cleanValue(properties.nm_conditional_groups);
+            conditionalGroups = typeof cleanedGroups === 'string'
+                ? JSON.parse(cleanedGroups)
+                : cleanedGroups;
         } catch (e) {
             console.error('Error parseando nm_conditional_groups:', e);
         }
@@ -138,32 +152,35 @@ function showModal(properties) {
     };
 
     // Render de un campo (normal o condicional)
-    const renderField = (label, value, extraClass = '') => {
+      const renderField = (label, value, extraClass = '') => {
+        // Limpiar el valor antes de procesarlo
+        const cleanedValue = cleanValue(value);
+        const cleanedLabel = cleanValue(label);
+        
         // Archivos / URLs
-        if (isValidURL(value) && isFile(value)) {
-            const ext = getFileExtension(value).toLowerCase();
+        if (isValidURL(cleanedValue) && isFile(cleanedValue)) {
+            const ext = getFileExtension(cleanedValue).toLowerCase();
             if (isImage(ext)) {
                 return `<p class="nm-modal-field ${extraClass}">
-                            <strong>${label}:</strong><br>
-                            <img src="${value}" alt="${label}" style="max-width:100%;height:auto;">
+                            <strong>${cleanedLabel}:</strong><br>
+                            <img src="${cleanedValue}" alt="${cleanedLabel}" style="max-width:100%;height:auto;">
                         </p>`;
             }
             if (ext === 'pdf') {
                 return `<p class="nm-modal-field ${extraClass}">
-                            <strong>${label}:</strong>
-                            <a href="${value}" target="_blank">Ver documento PDF</a>
+                            <strong>${cleanedLabel}:</strong>
+                            <a href="${cleanedValue}" target="_blank">Ver documento PDF</a>
                         </p>`;
             }
-            // Otro tipo de descarga
             return `<p class="nm-modal-field ${extraClass}">
-                        <strong>${label}:</strong>
-                        <a href="${value}" download>Descargar archivo</a>
+                        <strong>${cleanedLabel}:</strong>
+                        <a href="${cleanedValue}" download>Descargar archivo</a>
                     </p>`;
         }
 
-        // Texto simple
+        // Texto simple - aplicar limpieza aquí también
         return `<p class="nm-modal-field ${extraClass}">
-                    <strong>${label}:</strong> ${value}
+                    <strong>${cleanedLabel}:</strong> ${cleanedValue}
                 </p>`;
     };
 

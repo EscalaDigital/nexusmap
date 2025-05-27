@@ -394,6 +394,19 @@ class NM_Public
         /* ───────── Seguridad ───────── */
         check_ajax_referer('nm_public_nonce', 'nonce');
 
+        //Sanitizar y limpiar datos
+        $sanitize_form_data = function ($data) use (&$sanitize_form_data) {
+            if (is_array($data)) {
+                return array_map($sanitize_form_data, $data);
+            } elseif (is_string($data)) {
+                // Limpiar escapes múltiples y normalizar comillas
+                $data = stripslashes($data);
+                $data = str_replace(array("\\'", '\\"'), array("'", '"'), $data);
+                return sanitize_text_field($data);
+            }
+            return $data;
+        };
+
         $form_type = isset($_POST['nm_form_type']) ? intval($_POST['nm_form_type']) : 0;
         $form_fields          = array();   // propiedades finales, en orden
         $already_processed    = array();   // names tratados para no duplicar
@@ -451,11 +464,11 @@ class NM_Public
                 }
             }
 
-            /* ---- INPUT NORMAL ---- */ elseif (isset($_POST[$html_name])) {
+            /* ---- INPUT NORMAL ---- */ 
+            elseif (isset($_POST[$html_name])) {
                 $val = $_POST[$html_name];
-                $form_fields[$store_key] = is_array($val)
-                    ? array_map('sanitize_text_field', $val)
-                    : sanitize_text_field($val);
+                $cleaned_val = $sanitize_form_data($val);
+            $form_fields[$store_key] = $cleaned_val;
             }
             // si es file sin subir nada → simplemente se omite
         }
@@ -506,9 +519,8 @@ class NM_Public
                 }
             } elseif (isset($_POST[$inkey])) {
                 $v = $_POST[$inkey];
-                $form_fields[$store_key] = is_array($v)
-                    ? array_map('sanitize_text_field', $v)
-                    : sanitize_text_field($v);
+                 
+            $form_fields[$store_key] = $sanitize_form_data($v);
             }
         }
 
