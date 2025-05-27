@@ -38,12 +38,33 @@
     position: relative;
 }
 
-.nm-form-field label {
-    display: block;
-    margin-bottom: 8px;
+/* Headers y secciones */
+.nm-form-field[data-type="header"] {
+    margin: 40px -35px 20px;
+    padding: 15px 35px;
+    background: #f8f9fa;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.nm-form-field[data-type="header"] h3 {
+    margin: 0;
+    color: #0E6F6C;
+    font-size: 1.2em;
     font-weight: 600;
-    color: #2c3e50;
-    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nm-form-field[data-type="header"] + .nm-form-field {
+    margin-top: 25px;
+}
+
+/* Campos dentro de una sección */
+.nm-form-field[data-type="header"] ~ .nm-form-field:not([data-type="header"]) {
+    margin-left: 15px;
+    padding-left: 20px;
+    border-left: 3px solid #f0f0f0;
 }
 
 /* Estilos específicos por tipo de campo */
@@ -133,15 +154,40 @@
 }
 
 /* Estilos para campos condicionales */
-.conditional-target {
-    display: none;
-    margin-top: 15px;
-    padding-left: 20px;
+.nm-conditional-group {
     border-left: 3px solid #0E6F6C;
+    margin: 15px 0;
+    padding: 10px 0 10px 15px;
+    background-color: #f8f9fa;
+    border-radius: 0 6px 6px 0;
 }
 
-.conditional-target.active {
-    display: block;
+.nm-conditional-fields {
+    margin-left: 20px;
+    padding-top: 10px;
+}
+
+.nm-conditional-field {
+    color: #2c3e50;
+    font-size: 0.95em;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #dde1e7;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Botón de envío */
@@ -155,11 +201,15 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
+    width: auto;
+    min-width: 150px;
+    text-align: center;
 }
 
 .button:hover {
     background-color: #0b5a57;
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(14, 111, 108, 0.2);
 }
 
 /* Estados focus para inputs */
@@ -181,6 +231,15 @@
     .button {
         width: 100%;
     }
+
+    .nm-conditional-group {
+        margin: 10px 0;
+        padding: 10px;
+    }
+
+    .nm-conditional-fields {
+        margin-left: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -192,6 +251,10 @@
     .nm-form-field select,
     .nm-form-field textarea {
         font-size: 14px;
+        padding: 10px;
+    }
+
+    .nm-conditional-field {
         padding: 10px;
     }
 }
