@@ -186,4 +186,30 @@ class NM_Model {
             array( '%d' )
         );
     }
+
+    /**
+     * Actualizar los datos de una entrada
+     */
+    public function update_entry_data( $entry_id, $entry_data ) {
+        global $wpdb;
+        return $wpdb->update(
+            $this->entries_table,
+            array( 'entry_data' => maybe_serialize( $entry_data ) ),
+            array( 'id' => $entry_id ),
+            array( '%s' ),
+            array( '%d' )
+        );
+    }
+
+    /**
+     * Eliminar una entrada
+     */
+    public function delete_entry( $entry_id ) {
+        global $wpdb;
+        return $wpdb->delete(
+            $this->entries_table,
+            array( 'id' => $entry_id ),
+            array( '%d' )
+        );
+    }
 }

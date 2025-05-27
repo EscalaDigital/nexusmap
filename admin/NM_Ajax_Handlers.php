@@ -8,9 +8,7 @@ class NM_Ajax_Handlers
     public function __construct($loader, $model)
     {
         $this->loader = $loader;
-        $this->model = $model;
-
-        // Registro de acciones AJAX
+        $this->model = $model;        // Registro de acciones AJAX
         $this->loader->add_action('wp_ajax_nm_save_form', $this, 'save_form');
         $this->loader->add_action('wp_ajax_nm_get_field_template', $this, 'get_field_template');
         $this->loader->add_action('wp_ajax_nm_get_entries', $this, 'get_entries');
@@ -19,6 +17,9 @@ class NM_Ajax_Handlers
         $this->loader->add_action('wp_ajax_nm_save_option_texts', $this, 'save_option_texts');
         $this->loader->add_action('wp_ajax_nm_get_form', $this, 'get_form_html');
         $this->loader->add_action('wp_ajax_nm_save_conditional_fields', $this, 'save_conditional_fields');
+        $this->loader->add_action('wp_ajax_nm_get_entry_for_edit', $this, 'get_entry_for_edit');
+        $this->loader->add_action('wp_ajax_nm_update_entry_data', $this, 'update_entry_data');
+        $this->loader->add_action('wp_ajax_nm_delete_entry', $this, 'delete_entry');
     }
     // Compare this snippet from admin/NM_Ajax_Handlers.php:
     public function save_ab_option()
@@ -156,6 +157,71 @@ class NM_Ajax_Handlers
             wp_send_json_success('Conditional fields saved successfully');
         } else {
             wp_send_json_error('Error saving conditional fields');
+        }
+    }
+
+    /**
+     * Obtener una entrada para editar
+     */
+    public function get_entry_for_edit()
+    {
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+
+        $entry_id = intval($_POST['entry_id']);
+
+        if ($entry_id) {
+            $entry = $this->model->get_entry_by_id($entry_id);
+            if ($entry) {
+                $entry_data = maybe_unserialize($entry->entry_data);
+                wp_send_json_success($entry_data);
+            } else {
+                wp_send_json_error(__('Entry not found', 'nexusmap'));
+            }
+        } else {
+            wp_send_json_error(__('Entry ID is missing', 'nexusmap'));
+        }
+    }
+
+    /**
+     * Actualizar los datos de una entrada
+     */
+    public function update_entry_data()
+    {
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+
+        $entry_id = intval($_POST['entry_id']);
+        $entry_data = isset($_POST['entry_data']) ? $_POST['entry_data'] : array();
+
+        if ($entry_id && !empty($entry_data)) {
+            $result = $this->model->update_entry_data($entry_id, $entry_data);
+            if ($result !== false) {
+                wp_send_json_success(__('Entry updated successfully', 'nexusmap'));
+            } else {
+                wp_send_json_error(__('Error updating entry', 'nexusmap'));
+            }
+        } else {
+            wp_send_json_error(__('Entry ID or data is missing', 'nexusmap'));
+        }
+    }
+
+    /**
+     * Eliminar una entrada
+     */
+    public function delete_entry()
+    {
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+
+        $entry_id = intval($_POST['entry_id']);
+
+        if ($entry_id) {
+            $result = $this->model->delete_entry($entry_id);
+            if ($result !== false) {
+                wp_send_json_success(__('Entry deleted successfully', 'nexusmap'));
+            } else {
+                wp_send_json_error(__('Error deleting entry', 'nexusmap'));
+            }
+        } else {
+            wp_send_json_error(__('Entry ID is missing', 'nexusmap'));
         }
     }
 }

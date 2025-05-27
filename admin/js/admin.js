@@ -474,17 +474,28 @@ function saveForm(formSelector, formType) {
     //  Save Unique Form
     jQuery('#nm-save-form').click(function () {
         compruebaysalva('#nm-custom-form', 0);
-    });
-
-    // Entries Page Actions
-    jQuery('.approve-entry').click(function () {
-        var entryId = jQuery(this).data('id');
+    });    // Entries Page Actions - Usar delegación de eventos
+    $(document).on('click', '.approve-entry', function () {
+        var entryId = $(this).data('id');
         updateEntryStatus(entryId, 'approved');
     });
 
-    jQuery('.reject-entry').click(function () {
-        var entryId = jQuery(this).data('id');
+    $(document).on('click', '.reject-entry', function () {
+        var entryId = $(this).data('id');
         updateEntryStatus(entryId, 'rejected');
+    });
+
+    // Nuevos manejadores para entradas aprobadas
+    $(document).on('click', '.edit-entry', function () {
+        var entryId = $(this).data('id');
+        openEditEntryModal(entryId);
+    });
+
+    $(document).on('click', '.delete-entry', function () {
+        var entryId = $(this).data('id');
+        if (confirm('¿Estás seguro de que quieres eliminar esta entrada? Esta acción no se puede deshacer.')) {
+            deleteEntry(entryId);
+        }
     });
 
     function updateEntryStatus(entryId, status) {
@@ -501,6 +512,179 @@ function saveForm(formSelector, formType) {
             }
         });
     }
+
+    function openEditEntryModal(entryId) {
+        // Crear modal de edición si no existe
+        if ($('#editEntryModal').length === 0) {
+            var modalHtml = `
+                <div id="editEntryModal" class="modal" style="display:none;">
+                    <div class="modal-content" style="width: 90%; max-width: 800px;">
+                        <span class="close edit-modal-close">&times;</span>
+                        <h2>Editar Entrada</h2>
+                        <div id="editEntryForm">
+                            <div id="editFormFields"></div>
+                            <div style="margin-top: 20px;">
+                                <button id="saveEntryChanges" class="button button-primary">Guardar Cambios</button>
+                                <button id="cancelEntryEdit" class="button">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('body').append(modalHtml);
+        }
+
+        // Obtener datos de la entrada
+        $.post(nmAdmin.ajax_url, {
+            action: 'nm_get_entry_for_edit',
+            entry_id: entryId,
+            nonce: nmAdmin.nonce
+        }, function (response) {
+            if (response.success) {
+                buildEditForm(entryId, response.data);
+                $('#editEntryModal').show();
+            } else {
+                alert('Error al cargar los datos de la entrada: ' + response.data);
+            }
+        });
+    }
+
+    function buildEditForm(entryId, entryData) {
+        var formHtml = '';
+        
+        // Parsear map_data si existe
+        var mapData = null;
+        if (entryData.map_data) {
+            try {
+                var decodedMapData = decodeEscapedJsonString(entryData.map_data);
+                mapData = JSON.parse(decodedMapData)[0];
+            } catch (e) {
+                console.error('Error parsing map data:', e);
+            }
+        }
+
+        // Crear campos editables para las propiedades principales
+        if (mapData && mapData.properties) {
+            $.each(mapData.properties, function(key, value) {
+                if (key.startsWith('nm_') && !['nm_conditional_groups', 'nm_layers', 'nm_has_layer', 'nm_text_layers', 'nm_entry_id'].includes(key)) {
+                    var cleanKey = key.replace('nm_', '');
+                    var fieldType = getFieldType(value);
+                    
+                    formHtml += '<div class="edit-field-group">';
+                    formHtml += '<label for="edit_' + key + '"><strong>' + cleanKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + ':</strong></label>';
+                    
+                    if (fieldType === 'textarea') {
+                        formHtml += '<textarea id="edit_' + key + '" name="' + key + '" rows="3" style="width: 100%;">' + escapeHtml(value) + '</textarea>';
+                    } else {
+                        formHtml += '<input type="text" id="edit_' + key + '" name="' + key + '" value="' + escapeHtml(value) + '" style="width: 100%;">';
+                    }
+                    
+                    formHtml += '</div>';
+                }
+            });
+        }
+
+        $('#editFormFields').html(formHtml);
+
+        // Guardar el ID de entrada para uso posterior
+        $('#editEntryModal').data('entry-id', entryId);
+        $('#editEntryModal').data('original-data', entryData);
+    }
+
+    function getFieldType(value) {
+        if (typeof value === 'string' && value.length > 100) {
+            return 'textarea';
+        }
+        return 'text';
+    }
+
+    function escapeHtml(text) {
+        if (typeof text !== 'string') return text;
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function saveEntryChanges() {
+        var entryId = $('#editEntryModal').data('entry-id');
+        var originalData = $('#editEntryModal').data('original-data');
+        
+        // Recopilar los valores editados
+        var updatedData = $.extend(true, {}, originalData);
+        
+        if (updatedData.map_data) {
+            try {
+                var decodedMapData = decodeEscapedJsonString(updatedData.map_data);
+                var mapDataArray = JSON.parse(decodedMapData);
+                var mapData = mapDataArray[0];
+                
+                // Actualizar las propiedades con los valores del formulario
+                $('#editFormFields input, #editFormFields textarea').each(function() {
+                    var fieldName = $(this).attr('name');
+                    var fieldValue = $(this).val();
+                    if (mapData.properties.hasOwnProperty(fieldName)) {
+                        mapData.properties[fieldName] = fieldValue;
+                    }
+                });
+                
+                // Volver a serializar los datos
+                mapDataArray[0] = mapData;
+                updatedData.map_data = JSON.stringify(mapDataArray);
+                
+            } catch (e) {
+                console.error('Error updating map data:', e);
+                alert('Error al procesar los datos del mapa');
+                return;
+            }
+        }
+
+        // Enviar datos actualizados
+        $.post(nmAdmin.ajax_url, {
+            action: 'nm_update_entry_data',
+            entry_id: entryId,
+            entry_data: updatedData,
+            nonce: nmAdmin.nonce
+        }, function (response) {
+            if (response.success) {
+                alert('Entrada actualizada exitosamente');
+                $('#editEntryModal').hide();
+                location.reload();
+            } else {
+                alert('Error al actualizar la entrada: ' + response.data);
+            }
+        });
+    }
+
+    function deleteEntry(entryId) {
+        $.post(nmAdmin.ajax_url, {
+            action: 'nm_delete_entry',
+            entry_id: entryId,
+            nonce: nmAdmin.nonce
+        }, function (response) {
+            if (response.success) {
+                alert('Entrada eliminada exitosamente');
+                location.reload();
+            } else {
+                alert('Error al eliminar la entrada: ' + response.data);
+            }
+        });
+    }
+
+    // Manejadores para el modal de edición
+    $(document).on('click', '.edit-modal-close, #cancelEntryEdit', function() {
+        $('#editEntryModal').hide();
+    });
+
+    $(document).on('click', '#saveEntryChanges', function() {
+        saveEntryChanges();
+    });
+
+    // Cerrar modal al hacer clic fuera
+    $(document).on('click', '#editEntryModal', function(e) {
+        if (e.target === this) {
+            $('#editEntryModal').hide();
+        }
+    });
 
     $('#nm-layer-settings').on('submit', function (e) {
         e.preventDefault();
@@ -649,6 +833,16 @@ function saveForm(formSelector, formType) {
 
 
 });
+
+// Función para decodificar strings JSON escapados
+function decodeEscapedJsonString(escapedString) {
+    // Reemplaza todas las secuencias de escape que están duplicadas para que sea un JSON válido
+    return escapedString
+        .replace(/\\"/g, '"')  // Reemplaza las comillas escapadas
+        .replace(/\\n/g, '')   // Remueve los saltos de línea escapados
+        .replace(/\\r/g, '')   // Remueve los retornos de carro escapados
+        .replace(/\\\\/g, '\\');  // Reemplaza las barras invertidas dobles con una sola barra invertida
+}
 
 
 
