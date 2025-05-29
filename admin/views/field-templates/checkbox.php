@@ -1,7 +1,7 @@
 <div class="nm-form-field" data-type="checkbox">
     <label>Checkbox Group</label>
     <input type="text" class="field-label" placeholder="Field Label" value="<?php echo esc_attr( $field_label ); ?>">
-    <input type="text" class="field-name" placeholder="Field Name" value="<?php echo esc_attr( $field_name ); ?>">
+    <input type="hidden" class="field-name" value="<?php echo esc_attr( $field_name ); ?>">
     <div class="checkbox-options">
         <?php
         if ( isset( $field['options'] ) && is_array( $field['options'] ) ) {

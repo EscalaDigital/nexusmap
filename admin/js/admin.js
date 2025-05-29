@@ -1,4 +1,66 @@
 jQuery(document).ready(function ($) {
+    
+    // Function to generate unique field name from label
+    function generateFieldName(label, existingNames = []) {
+        // Remove accents and convert to lowercase
+        let name = label
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
+            .replace(/\s+/g, '_') // Replace spaces with underscores
+            .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+
+        // Ensure it starts with a letter
+        if (!/^[a-z]/.test(name)) {
+            name = 'field_' + name;
+        }
+
+        // Make it unique
+        let finalName = name;
+        let counter = 1;
+        while (existingNames.includes(finalName)) {
+            finalName = name + '_' + counter;
+            counter++;
+        }
+
+        return finalName;
+    }
+
+    // Function to get all existing field names in a form
+    function getExistingFieldNames(formSelector) {
+        let names = [];
+        jQuery(formSelector + ' .nm-form-field .field-name').each(function() {
+            let name = jQuery(this).val();
+            if (name) {
+                names.push(name);
+            }
+        });
+        return names;
+    }
+
+    // Auto-generate field name when label changes
+    jQuery(document).on('input', '.field-label', function() {
+        let $this = jQuery(this);
+        let $fieldNameInput = $this.siblings('.field-name');
+        let label = $this.val();
+        
+        if (label) {
+            // Get the form selector
+            let $form = $this.closest('form');
+            let formSelector = '#' + $form.attr('id');
+            
+            // Get existing names
+            let existingNames = getExistingFieldNames(formSelector);
+            
+            // Generate unique name
+            let generatedName = generateFieldName(label, existingNames);
+            $fieldNameInput.val(generatedName);
+        } else {
+            $fieldNameInput.val('');
+        }
+    });
+
     // Toggle visibility of A/B options when checkbox is changed
     jQuery('#nm-ab-option').change(function () {
         if (jQuery(this).is(':checked')) {
@@ -57,9 +119,7 @@ jQuery(document).ready(function ($) {
     jQuery('#nm-form-elements li').draggable({
         helper: 'clone',
         revert: 'invalid'
-    });
-
-    jQuery('.nm-form-droppable').droppable({
+    });    jQuery('.nm-form-droppable').droppable({
         accept: '#nm-form-elements li',
         drop: function (event, ui) {
             var fieldType = ui.draggable.data('type');
@@ -72,6 +132,38 @@ jQuery(document).ready(function ($) {
             }, function (response) {
                 if (response.success) {
                     $thisForm.append(response.data);
+                    
+                    // Auto-generate field name for the newly added field
+                    let $newField = $thisForm.find('.nm-form-field').last();
+                    let $labelInput = $newField.find('.field-label');
+                    let $nameInput = $newField.find('.field-name');
+                    
+                    // Set default label based on field type
+                    let defaultLabels = {
+                        'text': 'Text Field',
+                        'textarea': 'Textarea Field',
+                        'number': 'Number Field',
+                        'date': 'Date Field',
+                        'url': 'URL Field',
+                        'file': 'File Field',
+                        'image': 'Image Field',
+                        'radio': 'Radio Group',
+                        'select': 'Dropdown Menu',
+                        'checkbox': 'Checkbox Group',
+                        'range': 'Range Slider',
+                        'header': 'Header'
+                    };
+                    
+                    let defaultLabel = defaultLabels[fieldType] || 'Field';
+                    
+                    // Generate unique name
+                    let formSelector = '#' + $thisForm.attr('id');
+                    let existingNames = getExistingFieldNames(formSelector);
+                    let generatedName = generateFieldName(defaultLabel, existingNames);
+                    
+                    // Set the generated name
+                    $nameInput.val(generatedName);
+                    
                 } else {
                     alert('Error loading field template.');
                 }
@@ -133,9 +225,7 @@ jQuery(document).ready(function ($) {
     // Eliminar opción de select
     jQuery(document).on('click', '.remove-option', function () {
         jQuery(this).closest('.select-option').remove();
-    });
-
-    // Modificar la función de guardar formulario para incluir checkboxes
+    });    // Modificar la función de guardar formulario para incluir checkboxes
     // Function to collect form fields and send to server
     function saveForm(formSelector, formType) {
         var formFields = [];
@@ -144,6 +234,9 @@ jQuery(document).ready(function ($) {
             var fieldLabel = jQuery(this).find('.field-label').val() || '';
             var fieldName = jQuery(this).find('.field-name').val() || '';
             var fieldOptions = [];
+
+            // Skip fields without labels
+            if (!fieldLabel && fieldType !== 'map') return;
 
             // Collect options if the field has them
             if (fieldType === 'select' || fieldType === 'checkbox' || fieldType === 'radio') {
@@ -157,9 +250,13 @@ jQuery(document).ready(function ($) {
 
             var fieldData = {
                 type: fieldType,
-                label: fieldLabel,
-                name: fieldName
+                label: fieldLabel
             };
+
+            // Only add name if field has a name input (headers don't need names)
+            if (fieldName || jQuery(this).find('.field-name').length > 0) {
+                fieldData.name = fieldName;
+            }
 
             if (fieldOptions.length > 0) {
                 fieldData.options = fieldOptions;
@@ -181,12 +278,11 @@ jQuery(document).ready(function ($) {
                 alert('Error saving form.');
             }
         });
-    }
-
-    // Function to validate if all fields are filled
+    }    // Function to validate if all fields are filled
     function validateForm(formId) {
         let isValid = true;
-        jQuery(`${formId} .nm-form-field input, ${formId} .nm-form-field select, ${formId} .nm-form-field textarea`).each(function () {
+        // Only validate field labels, not field names (which are auto-generated)
+        jQuery(`${formId} .nm-form-field .field-label`).each(function () {
             if (jQuery(this).val() === "") {
                 isValid = false;
                 jQuery(this).css('border', '1px solid red'); // Highlight empty fields
@@ -196,7 +292,7 @@ jQuery(document).ready(function ($) {
         });
 
         if (!isValid) {
-            alert("Por favor, completa todos los campos antes de guardar.");
+            alert("Por favor, completa todos los campos de etiqueta antes de guardar.");
         }
         return isValid;
     }
