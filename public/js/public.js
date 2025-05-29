@@ -106,19 +106,50 @@ jQuery(document).ready(function ($) {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
-        }
-
-        // Agregar las capas overlay
+        }        // Agregar las capas overlay
         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
             nmMapData.overlay_layers.forEach(function (layer) {
 
                 if (layer.type === 'geojson') {
                     // Cargar la capa GeoJSON
-                    overlay = L.geoJSON(null); // Inicialmente vacía
-                    // Cargar los datos GeoJSON desde la URL
-                    $.getJSON(layer.url, function (data) {
-                        overlay.addData(data);
+                    overlay = L.geoJSON(null, {
+                        onEachFeature: function (feature, layer) {
+                            // Agregar popup con propiedades si existen
+                            if (feature.properties) {
+                                var popupContent = '<div class="geojson-popup">';
+                                Object.keys(feature.properties).forEach(function(key) {
+                                    if (feature.properties[key]) {
+                                        popupContent += '<p><strong>' + key + ':</strong> ' + feature.properties[key] + '</p>';
+                                    }
+                                });
+                                popupContent += '</div>';
+                                layer.bindPopup(popupContent);
+                            }
+                        },
+                        style: function (feature) {
+                            // Estilo por defecto para features
+                            return {
+                                color: "#3388ff",
+                                weight: 2,
+                                opacity: 0.8,
+                                fillOpacity: 0.2
+                            };
+                        }
                     });
+                    
+                    // Cargar los datos GeoJSON desde la URL
+                    $.getJSON(layer.url)
+                        .done(function (data) {
+                            overlay.addData(data);
+                            console.log('GeoJSON layer "' + layer.name + '" loaded successfully');
+                        })
+                        .fail(function (jqXHR, textStatus, errorThrown) {
+                            console.error('Error loading GeoJSON layer "' + layer.name + '":', textStatus, errorThrown);
+                            // Mostrar mensaje de error al usuario si es necesario
+                            if (jqXHR.status === 404) {
+                                console.warn('GeoJSON file not found for layer: ' + layer.name);
+                            }
+                        });
                 } else if (layer.type === 'wms') {
                     // Agregar capa WMS
                     overlay = L.tileLayer.wms(layer.url, {

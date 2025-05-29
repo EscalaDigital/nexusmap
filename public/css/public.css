@@ -202,4 +202,41 @@
     border-color: #aaa;
 }
 
+/* Estilos para popups de capas GeoJSON */
+.geojson-popup {
+    max-width: 300px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.geojson-popup p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.geojson-popup strong {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Estilos para el modal de carga de archivos */
+.nm-file-upload-info {
+    background: #e7f3ff;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #31708f;
+}
+
+.nm-file-upload-info ul {
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.nm-file-upload-info li {
+    margin: 3px 0;
+}
+
 

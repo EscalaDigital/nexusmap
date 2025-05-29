@@ -114,6 +114,17 @@
     box-sizing: border-box;
 }
 
+/* Hide field name inputs since they are now auto-generated */
+.nm-form-field .field-name {
+    display: none;
+}
+
+/* Style the field label input to take full width */
+.nm-form-field .field-label {
+    width: 100% !important;
+    margin-bottom: 10px;
+}
+
 /* Botones de acción dentro del formulario */
 .nm-form-field button,
 .nm-remove-field,
@@ -254,4 +265,46 @@
 
 #tabsforms .ui-tabs-panel.ui-tabs-active {
     display: block;
+}
+
+/* Estilos para la gestión de capas */
+.nm-file-upload-info {
+    background: #e7f3ff;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #31708f;
+}
+
+.nm-file-upload-info ul {
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.nm-file-upload-info li {
+    margin: 3px 0;
+}
+
+.nm-layer-url-truncated {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Mejoras para la tabla de capas */
+.wp-list-table .nm-layer-actions {
+    white-space: nowrap;
+}
+
+.wp-list-table .nm-layer-actions a {
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.wp-list-table .nm-layer-actions a:hover {
+    text-decoration: underline;
 }

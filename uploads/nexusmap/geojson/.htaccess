@@ -1,0 +1,14 @@
+# Deny access to PHP files
+<Files "*.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Allow only GeoJSON files to be accessed
+<FilesMatch "\.(geojson|json)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Prevent directory browsing
+Options -Indexes

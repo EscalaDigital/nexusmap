@@ -44,15 +44,15 @@
     margin-right: 10px;
 }
 
-#nm-user-form .nm-form-field .field-label,
+/* Hide field name inputs since they are now auto-generated */
 #nm-user-form .nm-form-field .field-name {
-    margin-top: 10px;
-    width: calc(50% - 10px);
-    display: inline-block;
+    display: none;
 }
 
 #nm-user-form .nm-form-field .field-label {
-    margin-right: 20px;
+    margin-top: 10px;
+    width: 100%;
+    display: block;
 }
 
 #nm-user-form .nm-form-field .nm-remove-field {
