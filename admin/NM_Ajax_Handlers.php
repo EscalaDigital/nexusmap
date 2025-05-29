@@ -57,19 +57,35 @@ class NM_Ajax_Handlers
         } else {
             wp_send_json_error(__('Form data is missing', 'nexusmap'));
         }
-    }
-    // Función para obtener la plantilla de un campo específico
+    }    // Función para obtener la plantilla de un campo específico
     public function get_field_template()
     {
         check_ajax_referer('nm_admin_nonce', 'nonce');
 
         $field_type = sanitize_text_field($_POST['field_type']);
-        ob_start();
-
+        
         if ($field_type) {
-            include 'views/field-templates/' . $field_type . '.php';
-            $field_html = ob_get_clean();
-            wp_send_json_success($field_html);
+            $template_path = __DIR__ . '/views/field-templates/' . $field_type . '.php';
+            
+            // Debug information
+            error_log("NM Debug - Field type: " . $field_type);
+            error_log("NM Debug - Template path: " . $template_path);
+            error_log("NM Debug - File exists: " . (file_exists($template_path) ? 'YES' : 'NO'));
+            
+            if (file_exists($template_path)) {
+                // Initialize variables that templates expect
+                $field_label = '';
+                $field_name = '';
+                
+                ob_start();
+                include $template_path;
+                $field_html = ob_get_clean();
+                
+                error_log("NM Debug - Generated HTML length: " . strlen($field_html));
+                wp_send_json_success($field_html);
+            } else {
+                wp_send_json_error(__('Field template not found: ' . $field_type . ' at path: ' . $template_path, 'nexusmap'));
+            }
         } else {
             wp_send_json_error(__('Field type is missing', 'nexusmap'));
         }

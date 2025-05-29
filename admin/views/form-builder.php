@@ -205,8 +205,7 @@
             if ($('#tabs').length) {
                 $("#tabs").tabs();
             }
-        }
-        $('#tabsforms .nav-tab').click(function(e) {
+        }        $('#tabsforms .nav-tab').click(function(e) {
             e.preventDefault();
 
             // Remover la clase 'nav-tab-active' de todas las pestañas
@@ -221,28 +220,47 @@
             // Mostrar el contenido correspondiente
             var selected_tab = $(this).attr('href');
             $(selected_tab).show();
+            
+            // Trigger initialization of fields in the newly shown tab
+            setTimeout(function() {
+                if (typeof runInitialization === 'function') {
+                    runInitialization();
+                }
+            }, 100);
         });
 
         // Initialize tabs on page load if A/B option is enabled
         <?php if ($ab_option_enabled): ?>
             initializeTabs();
-        <?php endif; ?>
-
-        // Toggle visibility of A/B options when checkbox is changed
+        <?php endif; ?>        // Toggle visibility of A/B options when checkbox is changed
         $('#nm-ab-option').change(function() {
-        var message = $('#nm-ab-message');
-        if ($(this).is(':checked')) {
-            $('#tabsforms').show();
-            // Initialize tabs
-            $('#formunique').hide();
-            initializeTabs();
-            message.show();
-        } else {
-            $('#tabsforms').hide();
-            // Destroy tabs and show only Form A
-            $('#formunique').show();
-            message.hide();
-        }
-    });
+            var message = $('#nm-ab-message');
+            if ($(this).is(':checked')) {
+                $('#tabsforms').show();
+                // Initialize tabs
+                $('#formunique').hide();
+                initializeTabs();
+                message.show();
+                
+                // Initialize fields after showing A/B forms
+                setTimeout(function() {
+                    if (typeof runInitialization === 'function') {
+                        runInitialization();
+                    }
+                }, 300);
+            } else {
+                $('#tabsforms').hide();
+                // Destroy tabs and show only Form A
+                $('#formunique').show();
+                message.hide();
+                
+                // Initialize fields after showing single form
+                setTimeout(function() {
+                    if (typeof runInitialization === 'function') {
+                        runInitialization();
+                    }
+                }, 300);
+            }
+        });
     });
 </script>

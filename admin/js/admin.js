@@ -55,11 +55,43 @@ jQuery(document).ready(function ($) {
             
             // Generate unique name
             let generatedName = generateFieldName(label, existingNames);
-            $fieldNameInput.val(generatedName);
-        } else {
+            $fieldNameInput.val(generatedName);        } else {
             $fieldNameInput.val('');
         }
-    });
+    });    // Initialize existing fields with auto-generated names if they don't have them
+    function initializeExistingFields() {
+        // Process all forms on the page
+        jQuery('form').each(function() {
+            let $form = jQuery(this);
+            let formSelector = '#' + $form.attr('id');
+            
+            // Skip if form doesn't have the required structure
+            if (!$form.find('.nm-form-field').length) return;
+            
+            console.log('Initializing form:', formSelector);
+            
+            // Generate names for fields that don't have them
+            ensureAllFieldsHaveNames(formSelector);
+        });
+    }
+
+    // Enhanced initialization function that runs multiple times to catch all scenarios
+    function runInitialization() {
+        initializeExistingFields();
+        
+        // Run again after a short delay to catch dynamically loaded content
+        setTimeout(function() {
+            initializeExistingFields();
+        }, 500);
+        
+        // Run again after tabs are fully loaded
+        setTimeout(function() {
+            initializeExistingFields();
+        }, 1000);
+    }
+
+    // Run initialization when page loads
+    runInitialization();
 
     // Toggle visibility of A/B options when checkbox is changed
     jQuery('#nm-ab-option').change(function () {
@@ -124,12 +156,18 @@ jQuery(document).ready(function ($) {
         drop: function (event, ui) {
             var fieldType = ui.draggable.data('type');
             var $thisForm = jQuery(this);
+            
+            console.log('Dragging field type:', fieldType);
+            console.log('AJAX URL:', nmAdmin.ajax_url);
+            console.log('Nonce:', nmAdmin.nonce);
+            
             // AJAX call to get field template
             $.post(nmAdmin.ajax_url, {
                 action: 'nm_get_field_template',
                 field_type: fieldType,
                 nonce: nmAdmin.nonce
             }, function (response) {
+                console.log('AJAX Response:', response);
                 if (response.success) {
                     $thisForm.append(response.data);
                     
@@ -160,12 +198,12 @@ jQuery(document).ready(function ($) {
                     let formSelector = '#' + $thisForm.attr('id');
                     let existingNames = getExistingFieldNames(formSelector);
                     let generatedName = generateFieldName(defaultLabel, existingNames);
-                    
-                    // Set the generated name
+                      // Set the generated name
                     $nameInput.val(generatedName);
                     
                 } else {
-                    alert('Error loading field template.');
+                    console.error('Error loading field template:', response);
+                    alert('Error loading field template: ' + (response.data || 'Unknown error'));
                 }
             });
         }
@@ -220,14 +258,16 @@ jQuery(document).ready(function ($) {
     // Eliminar opción de checkbox
     jQuery(document).on('click', '.remove-option', function () {
         jQuery(this).closest('.checkbox-option').remove();
-    });
-
-    // Eliminar opción de select
+    });    // Eliminar opción de select
     jQuery(document).on('click', '.remove-option', function () {
         jQuery(this).closest('.select-option').remove();
-    });    // Modificar la función de guardar formulario para incluir checkboxes
+    });
+    
     // Function to collect form fields and send to server
     function saveForm(formSelector, formType) {
+        // First, ensure all fields have generated names before saving
+        ensureAllFieldsHaveNames(formSelector);
+        
         var formFields = [];
         jQuery(formSelector + ' .nm-form-field').each(function () {
             var fieldType = jQuery(this).data('type');
@@ -276,9 +316,59 @@ jQuery(document).ready(function ($) {
                 alert('Form saved successfully.');
             } else {
                 alert('Error saving form.');
+            }        });
+    }
+      // Function to ensure all fields have generated names
+    function ensureAllFieldsHaveNames(formSelector) {
+        let existingNames = getExistingFieldNames(formSelector);
+        let fieldsProcessed = 0;
+        let fieldsGenerated = 0;
+        
+        jQuery(formSelector + ' .nm-form-field').each(function () {
+            let $field = jQuery(this);
+            let $labelInput = $field.find('.field-label');
+            let $nameInput = $field.find('.field-name');
+            let label = $labelInput.val();
+            let currentName = $nameInput.val();
+            let fieldType = $field.data('type');
+            
+            fieldsProcessed++;
+            
+            // Skip map fields as they don't need names
+            if (fieldType === 'map') {
+                return;
+            }
+            
+            // If field has a label but no name, generate one
+            if (label && (!currentName || currentName.trim() === '')) {
+                let generatedName = generateFieldName(label, existingNames);
+                $nameInput.val(generatedName);
+                existingNames.push(generatedName);
+                fieldsGenerated++;
+                console.log('Generated name "' + generatedName + '" for label "' + label + '"');
+            }
+            
+            // If field has no label but has a name input, generate a default label and name
+            else if (!label && $nameInput.length > 0 && fieldType !== 'header') {
+                let defaultLabel = fieldType.charAt(0).toUpperCase() + fieldType.slice(1) + ' Field';
+                $labelInput.val(defaultLabel);
+                
+                if (!currentName || currentName.trim() === '') {
+                    let generatedName = generateFieldName(defaultLabel, existingNames);
+                    $nameInput.val(generatedName);
+                    existingNames.push(generatedName);
+                    fieldsGenerated++;
+                    console.log('Generated default label and name for ' + fieldType + ' field');
+                }
             }
         });
-    }    // Function to validate if all fields are filled
+        
+        if (fieldsProcessed > 0) {
+            console.log('Processed ' + fieldsProcessed + ' fields, generated ' + fieldsGenerated + ' names in ' + formSelector);
+        }
+    }
+
+    // Function to validate if all fields are filled
     function validateForm(formId) {
         let isValid = true;
         // Only validate field labels, not field names (which are auto-generated)

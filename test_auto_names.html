@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auto Field Names</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Test Auto Field Names</h1>
+    
+    <form id="test-form">
+        <div class="nm-form-field" data-type="text">
+            <label>Field Label</label>
+            <input type="text" class="field-label" value="User Name" placeholder="Field Label">
+            <input type="hidden" class="field-name" value="">
+        </div>
+        
+        <div class="nm-form-field" data-type="text">
+            <label>Field Label</label>
+            <input type="text" class="field-label" value="Email Address" placeholder="Field Label">
+            <input type="hidden" class="field-name" value="">
+        </div>
+        
+        <div class="nm-form-field" data-type="text">
+            <label>Field Label</label>
+            <input type="text" class="field-label" value="" placeholder="Field Label">
+            <input type="hidden" class="field-name" value="">
+        </div>
+    </form>
+    
+    <button onclick="runTest()">Generate Names</button>
+    <button onclick="showNames()">Show Current Names</button>
+    
+    <div id="output"></div>
+
+    <script>
+        // Copy the functions from admin.js for testing
+        function generateFieldName(label, existingNames = []) {
+            // Remove accents and convert to lowercase
+            let name = label
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
+                .replace(/\s+/g, '_') // Replace spaces with underscores
+                .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+
+            // Ensure it starts with a letter
+            if (!/^[a-z]/.test(name)) {
+                name = 'field_' + name;
+            }
+
+            // Make it unique
+            let finalName = name;
+            let counter = 1;
+            while (existingNames.includes(finalName)) {
+                finalName = name + '_' + counter;
+                counter++;
+            }
+
+            return finalName;
+        }
+
+        function getExistingFieldNames(formSelector) {
+            let names = [];
+            jQuery(formSelector + ' .nm-form-field .field-name').each(function() {
+                let name = jQuery(this).val();
+                if (name) {
+                    names.push(name);
+                }
+            });
+            return names;
+        }
+
+        function ensureAllFieldsHaveNames(formSelector) {
+            let existingNames = getExistingFieldNames(formSelector);
+            let fieldsProcessed = 0;
+            let fieldsGenerated = 0;
+            
+            jQuery(formSelector + ' .nm-form-field').each(function () {
+                let $field = jQuery(this);
+                let $labelInput = $field.find('.field-label');
+                let $nameInput = $field.find('.field-name');
+                let label = $labelInput.val();
+                let currentName = $nameInput.val();
+                let fieldType = $field.data('type');
+                
+                fieldsProcessed++;
+                
+                // Skip map fields as they don't need names
+                if (fieldType === 'map') {
+                    return;
+                }
+                
+                // If field has a label but no name, generate one
+                if (label && (!currentName || currentName.trim() === '')) {
+                    let generatedName = generateFieldName(label, existingNames);
+                    $nameInput.val(generatedName);
+                    existingNames.push(generatedName);
+                    fieldsGenerated++;
+                    console.log('Generated name "' + generatedName + '" for label "' + label + '"');
+                }
+                
+                // If field has no label but has a name input, generate a default label and name
+                else if (!label && $nameInput.length > 0 && fieldType !== 'header') {
+                    let defaultLabel = fieldType.charAt(0).toUpperCase() + fieldType.slice(1) + ' Field';
+                    $labelInput.val(defaultLabel);
+                    
+                    if (!currentName || currentName.trim() === '') {
+                        let generatedName = generateFieldName(defaultLabel, existingNames);
+                        $nameInput.val(generatedName);
+                        existingNames.push(generatedName);
+                        fieldsGenerated++;
+                        console.log('Generated default label and name for ' + fieldType + ' field');
+                    }
+                }
+            });
+            
+            console.log('Processed ' + fieldsProcessed + ' fields, generated ' + fieldsGenerated + ' names in ' + formSelector);
+        }
+
+        function runTest() {
+            ensureAllFieldsHaveNames('#test-form');
+            showNames();
+        }
+
+        function showNames() {
+            let output = '<h3>Current Field Names:</h3>';
+            jQuery('#test-form .nm-form-field').each(function(index) {
+                let label = jQuery(this).find('.field-label').val();
+                let name = jQuery(this).find('.field-name').val();
+                output += `<p>Field ${index + 1}: Label="${label}", Name="${name}"</p>`;
+            });
+            jQuery('#output').html(output);
+        }
+
+        // Show initial state
+        jQuery(document).ready(function() {
+            showNames();
+        });
+    </script>
+</body>
+</html>
