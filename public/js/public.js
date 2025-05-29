@@ -15,24 +15,9 @@ jQuery(document).ready(function ($) {
         // Crear el contenedor de controles si aún no existe
         if (jQuery('#nm-top-controls').length === 0) {
             jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
-        }
-
-        // Referencia al contenedor de controles
+        }        // Referencia al contenedor de controles
         var $topControls = jQuery('#nm-top-controls');
 
-        // Botón de descarga de GeoJSON
-        if (nmMapData.enable_geojson_download) {
-            var $downloadButton = jQuery('<button>', {
-                class: 'nm-control-button',
-                title: 'Descargar GeoJSON',
-                html: '<i class="fa fa-download"></i>'
-            });
-            $downloadButton.on('click', function (e) {
-                e.stopPropagation(); // Evita que el evento se propague al mapa
-                downloadGeoJson();
-            });
-            $topControls.append($downloadButton);
-        }
         // Botón de búsqueda y campo de entrada
         if (nmMapData.enable_search) {
             var $searchContainer = jQuery('<div>', { class: 'nm-search-container' });
@@ -63,9 +48,7 @@ jQuery(document).ready(function ($) {
             $searchContainer.append($searchInput);
 
             $topControls.append($searchContainer);
-        }
-
-        // Botón para añadir capas WMS
+        }        // Botón para añadir capas WMS
         if (nmMapData.enable_user_wms) {
             var $addWmsButton = jQuery('<button>', {
                 class: 'nm-control-button',
@@ -77,6 +60,20 @@ jQuery(document).ready(function ($) {
                 showAddWmsForm();
             });
             $topControls.append($addWmsButton);
+        }
+
+        // Botón para descargar GeoJSON
+        if (nmMapData.enable_geojson_download) {
+            var $downloadButton = jQuery('<button>', {
+                class: 'nm-control-button',
+                title: 'Descargar datos en formato GeoJSON',
+                html: '<i class="fa fa-download"></i>'
+            });
+            $downloadButton.on('click', function (e) {
+                e.stopPropagation(); // Evita que el evento se propague al mapa
+                downloadGeoJson();
+            });
+            $topControls.append($downloadButton);
         }
 
         // Asegurarse de que el contenedor del mapa tiene posición relativa
@@ -106,66 +103,21 @@ jQuery(document).ready(function ($) {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
-        }        // Agregar las capas overlay
+        }        // Agregar las capas overlay (solo WMS)
         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
             nmMapData.overlay_layers.forEach(function (layer) {
-
-                if (layer.type === 'geojson') {
-                    // Cargar la capa GeoJSON
-                    overlay = L.geoJSON(null, {
-                        onEachFeature: function (feature, layer) {
-                            // Agregar popup con propiedades si existen
-                            if (feature.properties) {
-                                var popupContent = '<div class="geojson-popup">';
-                                Object.keys(feature.properties).forEach(function(key) {
-                                    if (feature.properties[key]) {
-                                        popupContent += '<p><strong>' + key + ':</strong> ' + feature.properties[key] + '</p>';
-                                    }
-                                });
-                                popupContent += '</div>';
-                                layer.bindPopup(popupContent);
-                            }
-                        },
-                        style: function (feature) {
-                            // Estilo por defecto para features
-                            return {
-                                color: "#3388ff",
-                                weight: 2,
-                                opacity: 0.8,
-                                fillOpacity: 0.2
-                            };
-                        }
-                    });
-                    
-                    // Cargar los datos GeoJSON desde la URL
-                    $.getJSON(layer.url)
-                        .done(function (data) {
-                            overlay.addData(data);
-                            console.log('GeoJSON layer "' + layer.name + '" loaded successfully');
-                        })
-                        .fail(function (jqXHR, textStatus, errorThrown) {
-                            console.error('Error loading GeoJSON layer "' + layer.name + '":', textStatus, errorThrown);
-                            // Mostrar mensaje de error al usuario si es necesario
-                            if (jqXHR.status === 404) {
-                                console.warn('GeoJSON file not found for layer: ' + layer.name);
-                            }
-                        });
-                } else if (layer.type === 'wms') {
+                if (layer.type === 'wms') {
                     // Agregar capa WMS
                     overlay = L.tileLayer.wms(layer.url, {
-                        layers: layer.wms_layer_name, // Nombre de la capa WMS especificada
+                        layers: layer.wms_layer_name,
                         format: 'image/png',
                         transparent: true,
                         attribution: layer.attribution || ''
-                        // Puedes agregar más opciones aquí
                     });
+                    overlays[layer.name] = overlay;
                 }
-                overlays[layer.name] = overlay;
-
             });
-        }
-
-        // Agregar controles de capas
+        }// Agregar controles de capas
         controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
 
 

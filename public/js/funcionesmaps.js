@@ -64,16 +64,16 @@ function performSearch(query) {
 //funciones para mostrar datos de elementos puntuales
 // Función para mostrar un modal con las propiedades de un elemento
 function showModal(properties) {
-    var modalContent = '<div class="nm-modal-content">';
+    var modalContent = '<div class="nm-modal-data">';
 
     for (var key in properties) {
         if (properties.hasOwnProperty(key)) {
-            // Omitir el 'entry_id' si aún está presente
-            if (key === 'entry_id') {
+            // Omitir campos específicos
+            if (key === 'entry_id' || key === 'form_type') {
                 continue;
             }
 
-            // Remover el prefijo 'nm_' si existe (si no lo has hecho ya en el servidor)
+            // Remover el prefijo 'nm_' si existe
             var cleanKey = key.startsWith('nm_') ? key.substring(3) : key;
 
             // Formatear la clave para mostrarla como etiqueta
@@ -81,46 +81,130 @@ function showModal(properties) {
 
             var value = properties[key];
 
+            // Si el valor está vacío, omitir el campo
+            if (!value || value === '' || value === null) {
+                continue;
+            }
+
+            modalContent += '<div class="nm-modal-field">';
+            modalContent += '<div class="nm-modal-label">' + label + ':</div>';
+            modalContent += '<div class="nm-modal-value">';
+
             // Verificar si el valor es una URL de archivo
             if (isValidURL(value) && isFile(value)) {
-                // Determinar el tipo de archivo por la extensión
-                var fileType = getFileExtension(value).toLowerCase();
-
-                if (isImage(fileType)) {
-                    // Mostrar la imagen
-                    modalContent += '<p><strong>' + label + ':</strong><br><img src="' + value + '" alt="' + label + '" style="max-width:100%; height:auto;"></p>';
+                var fileType = getFileExtension(value).toLowerCase();                if (isImage(fileType)) {
+                    // Mostrar la imagen con funcionalidad de ampliación
+                    modalContent += '<div class="nm-image-container" data-image-src="' + value + '">';
+                    modalContent += '<img src="' + value + '" alt="' + label + '" class="nm-modal-image">';
+                    modalContent += '<div class="nm-image-overlay"><i class="fas fa-search-plus"></i></div>';
+                    modalContent += '</div>';
                 } else if (fileType === 'pdf') {
-                    // Mostrar un enlace al PDF
-                    modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" target="_blank">Ver documento PDF</a></p>';
+                    modalContent += '<a href="' + value + '" target="_blank" class="nm-file-link nm-pdf-link">';
+                    modalContent += '<i class="fas fa-file-pdf"></i> Ver documento PDF</a>';
                 } else {
-                    // Para otros tipos de archivos, mostrar un enlace de descarga
-                    modalContent += '<p><strong>' + label + ':</strong> <a href="' + value + '" download>Descargar archivo</a></p>';
+                    modalContent += '<a href="' + value + '" download class="nm-file-link nm-download-link">';
+                    modalContent += '<i class="fas fa-download"></i> Descargar archivo</a>';
                 }
+            } else if (isValidURL(value)) {
+                // URL clicable
+                modalContent += '<a href="' + value + '" target="_blank" class="nm-url-link">';
+                modalContent += '<i class="fas fa-external-link-alt"></i> ' + value + '</a>';
             } else {
-                // Mostrar el valor como texto
-                modalContent += '<p><strong>' + label + ':</strong> ' + value + '</p>';
+                // Verificar si es un valor de checkbox múltiple (separado por comas)
+                if (typeof value === 'string' && value.includes(',')) {
+                    var values = value.split(',');
+                    modalContent += '<div class="nm-checkbox-values">';
+                    values.forEach(function(val, index) {
+                        val = val.trim();
+                        if (val) {
+                            modalContent += '<span class="nm-checkbox-item">' + val + '</span>';
+                        }
+                    });
+                    modalContent += '</div>';
+                } else {
+                    // Valor de texto normal
+                    modalContent += '<span class="nm-text-value">' + value + '</span>';
+                }
             }
+
+            modalContent += '</div></div>';
         }
     }
 
-    modalContent += '</div>';
-
-    // Insertar el contenido en el cuerpo del modal
+    modalContent += '</div>';    // Insertar el contenido en el cuerpo del modal
     jQuery('#nm-modal-body').html(modalContent);
 
-    // Mostrar el modal
-    jQuery('#nm-modal').css('display', 'block');
-
-    // Manejar el cierre del modal
-    jQuery('#nm-modal-close').on('click', function () {
-        jQuery('#nm-modal').css('display', 'none');
-    });
-
-    jQuery(window).on('click', function (event) {
-        if (jQuery(event.target).is('#nm-modal')) {
-            jQuery('#nm-modal').css('display', 'none');
+    // Agregar event listeners para las imágenes
+    jQuery('.nm-image-container').off('click').on('click', function() {
+        var imageSrc = jQuery(this).attr('data-image-src');
+        if (imageSrc) {
+            openImageModal(imageSrc);
         }
     });
+
+    // Mostrar el modal
+    jQuery('#nm-modal').css('display', 'flex');    // Manejar el cierre del modal
+    jQuery('#nm-modal-close').off('click').on('click', function () {
+        jQuery('#nm-modal').css('display', 'none');
+        closeImageModal(); // Cerrar también el modal de imagen si está abierto
+    });
+
+    jQuery(window).off('click.modal').on('click.modal', function (event) {
+        if (jQuery(event.target).is('#nm-modal')) {
+            jQuery('#nm-modal').css('display', 'none');
+            closeImageModal();
+        }
+    });
+    
+    // Cerrar modal con tecla Escape
+    jQuery(document).off('keydown.modal').on('keydown.modal', function(e) {
+        if (e.keyCode === 27) { // Escape key
+            jQuery('#nm-modal').css('display', 'none');
+            closeImageModal();
+        }
+    });
+}
+
+// Función para abrir modal de imagen ampliada
+function openImageModal(imageSrc) {
+    // Crear modal de imagen si no existe
+    if (jQuery('#nm-image-modal').length === 0) {
+        var imageModal = '<div id="nm-image-modal" class="nm-image-modal">' +
+                        '<div class="nm-image-modal-content">' +
+                        '<span class="nm-image-modal-close">&times;</span>' +
+                        '<img id="nm-enlarged-image" src="" alt="Imagen ampliada">' +
+                        '</div></div>';
+        jQuery('body').append(imageModal);
+        
+        // Agregar event listener para el botón de cierre
+        jQuery(document).on('click', '.nm-image-modal-close', function() {
+            closeImageModal();
+        });
+          // Cerrar modal al hacer clic fuera de la imagen
+        jQuery(document).on('click', '#nm-image-modal', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+        
+        // Cerrar modal de imagen con Escape
+        jQuery(document).on('keydown.imageModal', function(e) {
+            if (e.keyCode === 27 && jQuery('#nm-image-modal').is(':visible')) {
+                closeImageModal();
+            }
+        });
+    }
+    
+    // Mostrar la imagen
+    jQuery('#nm-enlarged-image').attr('src', imageSrc);
+    jQuery('#nm-image-modal').css('display', 'flex');
+}
+
+// Función para cerrar modal de imagen
+function closeImageModal() {
+    jQuery('#nm-image-modal').css('display', 'none');
+    // Limpiar event listeners específicos del modal de imagen
+    jQuery(document).off('keydown.imageModal');
 }
 
 
@@ -245,10 +329,22 @@ function showAddWmsForm() {
 
 // Función para validar si una cadena es una URL
 function isValidURL(string) {
+    // Verificar que no esté vacío y que tenga una longitud mínima
+    if (!string || string.length < 7) return false;
+    
     try {
-        new URL(string);
-        return true;
+        var url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
     } catch (_) {
+        // Fallback para URLs sin protocolo
+        if (string.match(/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}/) || string.includes('www.')) {
+            try {
+                new URL('http://' + string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
         return false;
     }
 }

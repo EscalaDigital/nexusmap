@@ -93,30 +93,13 @@ class NM_Manage_Layers
         check_admin_referer('nm_add_overlay_layer', 'nm_nonce');
 
         $overlay_name = sanitize_text_field($_POST['overlay_name']);
-        $overlay_type = sanitize_text_field($_POST['overlay_type']);
-        $wms_layer_name = isset($_POST['wms_layer_name']) ? sanitize_text_field($_POST['wms_layer_name']) : '';
+        $overlay_type = 'wms'; // Solo admitimos WMS
+        $wms_layer_name = sanitize_text_field($_POST['wms_layer_name']);
+        $overlay_url = nm_sanitize_tile_url($_POST['overlay_url']);
 
-        $overlay_url = '';
-          // Manejar GeoJSON
-        if ($overlay_type === 'geojson') {
-            // Para GeoJSON solo permitimos carga de archivo
-            if (isset($_FILES['geojson_file']) && !empty($_FILES['geojson_file']['tmp_name'])) {
-                $upload_result = nm_handle_geojson_upload($_FILES['geojson_file']);
-                
-                if (is_wp_error($upload_result)) {
-                    wp_die($upload_result->get_error_message());
-                }
-                
-                $overlay_url = $upload_result;
-            } else {
-                wp_die(__('Please select a GeoJSON file to upload.', 'nexusmap'));
-            }
-        } else {
-            // Para otros tipos de capas (WMS, etc.)
-            if (empty($_POST['overlay_url'])) {
-                wp_die(__('Please provide a layer URL.', 'nexusmap'));
-            }
-            $overlay_url = nm_sanitize_tile_url($_POST['overlay_url']);
+        // Validar que se proporcionen todos los campos necesarios para WMS
+        if (empty($overlay_url) || empty($wms_layer_name)) {
+            wp_die(__('Please provide both WMS Service URL and Layer Name.', 'nexusmap'));
         }
 
         $overlay_layers = get_option('nm_overlay_layers', array());
@@ -145,18 +128,6 @@ class NM_Manage_Layers
 
         $overlay_layers = get_option('nm_overlay_layers', array());
         if (isset($overlay_layers[$index])) {
-            $layer = $overlay_layers[$index];
-            
-            // Si es una capa GeoJSON y el archivo está almacenado localmente, eliminarlo
-            if ($layer['type'] === 'geojson' && isset($layer['url']) && strpos($layer['url'], '/nexusmap/geojson/') !== false) {
-                $upload_dir = wp_upload_dir();
-                $file_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $layer['url']);
-                
-                if (file_exists($file_path)) {
-                    wp_delete_file($file_path);
-                }
-            }
-            
             unset($overlay_layers[$index]);
             $overlay_layers = array_values($overlay_layers);
             update_option('nm_overlay_layers', $overlay_layers);
