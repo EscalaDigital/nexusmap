@@ -90,7 +90,7 @@
 
 /* Estilos para el modal */
 .nm-modal {
-    display: none; /* Oculto por defecto */
+    display: none;
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -98,30 +98,308 @@
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
 }
 
 .nm-modal-content {
     background-color: #fff;
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
+    margin: 5% auto;
+    padding: 0;
+    border: none;
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modalFadeIn 0.3s ease-out;
+    position: relative;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .nm-modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    font-size: 24px;
     font-weight: bold;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 50%;
+    z-index: 1001;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .nm-modal-close:hover,
 .nm-modal-close:focus {
-    color: black;
+    color: #fff;
+    background: #dc3545;
+    transform: scale(1.1);
+}
+
+/* Contenedor principal de datos del modal */
+.nm-modal-data {
+    padding: 20px 30px 30px;
+}
+
+/* Estilo para cada campo del modal */
+.nm-modal-field {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007cba;
+    transition: all 0.2s ease;
+}
+
+.nm-modal-field:hover {
+    background: #e9ecef;
+    transform: translateX(2px);
+}
+
+.nm-modal-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nm-modal-value {
+    color: #333;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Estilos para texto */
+.nm-text-value {
+    display: block;
+    padding: 8px 0;
+}
+
+/* Estilos para URLs */
+.nm-url-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #007cba;
     text-decoration: none;
+    padding: 8px 12px;
+    background: #e7f3ff;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    word-break: break-word;
+}
+
+.nm-url-link:hover {
+    background: #cce7ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 124, 186, 0.2);
+}
+
+/* Estilos para archivos */
+.nm-file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nm-pdf-link {
+    background: #ff4757;
+    color: white;
+}
+
+.nm-pdf-link:hover {
+    background: #ff3838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
+}
+
+.nm-download-link {
+    background: #2ed573;
+    color: white;
+}
+
+.nm-download-link:hover {
+    background: #1dd1a1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 213, 115, 0.3);
+}
+
+/* Estilos para imágenes */
+.nm-image-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
     cursor: pointer;
+}
+
+.nm-image-container:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.nm-modal-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    transition: all 0.3s ease;
+}
+
+.nm-image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: white;
+    font-size: 24px;
+}
+
+.nm-image-container:hover .nm-image-overlay {
+    opacity: 1;
+}
+
+/* Estilos para valores de checkbox múltiple */
+.nm-checkbox-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nm-checkbox-item {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Modal para imagen ampliada */
+.nm-image-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+}
+
+.nm-image-modal-content {
+    position: relative;
+    max-width: 95%;
+    max-height: 95%;
+    text-align: center;
+}
+
+.nm-image-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 15px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2001;
+}
+
+.nm-image-modal-close:hover {
+    background: rgba(255, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+#nm-enlarged-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    animation: imageZoomIn 0.3s ease-out;
+}
+
+@keyframes imageZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nm-modal-content {
+        width: 95%;
+        margin: 2% auto;
+        max-height: 95vh;
+    }
+    
+    .nm-modal-data {
+        padding: 15px 20px 20px;
+    }
+    
+    .nm-modal-field {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .nm-modal-close {
+        padding: 12px 15px;
+        font-size: 20px;
+    }
 }
 
 .nm-modal-content h3 {
