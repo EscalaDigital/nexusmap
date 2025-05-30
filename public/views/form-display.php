@@ -88,11 +88,10 @@
                             <input type="file" name="<?php echo esc_attr($field['name']); ?>">
                         </div>
                     <?php
-                        break;
-                    case 'map':
+                        break;                    case 'map':
                     ?>
                         <div class="nm-form-field" data-type="map">
-                            <label>Map Drawing</label>
+                            <label><?php echo esc_html($field['label']); ?></label>
                             <div id="nm-map-canvas" style="height: 400px;"></div>
                         </div>
                     <?php
