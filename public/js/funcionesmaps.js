@@ -34,30 +34,139 @@ function downloadGeoJson() {
 
 //funcion para abrir el control de busqueda
 function toggleSearchInput() {
+    console.log('toggleSearchInput llamada');
     var $searchInput = jQuery('.nm-search-input');
-    $searchInput.toggle();
+    console.log('Campo de búsqueda encontrado:', $searchInput.length > 0);
+    
     if ($searchInput.is(':visible')) {
+        console.log('Ocultando campo de búsqueda');
+        $searchInput.hide();
+    } else {
+        console.log('Mostrando campo de búsqueda');
+        $searchInput.show();
         $searchInput.focus();
+        
+        // Seleccionar todo el texto si hay alguno
+        var inputElement = $searchInput[0];
+        if (inputElement && inputElement.value) {
+            inputElement.select();
+        }
     }
 }
 
 
 function performSearch(query) {
+    // Evitar múltiples búsquedas simultáneas
+    if (window.searchInProgress) {
+        console.log('Búsqueda ya en progreso, ignorando nueva búsqueda');
+        return;
+    }
+    
     if (!query) {
         alert('Por favor, ingrese una ubicación para buscar.');
         return;
     }
 
-    // Usar el geocodificador para obtener las coordenadas
-    var geocoder = L.Control.Geocoder.nominatim(); // O el geocodificador que estés utilizando
-    geocoder.geocode(query, function (results) {
-        if (results && results.length > 0) {
-            var result = results[0];
-            map.setView(result.center, 18); // Ajusta el nivel de zoom según sea necesario
-        } else {
-            alert('No se encontraron resultados para: ' + query);
-        }
-    });
+    // Verificar que el mapa y el geocodificador estén disponibles
+    if (typeof L === 'undefined') {
+        alert('Error: Leaflet no está cargado.');
+        return;
+    }
+    
+    if (typeof L.Control.Geocoder === 'undefined') {
+        alert('Error: El geocodificador de Leaflet no está cargado.');
+        return;
+    }
+
+    // Marcar que hay una búsqueda en progreso
+    window.searchInProgress = true;
+    console.log('Iniciando búsqueda para:', query);
+
+    // Método alternativo usando fetch directamente a Nominatim
+    function searchWithFetch(query) {
+        var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1';
+        
+        fetch(url)
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                window.searchInProgress = false;
+                console.log('Resultados de fetch:', data);
+                
+                if (data && data.length > 0) {
+                    var result = data[0];
+                    var lat = parseFloat(result.lat);
+                    var lon = parseFloat(result.lon);
+                    
+                    console.log('Coordenadas encontradas:', lat, lon);
+                    
+                    // Solo centrar el mapa en el resultado encontrado
+                    map.setView([lat, lon], 14);
+                    
+                    // Ocultar el campo de búsqueda después de una búsqueda exitosa
+                    jQuery('.nm-search-input').hide();
+                    
+                    console.log('Búsqueda completada exitosamente');
+                } else {
+                    console.log('No se encontraron resultados para:', query);
+                    alert('No se encontraron resultados para: "' + query + '"');
+                }
+            })
+            .catch(function(error) {
+                window.searchInProgress = false;
+                console.error('Error en la búsqueda con fetch:', error);
+                alert('Error en la búsqueda. Por favor, inténtelo de nuevo.');
+            });
+    }
+
+    // Intentar primero con el geocodificador de Leaflet
+    try {
+        var geocoder = L.Control.Geocoder.nominatim({
+            serviceUrl: 'https://nominatim.openstreetmap.org/',
+            htmlTemplate: function(r) {
+                return r.display_name;
+            }
+        });
+        
+        geocoder.geocode(query, function (results) {
+            try {
+                window.searchInProgress = false;
+                console.log('Resultados del geocodificador Leaflet:', results);
+                
+                if (results && results.length > 0) {
+                    var result = results[0];
+                    console.log('Primer resultado:', result);
+                    
+                    // Verificar si tiene coordenadas válidas
+                    if (result.center && result.center.lat && result.center.lng) {
+                        // Solo centrar el mapa en el resultado encontrado
+                        map.setView([result.center.lat, result.center.lng], 14);
+                        console.log('Mapa centrado en:', result.center.lat, result.center.lng);
+                        
+                        // Ocultar el campo de búsqueda después de una búsqueda exitosa
+                        jQuery('.nm-search-input').hide();
+                        
+                        console.log('Búsqueda completada exitosamente con geocodificador Leaflet');
+                    } else {
+                        console.log('Resultado sin coordenadas válidas, intentando con fetch');
+                        searchWithFetch(query);
+                    }
+                } else {
+                    console.log('Sin resultados del geocodificador, intentando con fetch');
+                    searchWithFetch(query);
+                }
+            } catch (error) {
+                console.error('Error procesando resultados:', error);
+                console.log('Error en geocodificador, intentando con fetch');
+                searchWithFetch(query);
+            }
+        });
+    } catch (error) {
+        console.error('Error inicializando geocodificador:', error);
+        console.log('Geocodificador falló, usando fetch');
+        searchWithFetch(query);
+    }
 }
 
 

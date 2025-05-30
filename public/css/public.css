@@ -462,22 +462,33 @@
 .nm-search-container {
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .nm-search-input {
     position: absolute;
-    top: 50px; /* Ajusta según sea necesario */
-    left: 40%;
-    margin-left: 5px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 150px; /* Ajusta el ancho según tus necesidades */
+    top: 45px;
+    left: 0;
+    padding: 8px 12px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    width: 200px;
+    font-size: 14px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    transition: all 0.3s ease;
 }
 
 .nm-search-input:focus {
     outline: none;
-    border-color: #aaa;
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nm-search-input::placeholder {
+    color: #999;
+    font-style: italic;
 }
 
 /* Estilos para popups de capas GeoJSON */
