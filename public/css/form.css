@@ -1,4 +1,3 @@
-
 #nm-custom-form-container {
     width: 100%;
     max-width: 600px;
@@ -112,4 +111,86 @@
 
 .selection-button:active {
     background-color: #003f7d;
+}
+
+/* Estilos para el contenedor de controles del mapa en formularios */
+.nm-form-map-controls {
+    position: relative;
+    z-index: 1000;
+    margin-bottom: 10px;
+}
+
+/* Estilos para el buscador en formularios */
+.nm-form-map-controls .nm-search-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.nm-form-map-controls .nm-control-button {
+    background: #007cba;
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 40px;
+    min-height: 40px;
+}
+
+.nm-form-map-controls .nm-control-button:hover {
+    background: #005a87;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.nm-form-map-controls .nm-control-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nm-form-map-controls .nm-control-button i {
+    font-size: 16px;
+}
+
+.nm-form-search-input {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    padding: 8px 12px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    width: 200px;
+    font-size: 14px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.nm-form-search-input:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nm-form-search-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+/* Asegurar que el mapa tenga posición relativa para los controles */
+.nm-form-field[data-type="map"] {
+    position: relative;
+}
+
+#nm-map-canvas {
+    position: relative;
+    z-index: 1;
 }

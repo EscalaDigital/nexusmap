@@ -7,6 +7,15 @@ var controlLayers;
 
 jQuery(document).ready(function ($) {
     if (jQuery('#nm-main-map').length) {
+        
+        // Depuración: verificar que las librerías estén cargadas
+        console.log('=== DEPURACIÓN DE NEXUSMAP ===');
+        console.log('jQuery disponible:', typeof jQuery !== 'undefined');
+        console.log('Leaflet disponible:', typeof L !== 'undefined');
+        console.log('Geocoder disponible:', typeof L !== 'undefined' && typeof L.Control !== 'undefined' && typeof L.Control.Geocoder !== 'undefined');
+        console.log('Configuración del mapa:', nmMapData);
+        console.log('Búsqueda habilitada:', nmMapData.enable_search);
+        console.log('============================');
 
         map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
 
@@ -16,18 +25,20 @@ jQuery(document).ready(function ($) {
         if (jQuery('#nm-top-controls').length === 0) {
             jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
         }        // Referencia al contenedor de controles
-        var $topControls = jQuery('#nm-top-controls');
-
-        // Botón de búsqueda y campo de entrada
+        var $topControls = jQuery('#nm-top-controls');        // Botón de búsqueda y campo de entrada
         if (nmMapData.enable_search) {
+            console.log('Inicializando funcionalidad de búsqueda...');
+            
             var $searchContainer = jQuery('<div>', { class: 'nm-search-container' });
             var $searchButton = jQuery('<button>', {
                 class: 'nm-control-button',
-                title: 'Buscar',
+                title: 'Buscar ubicación',
                 html: '<i class="fa fa-search"></i>'
             });
+            
             $searchButton.on('click', function (e) {
                 e.stopPropagation();
+                console.log('Botón de búsqueda clickeado');
                 toggleSearchInput();
             });
             $searchContainer.append($searchButton);
@@ -35,20 +46,37 @@ jQuery(document).ready(function ($) {
             var $searchInput = jQuery('<input>', {
                 type: 'text',
                 class: 'nm-search-input',
-                placeholder: 'Buscar ubicación...'
-            }).hide();
-
+                placeholder: 'Buscar ubicación...',
+                autocomplete: 'off'
+            }).hide();            // Manejar el envío con Enter
             $searchInput.on('keypress', function (e) {
                 if (e.which === 13) {
                     e.preventDefault();
-                    performSearch($searchInput.val());
+                    e.stopPropagation(); // Evitar propagación del evento
+                    
+                    var query = $searchInput.val().trim();
+                    console.log('Búsqueda iniciada con:', query);
+                    if (query) {
+                        performSearch(query);
+                    }
+                }
+            });
+            
+            // Manejar escape para cerrar
+            $searchInput.on('keydown', function (e) {
+                if (e.which === 27) { // Escape key
+                    console.log('Cerrando búsqueda con Escape');
+                    $searchInput.hide();
                 }
             });
 
             $searchContainer.append($searchInput);
-
             $topControls.append($searchContainer);
-        }        // Botón para añadir capas WMS
+            
+            console.log('Funcionalidad de búsqueda inicializada correctamente');
+        } else {
+            console.log('Búsqueda deshabilitada en la configuración');
+        }// Botón para añadir capas WMS
         if (nmMapData.enable_user_wms) {
             var $addWmsButton = jQuery('<button>', {
                 class: 'nm-control-button',
