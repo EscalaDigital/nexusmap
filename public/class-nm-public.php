@@ -166,12 +166,11 @@ class NM_Public
             if (isset($entry_data['map_data'])) {
                 $map_data = json_decode(stripslashes($entry_data['map_data']), true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
-                    foreach ($map_data as $feature) {
-                        // Verificar si la geometría es de tipo "Point"
+                    foreach ($map_data as $feature) {                        // Verificar si la geometría es de tipo "Point"
                         if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
-                            // Agregar todas las propiedades del entry_data al properties
+                            // Agregar todas las propiedades del entry_data al properties, excluyendo campos técnicos
                             foreach ($entry_data as $key => $value) {
-                                if ($key !== 'map_data') { // Excluir 'map_data' si está
+                                if ($key !== 'map_data' && $key !== 'form_type' && $key !== 'nm_form_type' && $key !== 'nm_form_nonce' && $key !== '_wp_http_referer') {
                                     $feature['properties'][$key] = esc_html($value);
                                 }
                             }
