@@ -173,12 +173,10 @@ function performSearch(query) {
 //funciones para mostrar datos de elementos puntuales
 // Función para mostrar un modal con las propiedades de un elemento
 function showModal(properties) {
-    var modalContent = '<div class="nm-modal-data">';
-
-    for (var key in properties) {
+    var modalContent = '<div class="nm-modal-data">';    for (var key in properties) {
         if (properties.hasOwnProperty(key)) {
             // Omitir campos específicos
-            if (key === 'entry_id' || key === 'form_type') {
+            if (key === 'entry_id' || key === 'form_type' || key === 'nm_form_type' || key === 'nm_form_nonce' || key === '_wp_http_referer') {
                 continue;
             }
 
