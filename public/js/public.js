@@ -40,7 +40,7 @@ jQuery(document).ready(function ($) {
         document.querySelector('#nm-main-map').appendChild(legendPanel);
 
         // Manejar el clic en el botón de leyenda
-        $legendButton.on('click', function(e) {
+        $legendButton.on('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             legendPanel.classList.toggle('visible');
@@ -50,10 +50,11 @@ jQuery(document).ready(function ($) {
         });
 
         // Cerrar la leyenda al hacer clic fuera de ella
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!$legendButton[0].contains(e.target) && !legendPanel.contains(e.target)) {
                 legendPanel.classList.remove('visible');
-            }        });
+            }
+        });
 
         // Botón de descarga de GeoJSON
         if (nmMapData.enable_geojson_download) {
@@ -193,7 +194,7 @@ jQuery(document).ready(function ($) {
 
             // Crear el contenedor de filtros
             var $filterContainer = jQuery('<div>', { class: 'nm-filters-container' });
-            
+
             // Crear botón de filtros
             var $filterButton = jQuery('<button>', {
                 class: 'nm-control-button',
@@ -203,7 +204,7 @@ jQuery(document).ready(function ($) {
             $filterContainer.append($filterButton);
 
             // Crear el panel de filtros
-            var $filterPanel = jQuery('<div>', { 
+            var $filterPanel = jQuery('<div>', {
                 class: 'nm-filters-panel collapsed',
                 css: { zIndex: 1000 }
             });
@@ -248,19 +249,19 @@ jQuery(document).ready(function ($) {
             jQuery('#nm-main-map').append($filterPanel);
 
             // Eventos
-            $filterButton.on('click', function(e) {
+            $filterButton.on('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 $filterPanel.toggleClass('collapsed');
             });
 
-            $filterPanel.on('click', '.nm-close-filters', function(e) {
+            $filterPanel.on('click', '.nm-close-filters', function (e) {
                 $filterPanel.addClass('collapsed');
             });
 
             // Manejar clicks en los filtros
             const activeFilters = {};
-            $filterPanel.on('click', '.nm-filter-button', function(e) {
+            $filterPanel.on('click', '.nm-filter-button', function (e) {
                 const $button = jQuery(this);
                 const field = $button.data('field');
                 const value = $button.data('value');
@@ -578,6 +579,15 @@ jQuery(document).ready(function ($) {
             }
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);
+            console.error('Response:', jqXHR.responseText);
+            console.error('Status:', jqXHR.status);
+
+            // Log adicional para debug
+            if (jqXHR.status === 403) {
+                
+                  console.error('Error 403: Verificar permisos y nonce');
+                console.error('Nonce being sent:', nmMapData.nonce);
+            }
         });
 
         // Botón para ver gráficos

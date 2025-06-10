@@ -109,6 +109,13 @@ class NM_Public
             wp_enqueue_script('nm-funcionesmaps-js', NM_PLUGIN_URL . 'public/js/funcionesmaps.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), NM_VERSION, true);
             wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);
 
+            
+            // AGREGAR ESTA LOCALIZACIÓN PARA EL MAPA
+            wp_localize_script('nm-public-js', 'nmPublic', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('nm_public_nonce')
+            ));
+            
             // Para gráficos Chart.js
             wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
         }
@@ -232,7 +239,26 @@ class NM_Public
      */
     public function get_map_points()
     {
-        check_ajax_referer('nm_public_nonce', 'nonce');
+        // Agregar logs para debug
+        error_log('NexusMap: get_map_points called');
+        error_log('NexusMap: POST data: ' . print_r($_POST, true));
+
+        // Verificar si el nonce existe antes de validarlo
+        if (!isset($_POST['nonce'])) {
+            error_log('NexusMap: No nonce provided');
+            wp_send_json_error('No nonce provided');
+            return;
+        }
+
+        // Intentar verificar el nonce con manejo de errores
+        if (!wp_verify_nonce($_POST['nonce'], 'nm_public_nonce')) {
+            error_log('NexusMap: Nonce verification failed');
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+
+        error_log('NexusMap: Nonce verified successfully');
+
         $entries = $this->model->get_entries('approved');
         $features = array();
 
@@ -464,11 +490,10 @@ class NM_Public
                 }
             }
 
-            /* ---- INPUT NORMAL ---- */ 
-            elseif (isset($_POST[$html_name])) {
+            /* ---- INPUT NORMAL ---- */ elseif (isset($_POST[$html_name])) {
                 $val = $_POST[$html_name];
                 $cleaned_val = $sanitize_form_data($val);
-            $form_fields[$store_key] = $cleaned_val;
+                $form_fields[$store_key] = $cleaned_val;
             }
             // si es file sin subir nada → simplemente se omite
         }
@@ -519,8 +544,8 @@ class NM_Public
                 }
             } elseif (isset($_POST[$inkey])) {
                 $v = $_POST[$inkey];
-                 
-            $form_fields[$store_key] = $sanitize_form_data($v);
+
+                $form_fields[$store_key] = $sanitize_form_data($v);
             }
         }
 
