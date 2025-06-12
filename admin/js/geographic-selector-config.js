@@ -95,14 +95,16 @@
             }
             
             validateGeonamesUser(username, $button.closest('.nm-config-row'));
-        });
-
-        // Country selector change
+        });        // Country selector change
         $(document).on('change', '.nm-country-selector', function() {
             const country = $(this).val();
             const panel = $(this).closest('.nm-geo-config-panel');
+            const username = panel.find('.nm-geonames-user').val().trim();
             
-            if (country && COUNTRY_CONFIGS[country]) {
+            if (country && username) {
+                loadCountryStructureFromGeonames(country, username, panel);
+            } else if (country && COUNTRY_CONFIGS[country]) {
+                // Fallback to predefined config if no username
                 showLevelsConfig(panel, country);
             } else {
                 panel.find('.nm-levels-config').hide();
@@ -168,39 +170,38 @@
         
         // Update button state
         $button.prop('disabled', true).text('Validando...');
-        hideUserValidationMessage($configRow);
-        
-        // Test with a simple API call
-        $.ajax({
-            url: `https://api.geonames.org/countryInfoJSON?username=${username}`,
-            method: 'GET',
-            timeout: 10000,
-            success: function(response) {
+        hideUserValidationMessage($configRow);        // Test with a simple API call through proxy
+        callGeonamesProxy('countryInfoJSON', { username: username })
+            .done(function(response) {
                 $button.prop('disabled', false).text(originalText);
                 
-                if (response && response.geonames && response.geonames.length > 0) {
+                if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
                     showUserValidationMessage($configRow, '✓ Usuario válido. Cargando países...', 'success');
                     loadCountriesFromGeonames(username, $configRow);
                 } else {
                     showUserValidationMessage($configRow, 'Usuario válido pero sin datos de países', 'error');
                 }
-            },
-            error: function(xhr, status, error) {
+            })
+            .fail(function(xhr, status, error) {
                 $button.prop('disabled', false).text(originalText);
                 
                 let errorMessage = 'Error al validar usuario';
                 if (status === 'timeout') {
                     errorMessage = 'Tiempo de espera agotado';
-                } else if (xhr.status === 401 || xhr.responseText.includes('user account not found')) {
-                    errorMessage = 'Usuario no encontrado. Verifica que el usuario esté registrado en GeoNames.org';
+                } else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.geonames_error) {
+                    const geonamesError = xhr.responseJSON.data.geonames_error;
+                    if (geonamesError.includes('user account not found')) {
+                        errorMessage = 'Usuario no encontrado. Verifica que el usuario esté registrado en GeoNames.org';
+                    } else if (geonamesError.includes('daily limit')) {
+                        errorMessage = 'Límite diario de consultas alcanzado. Intenta mañana';
+                    }
                 } else if (xhr.status === 429) {
                     errorMessage = 'Demasiadas solicitudes. Intenta nuevamente en unos minutos';
                 }
                 
                 showUserValidationMessage($configRow, errorMessage, 'error');
-                console.error('GeoNames validation error:', error, xhr.responseText);
-            }
-        });
+                console.error('GeoNames validation error:', error, xhr.responseJSON);
+            });
     }
 
     function loadCountriesFromGeonames(username, $configRow) {
@@ -212,18 +213,13 @@
         // Show country section and loading
         $countryRow.show();
         $loading.show();
-        $countrySelect.prop('disabled', true);
-        
-        $.ajax({
-            url: `https://api.geonames.org/countryInfoJSON?username=${username}`,
-            method: 'GET',
-            timeout: 15000,
-            success: function(response) {
+        $countrySelect.prop('disabled', true);        callGeonamesProxy('countryInfoJSON', { username: username }, 15000)
+            .done(function(response) {
                 $loading.hide();
                 
-                if (response && response.geonames && response.geonames.length > 0) {
+                if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
                     // Sort countries alphabetically
-                    const countries = response.geonames.sort((a, b) => a.countryName.localeCompare(b.countryName));
+                    const countries = response.data.geonames.sort((a, b) => a.countryName.localeCompare(b.countryName));
                     
                     // Populate country selector
                     $countrySelect.empty().append('<option value="">Seleccionar país...</option>');
@@ -238,8 +234,8 @@
                     showUserValidationMessage($configRow, 'No se pudieron cargar los países', 'error');
                     $countrySelect.prop('disabled', true);
                 }
-            },
-            error: function(xhr, status, error) {
+            })
+            .fail(function(xhr, status, error) {
                 $loading.hide();
                 $countrySelect.prop('disabled', true);
                 
@@ -250,17 +246,306 @@
                 
                 showUserValidationMessage($configRow, errorMessage, 'error');
                 console.error('Error loading countries from GeoNames:', error);
-            }
-        });
+            });
     }
 
     function showUserValidationMessage($configRow, message, type) {
         const $messageDiv = $configRow.find('.nm-user-validation-message');
         $messageDiv.removeClass('success error').addClass(type).text(message).show();
+    }    function hideUserValidationMessage($configRow) {
+        $configRow.find('.nm-user-validation-message').hide();
     }
 
-    function hideUserValidationMessage($configRow) {
-        $configRow.find('.nm-user-validation-message').hide();
+    function loadCountryStructureFromGeonames(countryCode, username, panel) {
+        const $levelsConfig = panel.find('.nm-levels-config');
+        const $levelsList = panel.find('.nm-levels-list');
+        
+        // Show loading state
+        $levelsConfig.show();
+        $levelsList.html('<div class="nm-loading-structure">🌍 Cargando estructura administrativa del país...</div>');
+        
+        // Get country GeoName ID first
+        const countryGeoId = getCountryGeonameId(countryCode);
+        
+        // Load administrative structure from GeoNames
+        loadAdministrativeStructure(countryGeoId, username, countryCode, $levelsList);
+    }
+
+    function loadAdministrativeStructure(countryGeoId, username, countryCode, $levelsList) {
+        const levels = ['admin1', 'admin2', 'admin3', 'admin4'];
+        const structureData = [];
+        let completed = 0;        // Check each administrative level - only check first level initially
+        for (let index = 0; index < levels.length; index++) {
+            const level = levels[index];
+              callGeonamesProxy('childrenJSON', { 
+                username: username, 
+                geonameId: countryGeoId, 
+                featureClass: 'A' 
+            })
+            .done(function(response) {
+                completed++;
+                
+                if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
+                    // Filter by administrative level
+                    let levelData = response.data.geonames;
+                    
+                    if (level === 'admin1') {
+                        levelData = levelData.filter(item => 
+                            item.fcode === 'ADM1' || item.fcode === 'ADMD'
+                        );
+                    }
+                    
+                    if (levelData.length > 0) {
+                        // Get sample names to determine what this level represents
+                        const sampleNames = levelData.slice(0, 3).map(item => item.name);
+                        const levelName = determineAdministrativeLevelName(countryCode, level, sampleNames);
+                        
+                        structureData.push({
+                            code: level,
+                            name: levelName,
+                            available: true,
+                            count: levelData.length,
+                            samples: sampleNames
+                        });
+                    }
+                }
+                
+                // Check if we need to load next level (only for first level initially)
+                if (level === 'admin1' && structureData.length > 0 && structureData[0].available) {
+                    // Load one sample admin2 level to see if it exists
+                    const sampleAdmin1Id = response.data.geonames[0].geonameId;
+                    loadNextLevel(sampleAdmin1Id, 'admin2', username, structureData, $levelsList, levels, countryCode);
+                } else if (completed === 1) {
+                    // If no admin1 found, show what we have
+                    displayAdministrativeStructure(structureData, $levelsList, countryCode);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                completed++;
+                console.error(`Error loading ${level}:`, error);
+                
+                if (completed === 1) {
+                    // If first level fails, show fallback
+                    displayFallbackStructure($levelsList, countryCode);
+                }
+            });
+            // Only check first level initially
+            if (index === 0) break;
+        }
+    }
+
+    function loadNextLevel(parentId, level, username, structureData, $levelsList, allLevels, countryCode) {
+        const levelIndex = allLevels.indexOf(level);
+          callGeonamesProxy('childrenJSON', { 
+            username: username, 
+            geonameId: parentId, 
+            featureClass: 'A' 
+        }, 8000)
+        .done(function(response) {
+            if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
+                let levelData = response.data.geonames;
+                
+                // Filter by administrative level
+                if (level === 'admin2') {
+                    levelData = levelData.filter(item => 
+                        item.fcode === 'ADM2' || item.fcode === 'ADMD'
+                    );
+                } else if (level === 'admin3') {
+                    levelData = levelData.filter(item => 
+                        item.fcode === 'ADM3' || item.fcode === 'ADMD' || item.fcode === 'PPL' || item.fcode === 'PPLA'
+                    );
+                } else if (level === 'admin4') {
+                    levelData = levelData.filter(item => 
+                        item.fcode === 'ADM4' || item.fcode === 'ADMD' || item.fcode === 'PPL'
+                    );
+                }
+                
+                if (levelData.length > 0) {
+                    const sampleNames = levelData.slice(0, 3).map(item => item.name);
+                    const levelName = determineAdministrativeLevelName(countryCode, level, sampleNames);
+                    
+                    structureData.push({
+                        code: level,
+                        name: levelName,
+                        available: true,
+                        count: levelData.length,
+                        samples: sampleNames
+                    });
+                    
+                    // Try to load next level if available
+                    if (levelIndex < allLevels.length - 1) {
+                        const nextLevel = allLevels[levelIndex + 1];
+                        const sampleNextId = levelData[0].geonameId;
+                        loadNextLevel(sampleNextId, nextLevel, username, structureData, $levelsList, allLevels, countryCode);
+                    } else {
+                        displayAdministrativeStructure(structureData, $levelsList, countryCode);
+                    }
+                } else {
+                    displayAdministrativeStructure(structureData, $levelsList, countryCode);
+                }
+            } else {
+                displayAdministrativeStructure(structureData, $levelsList, countryCode);
+            }
+        })
+        .fail(function() {
+            displayAdministrativeStructure(structureData, $levelsList, countryCode);
+        });
+    }
+
+    function determineAdministrativeLevelName(countryCode, level, sampleNames) {
+        // Default names based on country and level
+        const countryDefaults = {
+            'ES': {
+                'admin1': 'Comunidad Autónoma',
+                'admin2': 'Provincia', 
+                'admin3': 'Municipio',
+                'admin4': 'Distrito'
+            },
+            'FR': {
+                'admin1': 'Región',
+                'admin2': 'Departamento',
+                'admin3': 'Comuna',
+                'admin4': 'Barrio'
+            },
+            'US': {
+                'admin1': 'Estado',
+                'admin2': 'Condado',
+                'admin3': 'Ciudad',
+                'admin4': 'Distrito'
+            },
+            'MX': {
+                'admin1': 'Estado',
+                'admin2': 'Municipio',
+                'admin3': 'Localidad',
+                'admin4': 'Colonia'
+            },
+            'BR': {
+                'admin1': 'Estado',
+                'admin2': 'Mesorregión',
+                'admin3': 'Municipio',
+                'admin4': 'Distrito'
+            }
+        };
+        
+        if (countryDefaults[countryCode] && countryDefaults[countryCode][level]) {
+            return countryDefaults[countryCode][level];
+        }
+        
+        // Generic fallback
+        const genericNames = {
+            'admin1': 'Primer Nivel Administrativo',
+            'admin2': 'Segundo Nivel Administrativo', 
+            'admin3': 'Tercer Nivel Administrativo',
+            'admin4': 'Cuarto Nivel Administrativo'
+        };
+        
+        return genericNames[level] || level;
+    }
+
+    function displayAdministrativeStructure(structureData, $levelsList, countryCode) {
+        $levelsList.empty();
+        
+        if (structureData.length === 0) {
+            displayFallbackStructure($levelsList, countryCode);
+            return;
+        }
+        
+        $levelsList.append('<h6>📊 Estructura administrativa detectada:</h6>');
+        
+        structureData.forEach((levelInfo, index) => {
+            const isChecked = index < 2; // Check first 2 levels by default
+            const samplesText = levelInfo.samples.length > 0 ? 
+                ` (ej: ${levelInfo.samples.slice(0, 2).join(', ')})` : '';
+            
+            const levelDiv = $(`
+                <div class="nm-level-config nm-detected-level">
+                    <input type="checkbox" class="nm-level-enabled" value="${levelInfo.code}" ${isChecked ? 'checked' : ''}>
+                    <span class="nm-level-info">
+                        <strong>${levelInfo.name}</strong> 
+                        <small>(${levelInfo.count} encontrados${samplesText})</small>
+                    </span>
+                    <input type="text" class="nm-level-label" data-level="${levelInfo.code}" 
+                           value="${levelInfo.name}" placeholder="Nombre personalizado">
+                </div>
+            `);
+            $levelsList.append(levelDiv);
+        });
+        
+        // Add info message
+        $levelsList.append(`
+            <div class="nm-structure-info">
+                <small>💡 Estructura cargada automáticamente desde GeoNames. 
+                Puedes personalizar los nombres y activar/desactivar niveles según necesites.</small>
+            </div>
+        `);
+    }
+
+    function displayFallbackStructure($levelsList, countryCode) {
+        $levelsList.empty();
+        
+        // Use predefined structure or generic one
+        let config = COUNTRY_CONFIGS[countryCode];
+        
+        if (!config) {
+            config = {
+                name: 'Estructura Genérica',
+                levels: [
+                    { code: 'admin1', name: 'Primer Nivel', default_label: 'Región/Estado' },
+                    { code: 'admin2', name: 'Segundo Nivel', default_label: 'Provincia/Condado' },
+                    { code: 'admin3', name: 'Tercer Nivel', default_label: 'Municipio/Ciudad' },
+                    { code: 'admin4', name: 'Cuarto Nivel', default_label: 'Distrito/Barrio' }
+                ]
+            };
+        }
+        
+        $levelsList.append('<h6>⚠️ Usando estructura predefinida:</h6>');
+        
+        config.levels.forEach((level, index) => {
+            const isChecked = index < 2;
+            const levelDiv = $(`
+                <div class="nm-level-config">
+                    <input type="checkbox" class="nm-level-enabled" value="${level.code}" ${isChecked ? 'checked' : ''}>
+                    <span>${level.name}:</span>
+                    <input type="text" class="nm-level-label" data-level="${level.code}" 
+                           value="${level.default_label}" placeholder="Nombre del campo">
+                </div>
+            `);
+            $levelsList.append(levelDiv);
+        });
+        
+        $levelsList.append(`
+            <div class="nm-structure-info">
+                <small>ℹ️ No se pudo cargar la estructura desde GeoNames. 
+                Usando configuración predefinida.</small>
+            </div>
+        `);
+    }
+
+    function getCountryGeonameId(countryCode) {
+        // Common country GeoName IDs
+        const countryIds = {
+            'ES': '2510769', // Spain
+            'FR': '3017382', // France  
+            'US': '6252001', // United States
+            'MX': '3996063', // Mexico
+            'IT': '3175395', // Italy
+            'DE': '2921044', // Germany
+            'PT': '2264397', // Portugal
+            'GB': '2635167', // United Kingdom
+            'AR': '3865483', // Argentina
+            'BR': '3469034', // Brazil
+            'CO': '3686110', // Colombia
+            'PE': '3932488', // Peru
+            'CL': '3895114', // Chile
+            'CA': '6251999', // Canada
+            'AU': '2077456', // Australia
+            'IN': '1269750', // India
+            'CN': '1814991', // China
+            'JP': '1861060', // Japan
+            'RU': '2017370'  // Russia
+        };
+        
+        return countryIds[countryCode] || countryCode;
     }
 
     function initializeExistingField($field) {
@@ -305,13 +590,17 @@
                 levels: [
                     { code: 'admin1', name: 'Nivel Administrativo 1', default_label: 'Región/Estado' },
                     { code: 'admin2', name: 'Nivel Administrativo 2', default_label: 'Provincia/Condado' },
-                    { code: 'admin3', name: 'Nivel Administrativo 3', default_label: 'Municipio/Ciudad' }
+                    { code: 'admin3', name: 'Nivel Administrativo 3', default_label: 'Municipio/Ciudad' },
+                    { code: 'admin4', name: 'Nivel Administrativo 4', default_label: 'Distrito/Barrio' }
                 ]
             };
         }
         
         const levelsContainer = panel.find('.nm-levels-list');
         levelsContainer.empty();
+        
+        // Add header indicating this is predefined structure
+        levelsContainer.append('<h6>📋 Estructura predefinida:</h6>');
 
         config.levels.forEach((level, index) => {
             const levelDiv = $(`
@@ -323,6 +612,14 @@
             `);
             levelsContainer.append(levelDiv);
         });
+        
+        // Add info message about predefined vs dynamic structure
+        levelsContainer.append(`
+            <div class="nm-structure-info">
+                <small>💡 Para cargar la estructura real del país desde GeoNames, 
+                valida tu usuario primero y luego selecciona el país nuevamente.</small>
+            </div>
+        `);
 
         panel.find('.nm-levels-config').show();
     }function loadConfigIntoPanel(panel, config) {
@@ -475,6 +772,27 @@
             action: 'nm_save_geonames_user',
             username: username,
             nonce: nmAdmin.nonce
+        });
+    }
+
+    /**
+     * Función auxiliar para llamadas a GeoNames a través del proxy
+     * Soluciona el problema de Mixed Content HTTPS/HTTP
+     */
+    function callGeonamesProxy(endpoint, params, timeout = 10000) {
+        const proxyParams = {
+            action: 'nm_geonames_proxy',
+            nonce: nmAdmin.nonce,
+            endpoint: endpoint,
+            ...params
+        };
+
+        return $.ajax({
+            url: nmAdmin.ajax_url,
+            method: 'GET',
+            data: proxyParams,
+            timeout: timeout,
+            dataType: 'json'
         });
     }
 

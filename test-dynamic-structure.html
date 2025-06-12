@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Estructura Administrativa Dinámica</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            background: #fafafa;
+        }
+        .controls { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap;
+        }
+        input, select, button { 
+            padding: 8px 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        button { 
+            background: #0073aa; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+        }
+        button:hover { background: #005a87; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { 
+            margin-top: 15px; 
+            padding: 10px; 
+            border-radius: 4px; 
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .loading { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .level-item { 
+            padding: 8px; 
+            margin: 5px 0; 
+            background: #f8f9fa; 
+            border-left: 4px solid #0073aa; 
+            border-radius: 0 4px 4px 0;
+        }
+        .samples { 
+            font-size: 12px; 
+            color: #666; 
+            font-style: italic; 
+        }
+        .countries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .country-button {
+            padding: 10px;
+            text-align: center;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .country-button:hover {
+            background: #e0e0e0;
+        }
+        .country-button.selected {
+            background: #0073aa;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Test Estructura Administrativa Dinámica</h1>
+        
+        <div class="test-section">
+            <h3>Configuración</h3>
+            <div class="controls">
+                <input type="text" id="username" placeholder="Usuario GeoNames" value="">
+                <button id="validateBtn">Validar Usuario</button>
+                <select id="countrySelect" disabled>
+                    <option value="">Seleccionar país...</option>
+                </select>
+                <button id="loadStructureBtn" disabled>Cargar Estructura</button>
+            </div>
+            <div id="validationResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Países de Prueba Rápida</h3>
+            <p>Haz clic en un país para probarlo rápidamente (requiere usuario válido):</p>
+            <div class="countries-grid">
+                <div class="country-button" data-country="ES" data-name="España">🇪🇸 España</div>
+                <div class="country-button" data-country="FR" data-name="Francia">🇫🇷 Francia</div>
+                <div class="country-button" data-country="US" data-name="Estados Unidos">🇺🇸 Estados Unidos</div>
+                <div class="country-button" data-country="MX" data-name="México">🇲🇽 México</div>
+                <div class="country-button" data-country="BR" data-name="Brasil">🇧🇷 Brasil</div>
+                <div class="country-button" data-country="IT" data-name="Italia">🇮🇹 Italia</div>
+                <div class="country-button" data-country="DE" data-name="Alemania">🇩🇪 Alemania</div>
+                <div class="country-button" data-country="CA" data-name="Canadá">🇨🇦 Canadá</div>
+                <div class="country-button" data-country="AU" data-name="Australia">🇦🇺 Australia</div>
+                <div class="country-button" data-country="IN" data-name="India">🇮🇳 India</div>
+                <div class="country-button" data-country="CN" data-name="China">🇨🇳 China</div>
+                <div class="country-button" data-country="JP" data-name="Japón">🇯🇵 Japón</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Resultado de Estructura Administrativa</h3>
+            <div id="structureResult">
+                <div class="info">👆 Selecciona un país para ver su estructura administrativa</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Log de Actividad</h3>
+            <div id="activityLog"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Instrucciones</h3>
+            <ol>
+                <li>Introduce tu usuario de GeoNames y valídalo</li>
+                <li>Selecciona un país del dropdown o haz clic en uno de los botones de prueba</li>
+                <li>La estructura administrativa se cargará automáticamente desde GeoNames</li>
+                <li>Verás los niveles disponibles con ejemplos de cada nivel</li>
+                <li>Los niveles se nombran automáticamente según el país (ej: España = Comunidad Autónoma, Provincia, Municipio)</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let validatedUsername = '';
+        
+        const countryGeoIds = {
+            'ES': '2510769', 'FR': '3017382', 'US': '6252001', 'MX': '3996063',
+            'BR': '3469034', 'IT': '3175395', 'DE': '2921044', 'CA': '6251999',
+            'AU': '2077456', 'IN': '1269750', 'CN': '1814991', 'JP': '1861060'
+        };
+
+        document.getElementById('validateBtn').addEventListener('click', validateUser);
+        document.getElementById('loadStructureBtn').addEventListener('click', loadSelectedCountryStructure);
+        
+        // Quick test buttons
+        document.querySelectorAll('.country-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!validatedUsername) {
+                    showResult('error', 'Por favor, valida tu usuario primero');
+                    return;
+                }
+                
+                document.querySelectorAll('.country-button').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const countryCode = this.dataset.country;
+                const countryName = this.dataset.name;
+                
+                logActivity(`🔍 Cargando estructura de ${countryName} (${countryCode})`);
+                loadCountryStructure(countryCode, validatedUsername);
+            });
+        });
+
+        function validateUser() {
+            const username = document.getElementById('username').value.trim();
+            const btn = document.getElementById('validateBtn');
+            
+            if (!username) {
+                showResult('error', 'Por favor, introduce un usuario');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Validando...';
+            showResult('loading', 'Validando usuario...');
+            logActivity(`🔐 Validando usuario: ${username}`);
+            
+            fetch(`http://api.geonames.org/countryInfoJSON?username=${username}`)
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.textContent = 'Validar Usuario';
+                    
+                    if (data && data.geonames && data.geonames.length > 0) {
+                        validatedUsername = username;
+                        showResult('success', `✓ Usuario válido. ${data.geonames.length} países disponibles`);
+                        logActivity(`✅ Usuario validado correctamente`);
+                        
+                        // Load countries
+                        loadCountriesDropdown(data.geonames);
+                        document.getElementById('loadStructureBtn').disabled = false;
+                    } else {
+                        showResult('error', 'Usuario válido pero sin acceso a datos');
+                        logActivity(`❌ Usuario sin acceso a datos`);
+                    }
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.textContent = 'Validar Usuario';
+                    showResult('error', `Error: ${error.message}`);
+                    logActivity(`❌ Error de validación: ${error.message}`);
+                });
+        }
+
+        function loadCountriesDropdown(countries) {
+            const select = document.getElementById('countrySelect');
+            select.innerHTML = '<option value="">Seleccionar país...</option>';
+            
+            countries.sort((a, b) => a.countryName.localeCompare(b.countryName));
+            
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.countryCode;
+                option.textContent = country.countryName;
+                select.appendChild(option);
+            });
+            
+            select.disabled = false;
+        }
+
+        function loadSelectedCountryStructure() {
+            const countryCode = document.getElementById('countrySelect').value;
+            const countryName = document.getElementById('countrySelect').selectedOptions[0].textContent;
+            
+            if (!countryCode) {
+                showResult('error', 'Por favor, selecciona un país');
+                return;
+            }
+            
+            logActivity(`🔍 Cargando estructura de ${countryName} (${countryCode})`);
+            loadCountryStructure(countryCode, validatedUsername);
+        }
+
+        function loadCountryStructure(countryCode, username) {
+            showStructureResult('loading', '🌍 Cargando estructura administrativa...');
+            
+            const countryGeoId = countryGeoIds[countryCode] || countryCode;
+            
+            fetch(`http://api.geonames.org/childrenJSON?geonameId=${countryGeoId}&username=${username}&featureClass=A`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.geonames && data.geonames.length > 0) {
+                        processAdministrativeStructure(data.geonames, countryCode, username, countryGeoId);
+                    } else {
+                        showStructureResult('error', 'No se encontraron divisiones administrativas para este país');
+                        logActivity(`❌ Sin divisiones administrativas para ${countryCode}`);
+                    }
+                })
+                .catch(error => {
+                    showStructureResult('error', `Error cargando estructura: ${error.message}`);
+                    logActivity(`❌ Error cargando estructura: ${error.message}`);
+                });
+        }
+
+        function processAdministrativeStructure(geonames, countryCode, username, parentId) {
+            // Filter admin1 level
+            const admin1Data = geonames.filter(item => 
+                item.fcode === 'ADM1' || item.fcode === 'ADMD'
+            );
+            
+            if (admin1Data.length === 0) {
+                showStructureResult('error', 'No se encontraron divisiones de primer nivel');
+                return;
+            }
+            
+            logActivity(`📊 Encontrados ${admin1Data.length} elementos de nivel 1`);
+            
+            const structure = [{
+                level: 'admin1',
+                name: determineAdminLevelName(countryCode, 'admin1'),
+                count: admin1Data.length,
+                samples: admin1Data.slice(0, 3).map(item => item.name)
+            }];
+            
+            // Load one sample of admin2 to check if it exists
+            if (admin1Data.length > 0) {
+                const sampleAdmin1Id = admin1Data[0].geonameId;
+                loadNextAdminLevel(sampleAdmin1Id, 'admin2', username, structure, countryCode);
+            } else {
+                displayFinalStructure(structure, countryCode);
+            }
+        }
+
+        function loadNextAdminLevel(parentId, level, username, structure, countryCode) {
+            fetch(`http://api.geonames.org/childrenJSON?geonameId=${parentId}&username=${username}&featureClass=A`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.geonames && data.geonames.length > 0) {
+                        let levelData = data.geonames;
+                        
+                        // Filter by level
+                        if (level === 'admin2') {
+                            levelData = levelData.filter(item => 
+                                item.fcode === 'ADM2' || item.fcode === 'ADMD'
+                            );
+                        } else if (level === 'admin3') {
+                            levelData = levelData.filter(item => 
+                                item.fcode === 'ADM3' || item.fcode === 'ADMD' || item.fcode === 'PPL' || item.fcode === 'PPLA'
+                            );
+                        } else if (level === 'admin4') {
+                            levelData = levelData.filter(item => 
+                                item.fcode === 'ADM4' || item.fcode === 'ADMD' || item.fcode === 'PPL'
+                            );
+                        }
+                        
+                        if (levelData.length > 0) {
+                            logActivity(`📊 Encontrados ${levelData.length} elementos de nivel ${level}`);
+                            
+                            structure.push({
+                                level: level,
+                                name: determineAdminLevelName(countryCode, level),
+                                count: levelData.length,
+                                samples: levelData.slice(0, 3).map(item => item.name)
+                            });
+                            
+                            // Try next level
+                            const nextLevel = getNextLevel(level);
+                            if (nextLevel && levelData.length > 0) {
+                                const sampleId = levelData[0].geonameId;
+                                loadNextAdminLevel(sampleId, nextLevel, username, structure, countryCode);
+                            } else {
+                                displayFinalStructure(structure, countryCode);
+                            }
+                        } else {
+                            displayFinalStructure(structure, countryCode);
+                        }
+                    } else {
+                        displayFinalStructure(structure, countryCode);
+                    }
+                })
+                .catch(error => {
+                    logActivity(`⚠️ Error en nivel ${level}: ${error.message}`);
+                    displayFinalStructure(structure, countryCode);
+                });
+        }
+
+        function getNextLevel(currentLevel) {
+            const levels = ['admin1', 'admin2', 'admin3', 'admin4'];
+            const currentIndex = levels.indexOf(currentLevel);
+            return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : null;
+        }
+
+        function determineAdminLevelName(countryCode, level) {
+            const countryDefaults = {
+                'ES': { admin1: 'Comunidad Autónoma', admin2: 'Provincia', admin3: 'Municipio', admin4: 'Distrito' },
+                'FR': { admin1: 'Región', admin2: 'Departamento', admin3: 'Comuna', admin4: 'Barrio' },
+                'US': { admin1: 'Estado', admin2: 'Condado', admin3: 'Ciudad', admin4: 'Distrito' },
+                'MX': { admin1: 'Estado', admin2: 'Municipio', admin3: 'Localidad', admin4: 'Colonia' },
+                'BR': { admin1: 'Estado', admin2: 'Mesorregión', admin3: 'Municipio', admin4: 'Distrito' },
+                'IT': { admin1: 'Región', admin2: 'Provincia', admin3: 'Comuna', admin4: 'Barrio' },
+                'DE': { admin1: 'Estado', admin2: 'Distrito', admin3: 'Municipio', admin4: 'Barrio' }
+            };
+            
+            if (countryDefaults[countryCode] && countryDefaults[countryCode][level]) {
+                return countryDefaults[countryCode][level];
+            }
+            
+            const generic = {
+                admin1: 'Primer Nivel', admin2: 'Segundo Nivel', 
+                admin3: 'Tercer Nivel', admin4: 'Cuarto Nivel'
+            };
+            
+            return generic[level] || level;
+        }
+
+        function displayFinalStructure(structure, countryCode) {
+            let html = `<h4>📊 Estructura Administrativa de ${countryCode}</h4>`;
+            
+            structure.forEach((level, index) => {
+                const samples = level.samples.length > 0 ? 
+                    ` (ejemplos: ${level.samples.join(', ')})` : '';
+                
+                html += `
+                    <div class="level-item">
+                        <strong>Nivel ${index + 1}: ${level.name}</strong><br>
+                        <span>${level.count} divisiones encontradas${samples}</span>
+                    </div>
+                `;
+            });
+            
+            html += `<div class="info" style="margin-top: 15px;">
+                ✅ Estructura cargada exitosamente. 
+                Total de niveles administrativos: ${structure.length}
+            </div>`;
+            
+            showStructureResult('success', html);
+            logActivity(`✅ Estructura completa cargada: ${structure.length} niveles`);
+        }
+
+        function showResult(type, message) {
+            const div = document.getElementById('validationResult');
+            div.className = `result ${type}`;
+            div.textContent = message;
+        }
+
+        function showStructureResult(type, html) {
+            const div = document.getElementById('structureResult');
+            div.className = `result ${type}`;
+            div.innerHTML = html;
+        }
+
+        function logActivity(message) {
+            const log = document.getElementById('activityLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'info';
+            entry.textContent = `[${timestamp}] ${message}`;
+            log.appendChild(entry);
+            entry.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

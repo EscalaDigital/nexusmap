@@ -264,4 +264,44 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
     font-style: italic;
     padding: 20px;
 }
+
+.nm-loading-structure {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.nm-detected-level {
+    background: #e7f3ff !important;
+    border: 1px solid #b3d9ff;
+}
+
+.nm-level-info {
+    flex: 1;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.nm-level-info strong {
+    display: block;
+    color: #0073aa;
+}
+
+.nm-level-info small {
+    color: #666;
+    font-style: italic;
+}
+
+.nm-structure-info {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f0f8ff;
+    border: 1px solid #d1edff;
+    border-radius: 4px;
+}
+
+.nm-structure-info small {
+    color: #0073aa;
+}
 </style>
