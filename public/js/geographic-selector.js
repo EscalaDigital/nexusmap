@@ -3,14 +3,33 @@
  * Handles cascading selects with GeoNames API
  */
 (function($) {
-    'use strict';
-
-    const GEONAMES_BASE_URL = 'http://api.geonames.org/';
+    'use strict';    // Use AJAX proxy to avoid Mixed Content issues
+    const PROXY_ENDPOINT = nmPublic.ajax_url; // WordPress AJAX endpoint (HTTPS)
     const REQUEST_TIMEOUT = 10000; // 10 seconds
     const CACHE_DURATION = 300000; // 5 minutes
-    
-    let cache = {};
+      let cache = {};
     let requestQueue = {};
+    
+    /**
+     * Call GeoNames API through WordPress AJAX proxy (HTTPS)
+     * Prevents Mixed Content issues on HTTPS sites
+     */
+    function callGeonamesProxy(endpoint, params, timeout = REQUEST_TIMEOUT) {
+        const proxyParams = {
+            action: 'nm_geonames_proxy',
+            nonce: nmPublic.nonce,
+            endpoint: endpoint,
+            ...params
+        };
+
+        return $.ajax({
+            url: PROXY_ENDPOINT,
+            method: 'GET',
+            data: proxyParams,
+            timeout: timeout,
+            dataType: 'json'
+        });
+    }
     
     $(document).ready(function() {
         initializeGeographicSelectors();
@@ -152,36 +171,33 @@
         // Avoid duplicate requests
         if (requestQueue[cacheKey]) {
             return;
-        }
-
-        showLoading($levelContainer);
+        }        showLoading($levelContainer);
         hideError($levelContainer);
         
-        // Build GeoNames API URL
-        let apiUrl;
+        // Prepare parameters for proxy call
+        let proxyParams = {
+            username: username
+        };
+        
         if (!parentCode) {
             // First level - get admin1 divisions for country
-            apiUrl = `${GEONAMES_BASE_URL}childrenJSON?geonameId=${getCountryGeonameId(country)}&username=${username}`;
+            proxyParams.geonameId = getCountryGeonameId(country);
         } else {
             // Subsequent levels - get children of selected area
-            apiUrl = `${GEONAMES_BASE_URL}childrenJSON?geonameId=${parentCode}&username=${username}`;
+            proxyParams.geonameId = parentCode;
         }
 
         requestQueue[cacheKey] = true;
 
-        $.ajax({
-            url: apiUrl,
-            method: 'GET',
-            timeout: REQUEST_TIMEOUT,
-            success: function(response) {
+        callGeonamesProxy('childrenJSON', proxyParams)
+            .done(function(response) {
                 delete requestQueue[cacheKey];
                 hideLoading($levelContainer);
                 
-                if (response && response.geonames) {
+                if (response.success && response.data && response.data.geonames) {
                     // Filter by feature class/code if needed
-                    let filteredData = response.geonames;
-                    
-                    // For administrative divisions, filter by feature code
+                    let filteredData = response.data.geonames;
+                      // For administrative divisions, filter by feature code
                     if (level === 'admin1') {
                         filteredData = filteredData.filter(item => 
                             item.fcode === 'ADM1' || item.fcode === 'ADMD'
@@ -209,24 +225,28 @@
                 } else {
                     showError($levelContainer, 'No se encontraron datos para esta ubicación');
                 }
-            },
-            error: function(xhr, status, error) {
+            })
+            .fail(function(xhr, status, error) {
                 delete requestQueue[cacheKey];
                 hideLoading($levelContainer);
                 
                 let errorMessage = 'Error al cargar los datos';
                 if (status === 'timeout') {
                     errorMessage = 'Tiempo de espera agotado. Verifique su conexión a internet';
+                } else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.geonames_error) {
+                    const geonamesError = xhr.responseJSON.data.geonames_error;
+                    if (geonamesError.includes('user account not found')) {
+                        errorMessage = 'Usuario GeoNames no válido';
+                    } else if (geonamesError.includes('daily limit')) {
+                        errorMessage = 'Límite diario de consultas alcanzado';
+                    }
                 } else if (xhr.status === 429) {
                     errorMessage = 'Demasiadas solicitudes. Intente nuevamente en unos minutos';
-                } else if (xhr.status === 401) {
-                    errorMessage = 'Usuario GeoNames no válido';
                 }
                 
                 showError($levelContainer, errorMessage);
-                console.error('GeoNames API Error:', error, xhr.responseText);
-            }
-        });
+                console.error('GeoNames API Error:', error, xhr.responseJSON);
+            });
     }
 
     function populateSelect($select, data) {

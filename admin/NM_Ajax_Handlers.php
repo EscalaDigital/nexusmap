@@ -20,6 +20,7 @@ class NM_Ajax_Handlers
         $this->loader->add_action('wp_ajax_nm_delete_entry', $this, 'delete_entry');
         $this->loader->add_action('wp_ajax_nm_save_geonames_user', $this, 'save_geonames_user');
         $this->loader->add_action('wp_ajax_nm_geonames_proxy', $this, 'geonames_proxy');
+        $this->loader->add_action('wp_ajax_nopriv_nm_geonames_proxy', $this, 'geonames_proxy');
     }
     // Compare this snippet from admin/NM_Ajax_Handlers.php:
     public function save_ab_option()
@@ -235,15 +236,19 @@ class NM_Ajax_Handlers
         
         update_option('nm_geonames_user', $username);
         wp_send_json_success(__('GeoNames user saved successfully', 'nexusmap'));
-    }
-
-    /**
+    }    /**
      * Proxy para GeoNames API - Soluciona problema de Mixed Content
      * Hace peticiones HTTP internas y las sirve por HTTPS
      */
     public function geonames_proxy()
     {
-        check_ajax_referer('nm_admin_nonce', 'nonce');
+        // Verificar nonce - aceptar tanto admin como público
+        $nonce = isset($_GET['nonce']) ? $_GET['nonce'] : '';
+        
+        if (!wp_verify_nonce($nonce, 'nm_admin_nonce') && !wp_verify_nonce($nonce, 'nm_public_nonce')) {
+            wp_send_json_error(__('Security check failed', 'nexusmap'));
+            return;
+        }
         
         // Obtener parámetros
         $endpoint = isset($_GET['endpoint']) ? sanitize_text_field($_GET['endpoint']) : '';
