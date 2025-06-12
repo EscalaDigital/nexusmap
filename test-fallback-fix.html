@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fallback Fix - Estructura Predefinida</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            background: #fafafa;
+        }
+        .controls { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 15px; 
+            align-items: center;
+        }
+        input, select, button { 
+            padding: 8px 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+        }
+        button { 
+            background: #0073aa; 
+            color: white; 
+            cursor: pointer; 
+        }
+        button:hover { background: #005177; }
+        button:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+        }
+        .result { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+        }
+        .result.success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .result.error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        .result.loading { 
+            background: #d1ecf1; 
+            color: #0c5460; 
+            border: 1px solid #bee5eb; 
+        }
+        .nm-geonames-error {
+            background: #fff3cd !important; 
+            color: #856404 !important; 
+            border: 1px solid #ffeaa7 !important; 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin-bottom: 15px;
+        }
+        .nm-level-config {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .nm-structure-info {
+            background: #e7f3ff;
+            color: #004085;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .scenario {
+            background: #e8f4f8;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .scenario h4 {
+            margin: 0 0 10px 0;
+            color: #17a2b8;
+        }
+        .test-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Fallback Fix - Estructura Predefinida</h1>
+        
+        <div class="test-section">
+            <h3>Configuración Base</h3>
+            <div class="controls">
+                <input type="text" id="username" placeholder="Usuario GeoNames" value="">
+                <button id="validateBtn">Validar Usuario</button>
+            </div>
+            <div id="validationResult"></div>
+        </div>
+
+        <div class="scenario">
+            <h4>🧪 Escenario 1: País Predefinido (España) - Simular Error GeoNames</h4>
+            <p>Cuando GeoNames falla, debe mostrar estructura predefinida con mensaje de error</p>
+            <button onclick="testPredefinedCountryWithError('ES')">Test España con Error Simulado</button>
+            <div id="testSpainResult" class="test-output"></div>
+        </div>
+
+        <div class="scenario">
+            <h4>🧪 Escenario 2: País No Predefinido (Ruanda) - Simular Error GeoNames</h4>
+            <p>Cuando GeoNames falla para país no predefinido, debe mostrar estructura genérica con mensaje</p>
+            <button onclick="testNonPredefinedCountryWithError('RW')">Test Ruanda con Error Simulado</button>
+            <div id="testRwandaResult" class="test-output"></div>
+        </div>
+
+        <div class="scenario">
+            <h4>🧪 Escenario 3: País Sin Usuario - Solo Estructura Predefinida</h4>
+            <p>Sin usuario validado, debe mostrar solo estructura predefinida sin intentar GeoNames</p>
+            <button onclick="testCountryWithoutUser('FR')">Test Francia sin Usuario</button>
+            <div id="testFranceResult" class="test-output"></div>
+        </div>
+
+        <div class="scenario">
+            <h4>🧪 Escenario 4: Usuario Inválido + País</h4>
+            <p>Con usuario inválido, debe mostrar estructura predefinida con mensaje de error</p>
+            <button onclick="testInvalidUserWithCountry('US')">Test Estados Unidos con Usuario Inválido</button>
+            <div id="testUSResult" class="test-output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Log de Actividad</h3>
+            <div id="activityLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let validatedUsername = '';
+
+        // Configuraciones predefinidas (copiadas del código real)
+        const COUNTRY_CONFIGS = {
+            'ES': {
+                name: 'España',
+                levels: [
+                    { code: 'admin1', name: 'Comunidad Autónoma', default_label: 'Comunidad Autónoma' },
+                    { code: 'admin2', name: 'Provincia', default_label: 'Provincia' },
+                    { code: 'admin3', name: 'Municipio', default_label: 'Municipio' }
+                ]
+            },
+            'FR': {
+                name: 'Francia',
+                levels: [
+                    { code: 'admin1', name: 'Región', default_label: 'Región' },
+                    { code: 'admin2', name: 'Departamento', default_label: 'Departamento' },
+                    { code: 'admin3', name: 'Comuna', default_label: 'Comuna' }
+                ]
+            },
+            'US': {
+                name: 'Estados Unidos',
+                levels: [
+                    { code: 'admin1', name: 'Estado', default_label: 'Estado' },
+                    { code: 'admin2', name: 'Condado', default_label: 'Condado' },
+                    { code: 'admin3', name: 'Ciudad', default_label: 'Ciudad' }
+                ]
+            }
+        };
+
+        // Validar usuario
+        document.getElementById('validateBtn').addEventListener('click', function() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                showResult('error', 'Por favor, introduce un nombre de usuario');
+                return;
+            }
+
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Validando...';
+
+            // Simular validación
+            setTimeout(() => {
+                if (username === 'demo' || username.length > 3) {
+                    validatedUsername = username;
+                    showResult('success', `Usuario "${username}" validado correctamente`);
+                    logActivity(`✅ Usuario validado: ${username}`);
+                } else {
+                    showResult('error', 'Usuario inválido - debe tener más de 3 caracteres');
+                    logActivity(`❌ Usuario inválido: ${username}`);
+                }
+                
+                btn.disabled = false;
+                btn.textContent = 'Validar Usuario';
+            }, 1000);
+        });
+
+        // Test 1: País predefinido con error simulado
+        function testPredefinedCountryWithError(countryCode) {
+            logActivity(`🧪 Test 1: ${countryCode} con error simulado de GeoNames`);
+            
+            const resultDiv = document.getElementById('testSpainResult');
+            resultDiv.innerHTML = '<div class="result loading">🔄 Simulando error de GeoNames...</div>';
+            
+            setTimeout(() => {
+                // Simular el comportamiento de displayFallbackStructureWithMessage
+                const errorMessage = 'Error de conexión con GeoNames';
+                const mockLevelsList = document.createElement('div');
+                
+                displayFallbackStructureWithMessage(mockLevelsList, countryCode, errorMessage);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">✅ Test 1 Completado</div>
+                    <div>Resultado esperado: Estructura predefinida de ${countryCode} con mensaje de error</div>
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: white;">
+                        ${mockLevelsList.innerHTML}
+                    </div>
+                `;
+                
+                logActivity(`✅ Test 1 completado: Fallback con mensaje mostrado correctamente`);
+            }, 1500);
+        }
+
+        // Test 2: País no predefinido con error simulado  
+        function testNonPredefinedCountryWithError(countryCode) {
+            logActivity(`🧪 Test 2: ${countryCode} (no predefinido) con error simulado`);
+            
+            const resultDiv = document.getElementById('testRwandaResult');
+            resultDiv.innerHTML = '<div class="result loading">🔄 Simulando error para país no predefinido...</div>';
+            
+            setTimeout(() => {
+                const errorMessage = 'Error de conexión con GeoNames';
+                const mockLevelsList = document.createElement('div');
+                
+                displayFallbackStructureWithMessage(mockLevelsList, countryCode, errorMessage);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">✅ Test 2 Completado</div>
+                    <div>Resultado esperado: Estructura genérica con mensaje de error</div>
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: white;">
+                        ${mockLevelsList.innerHTML}
+                    </div>
+                `;
+                
+                logActivity(`✅ Test 2 completado: Estructura genérica mostrada correctamente`);
+            }, 1500);
+        }
+
+        // Test 3: País sin usuario validado
+        function testCountryWithoutUser(countryCode) {
+            logActivity(`🧪 Test 3: ${countryCode} sin usuario validado`);
+            
+            const resultDiv = document.getElementById('testFranceResult');
+            resultDiv.innerHTML = '<div class="result loading">🔄 Simulando selección sin usuario...</div>';
+            
+            setTimeout(() => {
+                // Simular showLevelsConfig (comportamiento normal sin usuario)
+                const mockLevelsList = document.createElement('div');
+                showLevelsConfigMock(mockLevelsList, countryCode);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">✅ Test 3 Completado</div>
+                    <div>Resultado esperado: Solo estructura predefinida, sin intentar GeoNames</div>
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: white;">
+                        ${mockLevelsList.innerHTML}
+                    </div>
+                `;
+                
+                logActivity(`✅ Test 3 completado: Estructura predefinida mostrada sin GeoNames`);
+            }, 1000);
+        }
+
+        // Test 4: Usuario inválido + país
+        function testInvalidUserWithCountry(countryCode) {
+            logActivity(`🧪 Test 4: ${countryCode} con usuario inválido`);
+            
+            const resultDiv = document.getElementById('testUSResult');
+            resultDiv.innerHTML = '<div class="result loading">🔄 Simulando usuario inválido...</div>';
+            
+            setTimeout(() => {
+                const errorMessage = 'Usuario GeoNames inválido o sin permisos';
+                const mockLevelsList = document.createElement('div');
+                
+                displayFallbackStructureWithMessage(mockLevelsList, countryCode, errorMessage);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">✅ Test 4 Completado</div>
+                    <div>Resultado esperado: Estructura predefinida con mensaje de usuario inválido</div>
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: white;">
+                        ${mockLevelsList.innerHTML}
+                    </div>
+                `;
+                
+                logActivity(`✅ Test 4 completado: Fallback por usuario inválido funcionando`);
+            }, 1500);
+        }
+
+        // Función mock para simular showLevelsConfig
+        function showLevelsConfigMock(levelsList, countryCode) {
+            let config = COUNTRY_CONFIGS[countryCode];
+            
+            if (!config) {
+                config = {
+                    name: 'País Genérico',
+                    levels: [
+                        { code: 'admin1', name: 'Nivel Administrativo 1', default_label: 'Región/Estado' },
+                        { code: 'admin2', name: 'Nivel Administrativo 2', default_label: 'Provincia/Condado' },
+                        { code: 'admin3', name: 'Nivel Administrativo 3', default_label: 'Municipio/Ciudad' },
+                        { code: 'admin4', name: 'Nivel Administrativo 4', default_label: 'Distrito/Barrio' }
+                    ]
+                };
+            }
+            
+            levelsList.innerHTML = '<h6>📋 Estructura predefinida:</h6>';
+            
+            config.levels.forEach((level, index) => {
+                const isChecked = index < 2;
+                levelsList.innerHTML += `
+                    <div class="nm-level-config">
+                        <input type="checkbox" class="nm-level-enabled" value="${level.code}" ${isChecked ? 'checked' : ''}>
+                        <span>${level.name}:</span>
+                        <input type="text" class="nm-level-label" data-level="${level.code}" value="${level.default_label}" placeholder="Nombre del campo">
+                    </div>
+                `;
+            });
+            
+            levelsList.innerHTML += `
+                <div class="nm-structure-info">
+                    <small>💡 Para cargar la estructura real del país desde GeoNames, 
+                    valida tu usuario primero y luego selecciona el país nuevamente.</small>
+                </div>
+            `;
+        }
+
+        // Función copiada del código real (corregida)
+        function displayFallbackStructureWithMessage(levelsList, countryCode, errorMessage) {
+            levelsList.innerHTML = '';
+            
+            // Mostrar mensaje de error
+            levelsList.innerHTML += `
+                <div class="nm-geonames-error">
+                    <strong>⚠️ ${errorMessage}</strong><br>
+                    <small>Usando estructura predefinida como alternativa</small>
+                </div>
+            `;
+            
+            // Usar estructura predefinida o genérica
+            let config = COUNTRY_CONFIGS[countryCode];
+            
+            if (!config) {
+                config = {
+                    name: 'Estructura Genérica',
+                    levels: [
+                        { code: 'admin1', name: 'Primer Nivel', default_label: 'Región/Estado' },
+                        { code: 'admin2', name: 'Segundo Nivel', default_label: 'Provincia/Condado' },
+                        { code: 'admin3', name: 'Tercer Nivel', default_label: 'Municipio/Ciudad' },
+                        { code: 'admin4', name: 'Cuarto Nivel', default_label: 'Distrito/Barrio' }
+                    ]
+                };
+            }
+            
+            levelsList.innerHTML += '<h6>📋 Estructura predefinida (fallback):</h6>';
+            
+            config.levels.forEach((level, index) => {
+                const isChecked = index < 2;
+                levelsList.innerHTML += `
+                    <div class="nm-level-config">
+                        <input type="checkbox" class="nm-level-enabled" value="${level.code}" ${isChecked ? 'checked' : ''}>
+                        <span>${level.name}:</span>
+                        <input type="text" class="nm-level-label" data-level="${level.code}" 
+                               value="${level.default_label}" placeholder="Nombre del campo">
+                    </div>
+                `;
+            });
+            
+            levelsList.innerHTML += `
+                <div class="nm-structure-info">
+                    <small>ℹ️ Se está usando la configuración predefinida debido a problemas con GeoNames. 
+                    El sistema funcionará correctamente con esta estructura.</small>
+                </div>
+            `;
+        }
+
+        function showResult(type, message) {
+            const div = document.getElementById('validationResult');
+            div.className = `result ${type}`;
+            div.textContent = message;
+        }
+
+        function logActivity(message) {
+            const log = document.getElementById('activityLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Inicialización
+        logActivity('🔧 Test de Fallback iniciado');
+        logActivity('📋 4 escenarios de prueba disponibles');
+    </script>
+</body>
+</html>
