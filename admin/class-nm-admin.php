@@ -40,18 +40,17 @@ class NM_Admin
         // Verificar que solo se carguen en las páginas de NexusMap
         $plugin_pages = ['toplevel_page_nm', 'nexusmap_page_nm-entries', 'nexusmap_page_nm_map_settings', 'nexusmap_page_nm_manage_layers', 'nexusmap_page_nm-form-to-map', 'nexusmap_page_nm-form-filters', 'nexusmap_page_nm-chart-manager', 'nexusmap_page_nm_style_manager'];
 
-        if (in_array($hook_suffix, $plugin_pages)) {
-            // Cargar CSS
+        if (in_array($hook_suffix, $plugin_pages)) {            // Cargar CSS
             wp_enqueue_style('nm-admin-css', NM_PLUGIN_URL . 'admin/css/admin.css', array(), NM_VERSION);
             wp_enqueue_style('nm-entries-css', NM_PLUGIN_URL . 'admin/css/entries.css', array(), NM_VERSION);
+            wp_enqueue_style('nm-geographic-selector-css', NM_PLUGIN_URL . 'public/css/geographic-selector.css', array(), NM_VERSION);
 
             // Cargar CSS y JS de Leaflet (si es necesario para la página de capas o mapa)
             wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), null);
-            wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), null, true);
-
-            // Cargar scripts específicos
+            wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), null, true);            // Cargar scripts específicos
             wp_enqueue_script('nm-admin-js', NM_PLUGIN_URL . 'admin/js/admin.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), NM_VERSION, true);
             wp_enqueue_script('nm-entries-js', NM_PLUGIN_URL . 'admin/js/entries.js', array('jquery', 'leaflet-js'), NM_VERSION, true);
+            wp_enqueue_script('nm-geographic-selector-config-js', NM_PLUGIN_URL . 'admin/js/geographic-selector-config.js', array('jquery'), NM_VERSION, true);
             
 
             // Agregar variables globales para AJAX

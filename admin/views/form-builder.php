@@ -13,9 +13,9 @@
                 <li data-type="select">Dropdown Menu</li>
                 <li data-type="file">File Upload</li>
                 <li data-type="number">Number Field</li>
-                <li data-type="date">Date Picker</li>
-                <li data-type="url">URL Field</li>
+                <li data-type="date">Date Picker</li>                <li data-type="url">URL Field</li>
                 <li data-type="conditional-select">Conditional Select</li>
+                <li data-type="geographic-selector">Selector Geográfico</li>
 
           
             </ul>

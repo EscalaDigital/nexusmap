@@ -165,13 +165,26 @@
                                         <?php echo esc_html($opt['value']); ?>
                                     </option>
                                 <?php endforeach; ?>
-                            </select>
-
-                            <!-- aquí llegarán los sub-campos -->
+                            </select>                            <!-- aquí llegarán los sub-campos -->
                             <div class="conditional-target"
                                 data-select-id="<?php echo esc_attr($field['select_id']); ?>"></div>
                         </div>
         <?php break;
+
+                    case 'geographic-selector':
+                        $field_config = $field['config'] ?? [];
+                        if (!empty($field_config)):
+                    ?>
+                        <div class="nm-form-field nm-geographic-selector" 
+                             data-type="geographic-selector" 
+                             data-config='<?php echo esc_attr(json_encode($field_config)); ?>'
+                             id="<?php echo esc_attr($field_id); ?>">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <!-- Selectors will be populated via JavaScript -->
+                        </div>
+                    <?php 
+                        endif;
+                        break;
 
 
 

@@ -1,9 +1,7 @@
 jQuery(document).ready(function ($) {
 
-    const fieldTpl = {};
-
-    ['header', 'text', 'textarea', 'checkbox', 'radio',
-        'select', 'file', 'number', 'date', 'url'].forEach(function (type) {
+    const fieldTpl = {};    ['header', 'text', 'textarea', 'checkbox', 'radio',
+        'select', 'file', 'number', 'date', 'url', 'geographic-selector'].forEach(function (type) {
             $.post(nmAdmin.ajax_url, {
                 action: 'nm_get_field_template',
                 field_type: type,
@@ -383,9 +381,7 @@ function saveForm(formSelector, formType) {
                 name : fieldName,
                 select_id: selectId,
                 options  : optionsWithIds
-            });
-
-        /*────────────────────────────────────────────────────────
+            });        /*────────────────────────────────────────────────────────
          * 2. CAMPOS NORMALES
          *──────────────────────────────────────────────────────*/
         } else {
@@ -399,6 +395,29 @@ function saveForm(formSelector, formType) {
 
             const fieldData = { type: fieldType, label: fieldLabel, name: fieldName };
             if (fieldOptions.length) fieldData.options = fieldOptions;
+
+            // Manejo especial para el campo geográfico
+            if (fieldType === 'geographic-selector') {
+                const geoConfig = {
+                    country: $field.find('.geo-country-select').val() || '',
+                    levels: []
+                };
+
+                // Obtener configuración de niveles administrativos
+                $field.find('.geo-levels-list .geo-level-item').each(function() {
+                    const $level = jQuery(this);
+                    const levelData = {
+                        geonameId: $level.find('.geo-level-id').val() || '',
+                        name: $level.find('.geo-level-name').val() || '',
+                        fieldName: $level.find('.geo-field-name').val() || ''
+                    };
+                    if (levelData.geonameId && levelData.name && levelData.fieldName) {
+                        geoConfig.levels.push(levelData);
+                    }
+                });
+
+                fieldData.geoConfig = geoConfig;
+            }
 
             formFields.push(fieldData);
         }

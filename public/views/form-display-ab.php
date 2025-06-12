@@ -168,14 +168,27 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                                 <input type="url" name="<?php echo esc_attr($field['name']); ?>">
                             </div>
                         <?php
-                            break;
-                        case 'range':
+                            break;                        case 'range':
                         ?>
                             <div class="nm-form-field" data-type="range">
                                 <label><?php echo esc_html($field['label']); ?></label>
                                 <input type="range" name="<?php echo esc_attr($field['name']); ?>">
                             </div>
                         <?php
+                            break;
+                        case 'geographic-selector':
+                            $field_config = $field['config'] ?? [];
+                            if (!empty($field_config)):
+                        ?>
+                            <div class="nm-form-field nm-geographic-selector" 
+                                 data-type="geographic-selector" 
+                                 data-config='<?php echo esc_attr(json_encode($field_config)); ?>'
+                                 id="nm_field_<?php echo esc_attr($field['name']); ?>">
+                                <label><?php echo esc_html($field['label']); ?></label>
+                                <!-- Selectors will be populated via JavaScript -->
+                            </div>
+                        <?php 
+                            endif;
                             break;
                         default:
                             echo '<p>Unknown field type: ' . esc_html($field['type']) . '</p>';

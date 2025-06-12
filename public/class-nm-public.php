@@ -118,9 +118,7 @@ class NM_Public
             
             // Para gráficos Chart.js
             wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
-        }
-
-        // Check if the [nm_form] shortcode is used in the content
+        }        // Check if the [nm_form] shortcode is used in the content
         if (has_shortcode($post->post_content, 'nm_form')) {
             // Enqueue Leaflet CSS and JS
             wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
@@ -128,6 +126,10 @@ class NM_Public
             // Enqueue Leaflet Draw CSS and JS
             wp_enqueue_style('nm-leaflet-draw-css', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css', array('nm-leaflet-css'), '1.0.4');
             wp_enqueue_script('nm-leaflet-draw-js', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js', array('nm-leaflet-js'), '1.0.4', true);
+
+            // Enqueue Geographic Selector assets
+            wp_enqueue_style('nm-geographic-selector-css', NM_PLUGIN_URL . 'public/css/geographic-selector.css', array(), NM_VERSION);
+            wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);
 
             // Obtener el tema seleccionado de las opciones
             $selected_theme_form = get_option('nm_selected_theme_form', 'default');
