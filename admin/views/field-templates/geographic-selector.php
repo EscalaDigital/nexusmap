@@ -21,19 +21,25 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
     <div class="nm-geo-config-panel" style="display: none;">
         <div class="nm-config-section">
             <h4>Configuración del Selector Geográfico</h4>
-            
-            <div class="nm-config-row">
+              <div class="nm-config-row">
                 <label>Usuario GeoNames:</label>
-                <input type="text" class="nm-geonames-user" value="<?php echo esc_attr($geonames_user); ?>" placeholder="Tu usuario de GeoNames">
-                <small>Regístrate gratis en <a href="https://www.geonames.org/login" target="_blank">GeoNames.org</a></small>
+                <div class="nm-geonames-user-container">
+                    <input type="text" class="nm-geonames-user" value="<?php echo esc_attr($geonames_user); ?>" placeholder="Tu usuario de GeoNames">
+                    <button type="button" class="button nm-validate-user-btn">Validar Usuario</button>
+                </div>
+                <small>Regístrate gratis en <a href="https://www.geonames.org/login" target="_blank">GeoNames.org</a> y activa los webservices en: <a href="https://www.geonames.org/manageaccount"> Activar servicios</a> El uso de geonames puede tener costes. Infórmese en la plataforma </small>
+                <div class="nm-user-validation-message" style="display: none;"></div>
             </div>
             
-            <div class="nm-config-row">
+            <div class="nm-config-row nm-country-row" style="display: none;">
                 <label>País:</label>
-                <select class="nm-country-selector">
+                <select class="nm-country-selector" disabled>
                     <option value="">Seleccionar país...</option>
                     <!-- Countries will be loaded via JavaScript -->
                 </select>
+                <div class="nm-country-loading" style="display: none;">
+                    <span>Cargando países...</span>
+                </div>
             </div>
             
             <div class="nm-levels-config" style="display: none;">
@@ -140,6 +146,62 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
     display: block;
     color: #666;
     margin-top: 5px;
+}
+
+.nm-geonames-user-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nm-geonames-user-container input {
+    flex: 1;
+}
+
+.nm-validate-user-btn {
+    white-space: nowrap;
+}
+
+.nm-user-validation-message {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.nm-user-validation-message.success {
+    background-color: #d1edff;
+    border: 1px solid #0073aa;
+    color: #0073aa;
+}
+
+.nm-user-validation-message.error {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+}
+
+.nm-country-loading {
+    margin-top: 8px;
+    color: #666;
+    font-style: italic;
+}
+
+.nm-country-loading:before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: nm-spin 1s linear infinite;
+}
+
+@keyframes nm-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .nm-levels-config {

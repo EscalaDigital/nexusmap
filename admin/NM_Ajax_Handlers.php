@@ -8,8 +8,7 @@ class NM_Ajax_Handlers
     public function __construct($loader, $model)
     {
         $this->loader = $loader;
-        $this->model = $model;        // Registro de acciones AJAX
-        $this->loader->add_action('wp_ajax_nm_save_form', $this, 'save_form');
+        $this->model = $model;        // Registro de acciones AJAX        $this->loader->add_action('wp_ajax_nm_save_form', $this, 'save_form');
         $this->loader->add_action('wp_ajax_nm_get_field_template', $this, 'get_field_template');
         $this->loader->add_action('wp_ajax_nm_get_entries', $this, 'get_entries');
         $this->loader->add_action('wp_ajax_nm_update_entry_status', $this, 'update_entry_status');
@@ -20,6 +19,7 @@ class NM_Ajax_Handlers
         $this->loader->add_action('wp_ajax_nm_get_entry_for_edit', $this, 'get_entry_for_edit');
         $this->loader->add_action('wp_ajax_nm_update_entry_data', $this, 'update_entry_data');
         $this->loader->add_action('wp_ajax_nm_delete_entry', $this, 'delete_entry');
+        $this->loader->add_action('wp_ajax_nm_save_geonames_user', $this, 'save_geonames_user');
     }
     // Compare this snippet from admin/NM_Ajax_Handlers.php:
     public function save_ab_option()
@@ -220,8 +220,22 @@ class NM_Ajax_Handlers
             } else {
                 wp_send_json_error(__('Error deleting entry', 'nexusmap'));
             }
-        } else {
-            wp_send_json_error(__('Entry ID is missing', 'nexusmap'));
+        } else {            wp_send_json_error(__('Entry ID is missing', 'nexusmap'));
         }
+    }
+
+    public function save_geonames_user()
+    {
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+        
+        $username = isset($_POST['username']) ? sanitize_text_field($_POST['username']) : '';
+        
+        if (empty($username)) {
+            wp_send_json_error(__('Username is required', 'nexusmap'));
+            return;
+        }
+        
+        update_option('nm_geonames_user', $username);
+        wp_send_json_success(__('GeoNames user saved successfully', 'nexusmap'));
     }
 }
