@@ -30,39 +30,56 @@
             dataType: 'json'
         });
     }
-    
-    $(document).ready(function() {
+      $(document).ready(function() {
+        console.log('NexusMap Geographic Selector: Document ready, initializing...');
         initializeGeographicSelectors();
     });
 
     function initializeGeographicSelectors() {
-        $('.nm-geographic-selector').each(function() {
+        console.log('Looking for .nm-geographic-selector elements...');
+        const $selectors = $('.nm-geographic-selector');
+        console.log('Found', $selectors.length, 'geographic selector(s)');
+        
+        $selectors.each(function() {
             const $container = $(this);
+            console.log('Processing geographic selector:', $container.attr('id'));
             const config = getFieldConfig($container);
+            console.log('Config for selector:', config);
             
             if (config) {
                 setupCascadingSelects($container, config);
+            } else {
+                console.error('No valid config found for geographic selector');
             }
         });
-    }
-
-    function getFieldConfig($container) {
+    }    function getFieldConfig($container) {
         try {
             const configData = $container.data('config');
-            return configData ? (typeof configData === 'string' ? JSON.parse(configData) : configData) : null;
+            console.log('Raw config data:', configData);
+            console.log('Config data type:', typeof configData);
+            
+            const result = configData ? (typeof configData === 'string' ? JSON.parse(configData) : configData) : null;
+            console.log('Parsed config result:', result);
+            return result;
         } catch (e) {
             console.error('Error parsing geographic selector config:', e);
             return null;
         }
-    }
-
-    function setupCascadingSelects($container, config) {
+    }    function setupCascadingSelects($container, config) {
+        console.log('Setting up cascading selects with config:', config);
+        
         const levels = config.levels || [];
         const fieldNames = config.field_names || {};
         const country = config.country;
         const geonamesUser = config.geonames_user;
 
+        console.log('Levels:', levels);
+        console.log('Field names:', fieldNames);
+        console.log('Country:', country);
+        console.log('GeoNames user:', geonamesUser);
+
         if (!geonamesUser) {
+            console.error('GeoNames user not configured');
             showError($container, 'Usuario GeoNames no configurado');
             return;
         }
@@ -267,12 +284,23 @@
 
     function hideLoading($levelContainer) {
         $levelContainer.find('.nm-geo-loading').hide();
-    }
-
-    function showError($levelContainer, message) {
-        const $error = $levelContainer.find('.nm-geo-error');
-        $error.find('span').text(message);
-        $error.show();
+    }    function showError($container, message) {
+        console.error('Geographic Selector Error:', message);
+        
+        // Si $container es el nivel específico, buscar el error ahí
+        let $error = $container.find('.nm-geo-error');
+        
+        // Si no encuentra error en el contenedor, es porque $container es el contenedor principal
+        if ($error.length === 0) {
+            // Crear un div de error general si no existe
+            if ($container.find('.nm-geo-general-error').length === 0) {
+                $container.append('<div class="nm-geo-general-error" style="color: red; padding: 10px; border: 1px solid red; background: #ffe6e6; margin: 10px 0;"></div>');
+            }
+            $container.find('.nm-geo-general-error').text(message).show();
+        } else {
+            $error.find('span').text(message);
+            $error.show();
+        }
     }
 
     function hideError($levelContainer) {

@@ -394,29 +394,44 @@ function saveForm(formSelector, formType) {
             }
 
             const fieldData = { type: fieldType, label: fieldLabel, name: fieldName };
-            if (fieldOptions.length) fieldData.options = fieldOptions;
-
-            // Manejo especial para el campo geográfico
+            if (fieldOptions.length) fieldData.options = fieldOptions;            // Manejo especial para el campo geográfico
             if (fieldType === 'geographic-selector') {
-                const geoConfig = {
-                    country: $field.find('.geo-country-select').val() || '',
-                    levels: []
-                };
-
-                // Obtener configuración de niveles administrativos
-                $field.find('.geo-levels-list .geo-level-item').each(function() {
-                    const $level = jQuery(this);
-                    const levelData = {
-                        geonameId: $level.find('.geo-level-id').val() || '',
-                        name: $level.find('.geo-level-name').val() || '',
-                        fieldName: $level.find('.geo-field-name').val() || ''
-                    };
-                    if (levelData.geonameId && levelData.name && levelData.fieldName) {
-                        geoConfig.levels.push(levelData);
+                // Leer la configuración desde el campo oculto
+                const configField = $field.find('.nm-field-config');
+                if (configField.length > 0) {
+                    try {
+                        const configData = JSON.parse(configField.val());
+                        if (configData && configData.config) {
+                            fieldData.config = configData.config;
+                            console.log('Geographic field config loaded:', fieldData.config);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing geographic field config:', e);
                     }
-                });
+                }
+                
+                // Fallback a la estructura antigua si no hay configuración nueva
+                if (!fieldData.config) {
+                    const geoConfig = {
+                        country: $field.find('.geo-country-select').val() || '',
+                        levels: []
+                    };
 
-                fieldData.geoConfig = geoConfig;
+                    // Obtener configuración de niveles administrativos
+                    $field.find('.geo-levels-list .geo-level-item').each(function() {
+                        const $level = jQuery(this);
+                        const levelData = {
+                            geonameId: $level.find('.geo-level-id').val() || '',
+                            name: $level.find('.geo-level-name').val() || '',
+                            fieldName: $level.find('.geo-field-name').val() || ''
+                        };
+                        if (levelData.geonameId && levelData.name && levelData.fieldName) {
+                            geoConfig.levels.push(levelData);
+                        }
+                    });
+
+                    fieldData.config = geoConfig;
+                }
             }
 
             formFields.push(fieldData);

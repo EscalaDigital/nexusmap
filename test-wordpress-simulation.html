@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Geographic Selector - WordPress Simulation</title>
+    <link rel="stylesheet" href="public/css/geographic-selector.css">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f0f0f1;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nm-form-field { 
+            margin-bottom: 20px; 
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .nm-form-field label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .debug-panel { 
+            background: #e7f3ff; 
+            padding: 15px; 
+            margin: 20px 0; 
+            border-left: 4px solid #0073aa; 
+            border-radius: 4px;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+        }
+        .status.success { 
+            background: #d1edff; 
+            border: 1px solid #0073aa; 
+            color: #0073aa; 
+        }
+        .status.error { 
+            background: #ffebee; 
+            border: 1px solid #d32f2f; 
+            color: #d32f2f; 
+        }
+        .status.info { 
+            background: #fff3e0; 
+            border: 1px solid #ff9800; 
+            color: #f57c00; 
+        }
+        button {
+            background: #0073aa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .test-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Geographic Selector - Simulación WordPress</h1>
+        
+        <div class="debug-panel">
+            <h3>🎯 Propósito del Test</h3>
+            <p>Esta página simula exactamente cómo WordPress debería renderizar el formulario con el campo geographic-selector.</p>
+            <p><strong>Problema:</strong> El campo se muestra en el admin pero no en el frontend.</p>
+        </div>
+
+        <div id="status-panel">
+            <!-- Los estados se mostrarán aquí -->
+        </div>
+
+        <!-- Simulación exacta del HTML que debería generar form-display.php -->
+        <div id="nm-custom-form-container">
+            <div id="nm-form-messages" class="nm-messages"></div>
+            <form id="nm-user-form" method="post" enctype="multipart/form-data">
+
+                <!-- Campo geográfico tal como lo genera el template PHP -->
+                <div class="nm-form-field nm-geographic-selector" 
+                     data-type="geographic-selector" 
+                     data-config='{"geonames_user":"demo","country":"ES","levels":["admin1","admin2","admin3"],"field_names":{"admin1":"Comunidad Autónoma","admin2":"Provincia","admin3":"Municipio"}}'
+                     id="nm_field_ubicacion">
+                    <label>Selector Geográfico de Ubicación</label>
+                    <!-- Los selectores se poblarán vía JavaScript -->
+                </div>
+
+                <!-- Campo adicional para testing -->
+                <div class="nm-form-field" data-type="text">
+                    <label for="nm_field_nombre">Nombre</label>
+                    <input type="text" id="nm_field_nombre" name="nombre" placeholder="Tu nombre">
+                </div>
+
+                <input type="hidden" name="nm_form_type" value="0">
+                <button type="submit" name="nm_submit_form" class="button">Enviar Formulario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel de controles de test -->
+    <div class="test-controls">
+        <h4>🔧 Controles de Test</h4>
+        <button onclick="runDiagnostic()">Ejecutar Diagnóstico</button>
+        <button onclick="forceInit()">Forzar Inicialización</button>
+        <button onclick="showConfig()">Mostrar Config</button>
+        <button onclick="testAPI()">Test API</button>
+        <button onclick="clearLog()">Limpiar Log</button>
+    </div>
+
+    <!-- Simulación de wp_localize_script -->
+    <script>
+        // Simular las variables que wp_localize_script debería crear
+        window.nmPublic = {
+            ajax_url: '/wp-admin/admin-ajax.php',
+            nonce: 'test_nonce_' + Math.random().toString(36).substring(7)
+        };
+        
+        console.log('✅ Variables nmPublic configuradas:', window.nmPublic);
+    </script>
+
+    <!-- jQuery (WordPress lo incluye automáticamente) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Script geographic-selector.js -->
+    <script src="public/js/geographic-selector.js"></script>
+
+    <!-- Scripts de testing -->
+    <script>
+        function addStatus(message, type = 'info') {
+            const panel = document.getElementById('status-panel');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            panel.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function runDiagnostic() {
+            addStatus('Ejecutando diagnóstico completo...', 'info');
+            
+            // Verificar jQuery
+            if (typeof jQuery === 'undefined') {
+                addStatus('❌ jQuery no está cargado', 'error');
+                return;
+            } else {
+                addStatus('✅ jQuery cargado (v' + jQuery.fn.jquery + ')', 'success');
+            }
+
+            // Verificar nmPublic
+            if (typeof window.nmPublic === 'undefined') {
+                addStatus('❌ Variables nmPublic no están definidas', 'error');
+            } else {
+                addStatus('✅ Variables nmPublic definidas', 'success');
+            }
+
+            // Verificar elementos DOM
+            const $geoSelectors = jQuery('.nm-geographic-selector');
+            addStatus(`🔍 Encontrados ${$geoSelectors.length} selectores geográficos`, 'info');
+
+            if ($geoSelectors.length > 0) {
+                $geoSelectors.each(function(index) {
+                    const $container = jQuery(this);
+                    const config = $container.data('config');
+                    
+                    if (config) {
+                        addStatus(`✅ Selector ${index + 1} tiene configuración`, 'success');
+                        
+                        // Verificar si se generaron los selects
+                        const $selects = $container.find('.nm-geo-select');
+                        if ($selects.length > 0) {
+                            addStatus(`✅ Selector ${index + 1} generó ${$selects.length} elementos select`, 'success');
+                        } else {
+                            addStatus(`⚠️ Selector ${index + 1} no generó elementos select`, 'error');
+                        }
+                    } else {
+                        addStatus(`❌ Selector ${index + 1} no tiene configuración`, 'error');
+                    }
+                });
+            }
+
+            // Verificar script geographic-selector
+            if (typeof window.nmGeographicSelectorFrontend === 'undefined') {
+                addStatus('❌ Script geographic-selector.js no exporta funciones', 'error');
+            } else {
+                addStatus('✅ Script geographic-selector.js cargado correctamente', 'success');
+            }
+        }
+
+        function forceInit() {
+            addStatus('Forzando reinicialización...', 'info');
+            
+            if (typeof window.nmGeographicSelectorFrontend !== 'undefined' && 
+                window.nmGeographicSelectorFrontend.initializeSelectors) {
+                window.nmGeographicSelectorFrontend.initializeSelectors();
+                addStatus('✅ Reinicialización ejecutada', 'success');
+            } else {
+                addStatus('❌ No se puede reinicializar - funciones no disponibles', 'error');
+            }
+        }
+
+        function showConfig() {
+            const $geoSelectors = jQuery('.nm-geographic-selector');
+            
+            if ($geoSelectors.length === 0) {
+                addStatus('❌ No hay selectores geográficos para mostrar config', 'error');
+                return;
+            }
+
+            $geoSelectors.each(function(index) {
+                const $container = jQuery(this);
+                const config = $container.data('config');
+                
+                console.log(`Configuración Selector ${index + 1}:`, config);
+                addStatus(`📋 Config Selector ${index + 1} mostrada en consola`, 'info');
+            });
+        }
+
+        function testAPI() {
+            addStatus('🧪 Simulando llamada a API GeoNames...', 'info');
+            
+            // Simulación de respuesta exitosa
+            setTimeout(() => {
+                addStatus('✅ API simulada respondió correctamente', 'success');
+                
+                // Poblar el primer selector con datos de prueba
+                const $firstSelect = jQuery('.nm-geo-select').first();
+                if ($firstSelect.length > 0) {
+                    $firstSelect.empty().append(`
+                        <option value="">Seleccionar...</option>
+                        <option value="2593109">Andalucía</option>
+                        <option value="3336900">Cataluña</option>
+                        <option value="2593110">Madrid</option>
+                    `).prop('disabled', false);
+                    addStatus('✅ Primer selector poblado con datos de prueba', 'success');
+                }
+            }, 1000);
+        }
+
+        function clearLog() {
+            document.getElementById('status-panel').innerHTML = '';
+            console.clear();
+            addStatus('🧹 Log limpiado', 'info');
+        }
+
+        // Auto-ejecutar diagnóstico al cargar la página
+        jQuery(document).ready(function() {
+            setTimeout(() => {
+                addStatus('🚀 Página cargada, ejecutando diagnóstico automático...', 'info');
+                runDiagnostic();
+            }, 1000);
+        });
+
+        // Interceptar envío de formulario para testing
+        jQuery(document).on('submit', '#nm-user-form', function(e) {
+            e.preventDefault();
+            addStatus('📤 Formulario interceptado (no se envía realmente)', 'info');
+            
+            // Mostrar datos que se enviarían
+            const formData = new FormData(this);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            console.log('Datos del formulario:', data);
+            addStatus('📊 Datos del formulario mostrados en consola', 'info');
+        });
+    </script>
+</body>
+</html>
