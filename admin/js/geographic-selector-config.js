@@ -1,67 +1,17 @@
 /**
- * Geographic Selector Configuration JavaScript
+ * Geographic Selector Configuration JavaScript - Dynamic Structure Discovery
  */
 (function($) {
     'use strict';
 
-    // Common country configurations for GeoNames levels
-    const COUNTRY_CONFIGS = {
-        'ES': {
-            name: 'España',
-            levels: [
-                { code: 'admin1', name: 'Comunidad Autónoma', default_label: 'Comunidad Autónoma' },
-                { code: 'admin2', name: 'Provincia', default_label: 'Provincia' },
-                { code: 'admin3', name: 'Municipio', default_label: 'Municipio' }
-            ]
-        },
-        'FR': {
-            name: 'Francia',
-            levels: [
-                { code: 'admin1', name: 'Región', default_label: 'Región' },
-                { code: 'admin2', name: 'Departamento', default_label: 'Departamento' },
-                { code: 'admin3', name: 'Comuna', default_label: 'Comuna' }
-            ]
-        },
-        'US': {
-            name: 'Estados Unidos',
-            levels: [
-                { code: 'admin1', name: 'Estado', default_label: 'Estado' },
-                { code: 'admin2', name: 'Condado', default_label: 'Condado' },
-                { code: 'admin3', name: 'Ciudad', default_label: 'Ciudad' }
-            ]
-        },
-        'MX': {
-            name: 'México',
-            levels: [
-                { code: 'admin1', name: 'Estado', default_label: 'Estado' },
-                { code: 'admin2', name: 'Municipio', default_label: 'Municipio' },
-                { code: 'admin3', name: 'Localidad', default_label: 'Localidad' }
-            ]
-        },
-        'IT': {
-            name: 'Italia',
-            levels: [
-                { code: 'admin1', name: 'Región', default_label: 'Región' },
-                { code: 'admin2', name: 'Provincia', default_label: 'Provincia' },
-                { code: 'admin3', name: 'Comuna', default_label: 'Comuna' }
-            ]
-        },
-        'DE': {
-            name: 'Alemania',
-            levels: [
-                { code: 'admin1', name: 'Estado', default_label: 'Estado' },
-                { code: 'admin2', name: 'Distrito', default_label: 'Distrito' },
-                { code: 'admin3', name: 'Municipio', default_label: 'Municipio' }
-            ]
-        }
-    };
-
+    // Cache para estructuras de países descubiertas dinámicamente
+    let countryStructureCache = {};
     let currentField = null;
 
     $(document).ready(function() {
         initializeGeographicSelector();
         setupEventHandlers();
-    });    function initializeGeographicSelector() {
+    });function initializeGeographicSelector() {
         // Initialize existing fields
         $('.nm-geographic-field').each(function() {
             initializeExistingField($(this));
@@ -102,12 +52,10 @@
             const username = panel.find('.nm-geonames-user').val().trim();
             
             if (country && username) {
-                loadCountryStructureFromGeonames(country, username, panel);
-            } else if (country && COUNTRY_CONFIGS[country]) {
-                // Fallback to predefined config if no username
-                showLevelsConfig(panel, country);
+                discoverCountryStructure(country, username, panel);
             } else {
                 panel.find('.nm-levels-config').hide();
+                showStructureMessage(panel, 'Selecciona un país y valida el usuario GeoNames para explorar su estructura administrativa.', 'info');
             }
         });
 
@@ -136,33 +84,7 @@
                     }, 100);
                 }
             });
-        }
-    }    function loadCountries() {
-        const commonCountries = [
-            { code: 'ES', name: 'España' },
-            { code: 'FR', name: 'Francia' },
-            { code: 'US', name: 'Estados Unidos' },
-            { code: 'MX', name: 'México' },
-            { code: 'IT', name: 'Italia' },
-            { code: 'DE', name: 'Alemania' },
-            { code: 'PT', name: 'Portugal' },
-            { code: 'GB', name: 'Reino Unido' },
-            { code: 'AR', name: 'Argentina' },
-            { code: 'BR', name: 'Brasil' },
-            { code: 'CO', name: 'Colombia' },
-            { code: 'PE', name: 'Perú' },
-            { code: 'CL', name: 'Chile' }
-        ];
-
-        $('.nm-country-selector').each(function() {
-            const $select = $(this);
-            $select.empty().append('<option value="">Seleccionar país...</option>');
-            
-            commonCountries.forEach(country => {
-                $select.append(`<option value="${country.code}">${country.name}</option>`);
-            });
-        });
-    }
+        }    }
 
     function validateGeonamesUser(username, $configRow) {
         const $button = $configRow.find('.nm-validate-user-btn');
@@ -254,196 +176,235 @@
         $messageDiv.removeClass('success error').addClass(type).text(message).show();
     }    function hideUserValidationMessage($configRow) {
         $configRow.find('.nm-user-validation-message').hide();
-    }    function loadCountryStructureFromGeonames(countryCode, username, panel) {
+    }
+
+    /**
+     * Discover country administrative structure dynamically from GeoNames
+     */
+    function discoverCountryStructure(countryCode, username, panel) {
+        console.log(`🔍 Discovering structure for country: ${countryCode}`);
+        
         const $levelsConfig = panel.find('.nm-levels-config');
         const $levelsList = panel.find('.nm-levels-list');
         
         // Show loading state
         $levelsConfig.show();
-        $levelsList.html('<div class="nm-loading-structure">🌍 Cargando estructura administrativa del país...</div>');
+        $levelsList.html('<div class="nm-loading-structure">🌍 Explorando estructura administrativa del país...</div>');
         
-        // Get country GeoName ID first
+        // Check cache first
+        const cacheKey = `${countryCode}_${username}`;
+        if (countryStructureCache[cacheKey]) {
+            console.log('📋 Using cached structure for', countryCode);
+            displayDiscoveredStructure(countryStructureCache[cacheKey], $levelsList);
+            return;
+        }
+        
+        // Get country GeoName ID and start discovery
         const countryGeoId = getCountryGeonameId(countryCode);
+        if (!countryGeoId) {
+            showStructureMessage(panel, `❌ No se encontró el país ${countryCode} en la base de datos. Verifica el código del país.`, 'error');
+            return;
+        }
         
-        // Load administrative structure from GeoNames with fallback
-        try {
-            loadAdministrativeStructureWithFallback(countryGeoId, username, countryCode, $levelsList, panel);
-        } catch (error) {
-            console.error('Error loading administrative structure:', error);
-            // Ultimate fallback: use predefined structure directly
-            displayFallbackStructureWithMessage($levelsList, countryCode, 'Error crítico cargando estructura. Usando configuración predefinida');
-        }
+        exploreAdministrativeStructure(countryGeoId, countryCode, username, $levelsList, panel);
     }
 
-    function loadAdministrativeStructureWithFallback(countryGeoId, username, countryCode, $levelsList, panel) {
-        const levels = ['admin1', 'admin2', 'admin3', 'admin4'];
-        const structureData = [];
-        let completed = 0;
-        let hasError = false;
-
-        // Check each administrative level - only check first level initially
-        for (let index = 0; index < levels.length; index++) {
-            const level = levels[index];
-            
-            callGeonamesProxy('childrenJSON', { 
-                username: username, 
-                geonameId: countryGeoId, 
-                featureClass: 'A' 
-            })
-            .done(function(response) {
-                completed++;
-                
-                if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
-                    // Filter by administrative level
-                    let levelData = response.data.geonames;
-                    
-                    if (level === 'admin1') {
-                        levelData = levelData.filter(item => 
-                            item.fcode === 'ADM1' || item.fcode === 'ADMD'
-                        );
-                    }
-                    
-                    if (levelData.length > 0) {
-                        // Get sample names to determine what this level represents
-                        const sampleNames = levelData.slice(0, 3).map(item => item.name);
-                        const levelName = determineAdministrativeLevelName(countryCode, level, sampleNames);
-                        
-                        structureData.push({
-                            code: level,
-                            name: levelName,
-                            available: true,
-                            count: levelData.length,
-                            samples: sampleNames
-                        });
-                    }
-                }
-                
-                // Check if we need to load next level (only for first level initially)
-                if (level === 'admin1' && structureData.length > 0 && structureData[0].available) {
-                    // Load one sample admin2 level to see if it exists
-                    const sampleAdmin1Id = response.data.geonames[0].geonameId;
-                    loadNextLevelWithFallback(sampleAdmin1Id, 'admin2', username, structureData, $levelsList, levels, countryCode, panel);
-                } else if (completed === 1) {
-                    // If no admin1 found but GeoNames responded, show what we have
-                    if (structureData.length > 0) {
-                        displayAdministrativeStructure(structureData, $levelsList, countryCode);
-                    } else {
-                        // No data from GeoNames, use fallback
-                        displayFallbackStructureWithMessage($levelsList, countryCode, 'No se encontraron datos administrativos en GeoNames');
-                    }
-                }
-            })
-            .fail(function(xhr, status, error) {
-                completed++;
-                hasError = true;
-                console.error(`Error loading ${level}:`, error);
-                
-                if (completed === 1) {
-                    // GeoNames failed, use fallback structure
-                    let errorMessage = 'Error de conexión con GeoNames';
-                    if (status === 'timeout') {
-                        errorMessage = 'Timeout conectando con GeoNames';
-                    } else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.geonames_error) {
-                        errorMessage = 'Error en GeoNames: ' + xhr.responseJSON.data.geonames_error;
-                    }
-                    
-                    displayFallbackStructureWithMessage($levelsList, countryCode, errorMessage);
-                }
-            });
-            
-            // Only check first level initially
-            if (index === 0) break;
-        }
+    /**
+     * Recursively explore administrative structure
+     */
+    function exploreAdministrativeStructure(geonameId, countryCode, username, $levelsList, panel) {
+        console.log(`🔍 Exploring administrative structure for GeoName ID: ${geonameId}`);
+        
+        const structure = {
+            country: countryCode,
+            levels: []
+        };
+        
+        // Start with admin1 level
+        exploreLevel(geonameId, 'admin1', 1, username, structure, $levelsList, panel);
     }
 
-    function loadNextLevelWithFallback(parentId, level, username, structureData, $levelsList, allLevels, countryCode, panel) {
-        const levelIndex = allLevels.indexOf(level);
+    /**
+     * Explore a specific administrative level
+     */
+    function exploreLevel(parentGeoId, levelCode, levelNumber, username, structure, $levelsList, panel) {
+        console.log(`🔍 Exploring level ${levelNumber} (${levelCode}) under parent ${parentGeoId}`);
+        
+        // Update loading message
+        $levelsList.html(`<div class="nm-loading-structure">🌍 Explorando nivel ${levelNumber} (${levelCode})...</div>`);
         
         callGeonamesProxy('childrenJSON', { 
             username: username, 
-            geonameId: parentId, 
-            featureClass: 'A' 
-        }, 8000)
+            geonameId: parentGeoId,
+            featureClass: 'A'
+        })
         .done(function(response) {
             if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
-                let levelData = response.data.geonames;
-                
-                // Filter by administrative level
-                if (level === 'admin2') {
-                    levelData = levelData.filter(item => 
-                        item.fcode === 'ADM2' || item.fcode === 'ADMD'
-                    );
-                } else if (level === 'admin3') {
-                    levelData = levelData.filter(item => 
-                        item.fcode === 'ADM3' || item.fcode === 'ADMD' || item.fcode === 'PPL' || item.fcode === 'PPLA'
-                    );
-                } else if (level === 'admin4') {
-                    levelData = levelData.filter(item => 
-                        item.fcode === 'ADM4' || item.fcode === 'ADMD' || item.fcode === 'PPL'
-                    );
-                }
+                // Filter administrative divisions for this level
+                let levelData = response.data.geonames.filter(item => {
+                    const fcode = item.fcode;
+                    if (levelCode === 'admin1') return fcode === 'ADM1' || fcode === 'ADMD';
+                    if (levelCode === 'admin2') return fcode === 'ADM2' || fcode === 'ADMD';
+                    if (levelCode === 'admin3') return fcode === 'ADM3' || fcode === 'ADMD';
+                    if (levelCode === 'admin4') return fcode === 'ADM4' || fcode === 'ADMD';
+                    return false;
+                });
                 
                 if (levelData.length > 0) {
-                    const sampleNames = levelData.slice(0, 3).map(item => item.name);
-                    const levelName = determineAdministrativeLevelName(countryCode, level, sampleNames);
+                    // Sort alphabetically
+                    levelData.sort((a, b) => a.name.localeCompare(b.name));
                     
-                    structureData.push({
-                        code: level,
-                        name: levelName,
-                        available: true,
+                    // Get a sample name for display
+                    const sampleName = levelData[0].name;
+                    
+                    structure.levels.push({
+                        code: levelCode,
+                        number: levelNumber,
+                        name: `Nivel ${levelNumber}`,
+                        default_label: `Nivel ${levelNumber}`,
+                        sample: sampleName,
                         count: levelData.length,
-                        samples: sampleNames
+                        enabled: true
                     });
                     
-                    // Try to load next level if available
-                    if (levelIndex < allLevels.length - 1) {
-                        const nextLevel = allLevels[levelIndex + 1];
-                        const sampleNextId = levelData[0].geonameId;
-                        loadNextLevelWithFallback(sampleNextId, nextLevel, username, structureData, $levelsList, allLevels, countryCode, panel);
+                    console.log(`✅ Found ${levelData.length} items for ${levelCode}. Sample: ${sampleName}`);
+                    
+                    // Try to explore next level using first item
+                    const nextLevelCode = getNextLevelCode(levelCode);
+                    if (nextLevelCode && levelNumber < 4) {
+                        exploreLevel(levelData[0].geonameId, nextLevelCode, levelNumber + 1, username, structure, $levelsList, panel);
                     } else {
-                        displayAdministrativeStructure(structureData, $levelsList, countryCode);
+                        // Finished exploring, display structure
+                        finishStructureDiscovery(structure, $levelsList, panel);
                     }
                 } else {
-                    displayAdministrativeStructure(structureData, $levelsList, countryCode);
+                    console.log(`❌ No administrative divisions found for ${levelCode}`);
+                    // Finished exploring, display structure
+                    finishStructureDiscovery(structure, $levelsList, panel);
                 }
             } else {
-                displayAdministrativeStructure(structureData, $levelsList, countryCode);
+                console.log(`❌ No data returned for ${levelCode}`);
+                // Finished exploring, display structure
+                finishStructureDiscovery(structure, $levelsList, panel);
             }
         })
         .fail(function(xhr, status, error) {
-            console.error(`Error loading next level ${level}:`, error);
-            // If secondary level fails, still show what we have from first level
-            displayAdministrativeStructure(structureData, $levelsList, countryCode);
+            console.error(`❌ Error exploring ${levelCode}:`, error);
+            if (structure.levels.length === 0) {
+                showStructureMessage(panel, '❌ No se pudo explorar la estructura administrativa de este país. Verifica tu conexión y usuario GeoNames.', 'error');
+            } else {
+                // Finish with what we have
+                finishStructureDiscovery(structure, $levelsList, panel);
+            }
         });
     }
 
-    function displayFallbackStructureWithMessage($levelsList, countryCode, errorMessage) {
+    /**
+     * Get next administrative level code
+     */
+    function getNextLevelCode(currentLevel) {
+        const levelMap = {
+            'admin1': 'admin2',
+            'admin2': 'admin3', 
+            'admin3': 'admin4',
+            'admin4': null
+        };
+        return levelMap[currentLevel];
+    }
+
+    /**
+     * Finish structure discovery and display results
+     */
+    function finishStructureDiscovery(structure, $levelsList, panel) {
+        console.log('🎯 Structure discovery completed:', structure);
+        
+        // Cache the structure
+        const countryCode = structure.country;
+        const username = panel.find('.nm-geonames-user').val().trim();
+        const cacheKey = `${countryCode}_${username}`;
+        countryStructureCache[cacheKey] = structure;
+        
+        // Display the discovered structure
+        displayDiscoveredStructure(structure, $levelsList);
+    }
+
+    /**
+     * Display discovered administrative structure
+     */
+    function displayDiscoveredStructure(structure, $levelsList) {
+        console.log('📋 Displaying discovered structure:', structure);
+        
+        $levelsList.empty();
+        
+        if (structure.levels.length === 0) {
+            $levelsList.html(`
+                <div class="nm-structure-info">
+                    <p>❌ No se encontró estructura administrativa para este país.</p>
+                    <p>💡 El país puede no tener divisiones administrativas en GeoNames o usar un sistema diferente.</p>
+                </div>
+            `);
+            return;
+        }
+        
+        structure.levels.forEach(levelInfo => {
+            const levelDiv = $(`
+                <div class="nm-level-config">
+                    <input type="checkbox" class="nm-level-enabled" value="${levelInfo.code}" ${levelInfo.enabled ? 'checked' : ''}>
+                    <span class="nm-level-info">
+                        <strong>${levelInfo.name}</strong>
+                        <small>Ejemplo: ${levelInfo.sample} (${levelInfo.count} encontrados)</small>
+                    </span>
+                    <input type="text" class="nm-level-label" data-level="${levelInfo.code}" 
+                           value="${levelInfo.default_label}" placeholder="Nombre personalizado">
+                </div>
+            `);
+            $levelsList.append(levelDiv);
+        });
+        
+        // Add info message
+        $levelsList.append(`
+            <div class="nm-structure-info">
+                <small>🔍 Estructura descubierta dinámicamente desde GeoNames. 
+                Puedes personalizar los nombres y activar/desactivar niveles según necesites.</small>
+            </div>
+        `);
+    }
+
+    /**
+     * Show structure message
+     */
+    function showStructureMessage(panel, message, type) {
+        const $levelsList = panel.find('.nm-levels-list');
+        const cssClass = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+        $levelsList.html(`
+            <div class="nm-structure-message nm-structure-${cssClass}">
+                <p>${message}</p>
+            </div>
+        `);    }
+
+    function displayGenericStructureWithMessage($levelsList, countryCode, errorMessage) {
         $levelsList.empty();
         
         // Show error message
         $levelsList.append(`
             <div class="nm-geonames-error" style="background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
                 <strong>⚠️ ${errorMessage}</strong><br>
-                <small>Usando estructura predefinida como alternativa</small>
+                <small>Usando estructura genérica como alternativa</small>
             </div>
         `);
         
-        // Use predefined structure or generic one
-        let config = COUNTRY_CONFIGS[countryCode];
+        // Use generic structure only
+        const config = {
+            name: 'Estructura Genérica',
+            levels: [
+                { code: 'admin1', name: 'Primer Nivel Administrativo', default_label: 'Región/Estado' },
+                { code: 'admin2', name: 'Segundo Nivel Administrativo', default_label: 'Provincia/Condado' },
+                { code: 'admin3', name: 'Tercer Nivel Administrativo', default_label: 'Municipio/Ciudad' },
+                { code: 'admin4', name: 'Cuarto Nivel Administrativo', default_label: 'Distrito/Barrio' }
+            ]
+        };
         
-        if (!config) {
-            config = {
-                name: 'Estructura Genérica',
-                levels: [
-                    { code: 'admin1', name: 'Primer Nivel', default_label: 'Región/Estado' },
-                    { code: 'admin2', name: 'Segundo Nivel', default_label: 'Provincia/Condado' },
-                    { code: 'admin3', name: 'Tercer Nivel', default_label: 'Municipio/Ciudad' },
-                    { code: 'admin4', name: 'Cuarto Nivel', default_label: 'Distrito/Barrio' }
-                ]
-            };
-        }
-        
-        $levelsList.append('<h6>📋 Estructura predefinida (fallback):</h6>');
+        $levelsList.append('<h6>📋 Estructura genérica (fallback):</h6>');
         
         config.levels.forEach((level, index) => {
             const isChecked = index < 2;
@@ -452,7 +413,7 @@
                     <input type="checkbox" class="nm-level-enabled" value="${level.code}" ${isChecked ? 'checked' : ''}>
                     <span>${level.name}:</span>
                     <input type="text" class="nm-level-label" data-level="${level.code}" 
-                           value="${level.default_label}" placeholder="Nombre del campo">
+                           value="${level.default_label}" placeholder="Nombre personalizado">
                 </div>
             `);
             $levelsList.append(levelDiv);
@@ -460,8 +421,8 @@
         
         $levelsList.append(`
             <div class="nm-structure-info">
-                <small>ℹ️ Se está usando la configuración predefinida debido a problemas con GeoNames. 
-                El sistema funcionará correctamente con esta estructura.</small>
+                <small>ℹ️ No se pudo obtener la estructura administrativa desde GeoNames. 
+                Usando estructura genérica que funciona para la mayoría de países.</small>
             </div>
         `);
     }
@@ -518,7 +479,7 @@
         $levelsList.empty();
         
         if (structureData.length === 0) {
-            displayFallbackStructureWithMessage($levelsList, countryCode, 'No se encontraron datos administrativos válidos');
+            displayGenericStructureWithMessage($levelsList, countryCode, 'No se encontraron datos administrativos válidos');
             return;
         }
         
@@ -549,49 +510,7 @@
                 <small>💡 Estructura cargada automáticamente desde GeoNames. 
                 Puedes personalizar los nombres y activar/desactivar niveles según necesites.</small>
             </div>
-        `);
-    }
-
-    function displayFallbackStructure($levelsList, countryCode) {
-        $levelsList.empty();
-        
-        // Use predefined structure or generic one
-        let config = COUNTRY_CONFIGS[countryCode];
-        
-        if (!config) {
-            config = {
-                name: 'Estructura Genérica',
-                levels: [
-                    { code: 'admin1', name: 'Primer Nivel', default_label: 'Región/Estado' },
-                    { code: 'admin2', name: 'Segundo Nivel', default_label: 'Provincia/Condado' },
-                    { code: 'admin3', name: 'Tercer Nivel', default_label: 'Municipio/Ciudad' },
-                    { code: 'admin4', name: 'Cuarto Nivel', default_label: 'Distrito/Barrio' }
-                ]
-            };
-        }
-        
-        $levelsList.append('<h6>⚠️ Usando estructura predefinida:</h6>');
-        
-        config.levels.forEach((level, index) => {
-            const isChecked = index < 2;
-            const levelDiv = $(`
-                <div class="nm-level-config">
-                    <input type="checkbox" class="nm-level-enabled" value="${level.code}" ${isChecked ? 'checked' : ''}>
-                    <span>${level.name}:</span>
-                    <input type="text" class="nm-level-label" data-level="${level.code}" 
-                           value="${level.default_label}" placeholder="Nombre del campo">
-                </div>
-            `);
-            $levelsList.append(levelDiv);
-        });
-        
-        $levelsList.append(`
-            <div class="nm-structure-info">
-                <small>ℹ️ No se pudo cargar la estructura desde GeoNames. 
-                Usando configuración predefinida.</small>
-            </div>
-        `);
-    }
+        `);    }
 
     function getCountryGeonameId(countryCode) {
         // Common country GeoName IDs
@@ -650,51 +569,7 @@
 
     function closeConfigPanel() {
         $('.nm-geo-config-panel').hide();
-        currentField = null;
-    }    function showLevelsConfig(panel, country) {
-        // First check if we have predefined configuration
-        let config = COUNTRY_CONFIGS[country];
-        
-        // If no predefined config, create a generic one
-        if (!config) {
-            config = {
-                name: panel.find('.nm-country-selector option:selected').text(),
-                levels: [
-                    { code: 'admin1', name: 'Nivel Administrativo 1', default_label: 'Región/Estado' },
-                    { code: 'admin2', name: 'Nivel Administrativo 2', default_label: 'Provincia/Condado' },
-                    { code: 'admin3', name: 'Nivel Administrativo 3', default_label: 'Municipio/Ciudad' },
-                    { code: 'admin4', name: 'Nivel Administrativo 4', default_label: 'Distrito/Barrio' }
-                ]
-            };
-        }
-        
-        const levelsContainer = panel.find('.nm-levels-list');
-        levelsContainer.empty();
-        
-        // Add header indicating this is predefined structure
-        levelsContainer.append('<h6>📋 Estructura predefinida:</h6>');
-
-        config.levels.forEach((level, index) => {
-            const levelDiv = $(`
-                <div class="nm-level-config">
-                    <input type="checkbox" class="nm-level-enabled" value="${level.code}" ${index < 2 ? 'checked' : ''}>
-                    <span>${level.name}:</span>
-                    <input type="text" class="nm-level-label" data-level="${level.code}" value="${level.default_label}" placeholder="Nombre del campo">
-                </div>
-            `);
-            levelsContainer.append(levelDiv);
-        });
-        
-        // Add info message about predefined vs dynamic structure
-        levelsContainer.append(`
-            <div class="nm-structure-info">
-                <small>💡 Para cargar la estructura real del país desde GeoNames, 
-                valida tu usuario primero y luego selecciona el país nuevamente.</small>
-            </div>
-        `);
-
-        panel.find('.nm-levels-config').show();
-    }function loadConfigIntoPanel(panel, config) {
+        currentField = null;    }function loadConfigIntoPanel(panel, config) {
         const $geonamesInput = panel.find('.nm-geonames-user');
         const $countryRow = panel.find('.nm-country-row');
         const $countrySelect = panel.find('.nm-country-selector');
