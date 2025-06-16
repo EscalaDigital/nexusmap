@@ -3,12 +3,13 @@
 class NM_Ajax_Handlers
 {
     private $loader;
-    private $model;
-
-    public function __construct($loader, $model)
+    private $model;    public function __construct($loader, $model)
     {
         $this->loader = $loader;
-        $this->model = $model;        // Registro de acciones AJAX        $this->loader->add_action('wp_ajax_nm_save_form', $this, 'save_form');
+        $this->model = $model;
+        
+        // Registro de acciones AJAX
+        $this->loader->add_action('wp_ajax_nm_save_form', $this, 'save_form');
         $this->loader->add_action('wp_ajax_nm_get_field_template', $this, 'get_field_template');
         $this->loader->add_action('wp_ajax_nm_get_entries', $this, 'get_entries');
         $this->loader->add_action('wp_ajax_nm_update_entry_status', $this, 'update_entry_status');
@@ -16,13 +17,13 @@ class NM_Ajax_Handlers
         $this->loader->add_action('wp_ajax_nm_save_option_texts', $this, 'save_option_texts');
         $this->loader->add_action('wp_ajax_nm_get_form', $this, 'get_form_html');
         $this->loader->add_action('wp_ajax_nm_save_conditional_fields', $this, 'save_conditional_fields');
-        $this->loader->add_action('wp_ajax_nm_get_entry_for_edit', $this, 'get_entry_for_edit');        $this->loader->add_action('wp_ajax_nm_update_entry_data', $this, 'update_entry_data');
+        $this->loader->add_action('wp_ajax_nm_get_entry_for_edit', $this, 'get_entry_for_edit');
+        $this->loader->add_action('wp_ajax_nm_update_entry_data', $this, 'update_entry_data');
         $this->loader->add_action('wp_ajax_nm_delete_entry', $this, 'delete_entry');
         $this->loader->add_action('wp_ajax_nm_save_geonames_user', $this, 'save_geonames_user');
         $this->loader->add_action('wp_ajax_nm_geonames_proxy', $this, 'geonames_proxy');
-        $this->loader->add_action('wp_ajax_nopriv_nm_geonames_proxy', $this, 'geonames_proxy');
-    }
-    // Compare this snippet from admin/NM_Ajax_Handlers.php:
+        $this->loader->add_action('wp_ajax_nopriv_nm_geonames_proxy', $this, 'geonames_proxy');    }
+
     public function save_ab_option()
     {
         check_ajax_referer('nm_admin_nonce', 'nonce');
@@ -47,80 +48,46 @@ class NM_Ajax_Handlers
             wp_send_json_error(__('Option texts are missing', 'nexusmap'));
         }
     }    public function save_form() {
-        check_ajax_referer('nm_admin_nonce', 'nonce');
+        // Log de debug inicial
+        error_log('save_form method called');
+        error_log('POST data: ' . print_r($_POST, true));
+        
+        // Verificar nonce
+        if (!check_ajax_referer('nm_admin_nonce', 'nonce', false)) {
+            error_log('Nonce verification failed');
+            wp_send_json_error(__('Security verification failed', 'nexusmap'));
+            return;
+        }
+        
+        error_log('Nonce verification passed');
     
         $form_data = isset($_POST['form_data']) ? $_POST['form_data'] : '';
         $form_type = isset($_POST['form_type']) ? intval($_POST['form_type']) : 0;
+        
+        error_log('Form type: ' . $form_type);
+        error_log('Form data received: ' . print_r($form_data, true));
     
         if ($form_data) {
-            // Log para debug
-            error_log('Saving form data: ' . print_r($form_data, true));
-            
             // Validar que form_data es un array
             if (!is_array($form_data)) {
                 error_log('Form data is not an array: ' . gettype($form_data));
                 wp_send_json_error(__('Invalid form data format', 'nexusmap'));
                 return;
             }
-              // Procesar campos geographic-selector para asegurar que se guarden correctamente
-            if (isset($form_data['fields']) && is_array($form_data['fields'])) {
-                $valid_fields = [];
-                
-                foreach ($form_data['fields'] as $index => $field) {
-                    // Validar que el campo tiene un tipo válido
-                    if (!isset($field['type']) || empty($field['type'])) {
-                        error_log("Field without type found at index {$index}: " . print_r($field, true));
-                        continue; // Saltar campos sin tipo
-                    }
-                    
-                    // Lista de tipos válidos
-                    $valid_types = [
-                        'text', 'textarea', 'select', 'checkbox', 'radio', 
-                        'file', 'image', 'number', 'date', 'url', 'range',
-                        'header', 'map', 'conditional-select', 'geographic-selector'
-                    ];
-                    
-                    if (!in_array($field['type'], $valid_types)) {
-                        error_log("Invalid field type '{$field['type']}' found at index {$index}. Skipping field.");
-                        continue; // Saltar campos con tipos inválidos
-                    }
-                    
-                    if ($field['type'] === 'geographic-selector') {
-                        // Asegurar que la configuración se guarde correctamente
-                        if (isset($field['config']) && is_string($field['config'])) {
-                            $field['config'] = json_decode($field['config'], true);
-                        }
-                        
-                        // Validar que las propiedades básicas estén presentes
-                        if (empty($field['name'])) {
-                            $field['name'] = 'geographic_selector_' . uniqid();
-                        }
-                        if (empty($field['label'])) {
-                            $field['label'] = 'Selector Geográfico';
-                        }
-                        if (!isset($field['config']) || !is_array($field['config'])) {
-                            $field['config'] = [
-                                'geonames_user' => '',
-                                'country' => 'ES',
-                                'levels' => [],
-                                'field_names' => []
-                            ];
-                        }
-                        
-                        // Log para debug
-                        error_log('Geographic selector field being saved: ' . print_r($field, true));
-                    }
-                    
-                    $valid_fields[] = $field;
-                }
-                
-                // Reemplazar con campos válidos
-                $form_data['fields'] = $valid_fields;
-                error_log("Valid fields to save: " . count($valid_fields) . " out of original " . count($form_data['fields'] ?? []));
+            
+            // Verificar que hay campos para guardar
+            if (!isset($form_data['fields']) || !is_array($form_data['fields']) || empty($form_data['fields'])) {
+                error_log('No fields to save in form data');
+                wp_send_json_error(__('No fields to save', 'nexusmap'));
+                return;
             }
+            
+            error_log('Number of fields to save: ' . count($form_data['fields']));
             
             try {
                 $result = $this->model->save_form($form_data, $form_type);
+                error_log('Save result: ' . ($result !== false ? 'success' : 'failed'));
+                
                 if ($result !== false) {
                     wp_send_json_success(__('Form saved successfully', 'nexusmap'));
                 } else {
@@ -131,6 +98,7 @@ class NM_Ajax_Handlers
                 wp_send_json_error(__('Database error: ', 'nexusmap') . $e->getMessage());
             }
         } else {
+            error_log('Form data is missing or empty');
             wp_send_json_error(__('Form data is missing', 'nexusmap'));
         }
     }

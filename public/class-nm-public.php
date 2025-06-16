@@ -22,10 +22,6 @@ class NM_Public
         $this->loader->add_action('wp_ajax_nopriv_nm_get_map_points', $this, 'get_map_points');
         $this->loader->add_action('wp_ajax_nm_submit_form', $this, 'submit_form');
 
-        // Add AJAX handlers for geographic selector proxy
-        $this->loader->add_action('wp_ajax_nm_geonames_proxy', $this, 'geonames_proxy');
-        $this->loader->add_action('wp_ajax_nopriv_nm_geonames_proxy', $this, 'geonames_proxy');
-
         // Registrar la acción AJAX para descargar el GeoJSON
         $this->loader->add_action('wp_ajax_nm_download_geojson', $this, 'download_geojson');
         $this->loader->add_action('wp_ajax_nopriv_nm_download_geojson', $this, 'download_geojson');
@@ -124,18 +120,9 @@ class NM_Public
         if (has_shortcode($post->post_content, 'nm_form')) {
             // Enqueue Leaflet CSS and JS
             wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
-            wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);
-            // Enqueue Leaflet Draw CSS and JS
+            wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);            // Enqueue Leaflet Draw CSS and JS
             wp_enqueue_style('nm-leaflet-draw-css', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css', array('nm-leaflet-css'), '1.0.4');
-            wp_enqueue_script('nm-leaflet-draw-js', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js', array('nm-leaflet-js'), '1.0.4', true);            // Enqueue Geographic Selector assets
-            wp_enqueue_style('nm-geographic-selector-css', NM_PLUGIN_URL . 'public/css/geographic-selector.css', array(), NM_VERSION);
-            wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);
-
-            // Localize geographic selector script for AJAX handling
-            wp_localize_script('nm-geographic-selector-js', 'nmPublic', array(
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce')
-            ));
+            wp_enqueue_script('nm-leaflet-draw-js', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js', array('nm-leaflet-js'), '1.0.4', true);
 
             // Obtener el tema seleccionado de las opciones
             $selected_theme_form = get_option('nm_selected_theme_form', 'default');
@@ -716,117 +703,6 @@ class NM_Public
         ob_start();
         foreach ($fields as $subfield) {
             nm_render_conditional_field($subfield);   // misma función del paso 1
-        }
-        wp_send_json_success(ob_get_clean());
-    }
-
-    /**
-     * Proxy para GeoNames API - Soluciona problema de Mixed Content
-     * Hace peticiones HTTP internas y las sirve por HTTPS
-     */
-    public function geonames_proxy()
-    {
-        // Verificar nonce - aceptar tanto admin como público
-        $nonce = isset($_GET['nonce']) ? $_GET['nonce'] : '';
-        
-        if (!wp_verify_nonce($nonce, 'nm_public_nonce') && !wp_verify_nonce($nonce, 'nm_admin_nonce')) {
-            wp_send_json_error(__('Security check failed', 'nexusmap'));
-            return;
-        }
-        
-        // Obtener parámetros
-        $endpoint = isset($_GET['endpoint']) ? sanitize_text_field($_GET['endpoint']) : '';
-        $username = isset($_GET['username']) ? sanitize_text_field($_GET['username']) : '';
-        $geonameId = isset($_GET['geonameId']) ? sanitize_text_field($_GET['geonameId']) : '';
-        $featureClass = isset($_GET['featureClass']) ? sanitize_text_field($_GET['featureClass']) : '';
-        
-        // Validar parámetros requeridos
-        if (empty($endpoint) || empty($username)) {
-            wp_send_json_error(__('Missing required parameters', 'nexusmap'));
-            return;
-        }
-        
-        // Lista de endpoints permitidos (seguridad)
-        $allowed_endpoints = [
-            'countryInfoJSON',
-            'childrenJSON'
-        ];
-        
-        if (!in_array($endpoint, $allowed_endpoints)) {
-            wp_send_json_error(__('Endpoint not allowed', 'nexusmap'));
-            return;
-        }
-        
-        // Construir URL de GeoNames
-        $base_url = "http://api.geonames.org/{$endpoint}";
-        $params = [
-            'username' => $username
-        ];
-        
-        // Añadir parámetros adicionales según el endpoint
-        if ($endpoint === 'childrenJSON') {
-            if (empty($geonameId)) {
-                wp_send_json_error(__('GeonameId required for childrenJSON', 'nexusmap'));
-                return;
-            }
-            $params['geonameId'] = $geonameId;
-            if (!empty($featureClass)) {
-                $params['featureClass'] = $featureClass;
-            }
-        }
-        
-        $url = $base_url . '?' . http_build_query($params);
-        
-        // Hacer petición HTTP interna
-        $response = wp_remote_get($url, [
-            'timeout' => 15,
-            'headers' => [
-                'User-Agent' => 'NexusMap-WordPress-Plugin/1.0'
-            ]
-        ]);
-        
-        // Verificar errores de petición
-        if (is_wp_error($response)) {
-            wp_send_json_error([
-                'message' => __('Error connecting to GeoNames', 'nexusmap'),
-                'details' => $response->get_error_message()
-            ]);
-            return;
-        }
-        
-        // Obtener código de respuesta
-        $status_code = wp_remote_retrieve_response_code($response);
-        if ($status_code !== 200) {
-            wp_send_json_error([
-                'message' => __('GeoNames API error', 'nexusmap'),
-                'status_code' => $status_code
-            ]);
-            return;
-        }
-        
-        // Obtener y decodificar respuesta
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
-        
-        // Verificar si la respuesta es JSON válido
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            wp_send_json_error([
-                'message' => __('Invalid JSON response from GeoNames', 'nexusmap'),
-                'json_error' => json_last_error_msg()
-            ]);
-            return;
-        }
-        
-        // Verificar errores específicos de GeoNames
-        if (isset($data['status'])) {
-            wp_send_json_error([
-                'message' => __('GeoNames API returned error', 'nexusmap'),
-                'geonames_error' => $data['status']['message'] ?? 'Unknown error'
-            ]);
-            return;
-        }
-        
-        // Devolver datos exitosamente
-        wp_send_json_success($data);
+        }        wp_send_json_success(ob_get_clean());
     }
 }

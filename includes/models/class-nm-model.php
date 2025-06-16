@@ -98,52 +98,11 @@ class NM_Model {
     if ($result === null) {
         error_log("Warning: No form data found for form_type $form_type.");
         return null;
-    }    $form_data = maybe_unserialize($result->form_data);
-
-    // Si hay campos en el formulario, buscar campos condicionales y procesar geographic-selector
+    }    $form_data = maybe_unserialize($result->form_data);    // Si hay campos en el formulario, buscar campos condicionales
     if (isset($form_data['fields']) && is_array($form_data['fields'])) {
-        $valid_fields = [];
-        
-        foreach ($form_data['fields'] as $index => $field) {
-            // Log del campo para debug
-            error_log('Processing field: ' . print_r($field, true));
-            
-            // Validar que el campo tiene tipo
-            if (!isset($field['type']) || empty($field['type'])) {
-                error_log("Skipping field without type at index {$index}");
-                continue;
-            }
-            
-            // Lista de tipos válidos
-            $valid_types = [
-                'text', 'textarea', 'select', 'checkbox', 'radio', 
-                'file', 'image', 'number', 'date', 'url', 'range',
-                'header', 'map', 'conditional-select', 'geographic-selector'
-            ];
-            
-            if (!in_array($field['type'], $valid_types)) {
-                error_log("Skipping invalid field type '{$field['type']}' at index {$index}");
-                continue;
-            }
-            
-            // Procesar campos geographic-selector
-            if ($field['type'] === 'geographic-selector') {
-                // Asegurar que la configuración se preserve correctamente
-                if (isset($field['config']) && is_string($field['config'])) {
-                    $field['config'] = json_decode($field['config'], true);
-                }
-                // Si no hay configuración, intentar construir una básica
-                if (empty($field['config'])) {
-                    $field['config'] = [
-                        'geonames_user' => get_option('nm_geonames_user', ''),
-                        'country' => 'ES',
-                        'levels' => [],
-                        'field_names' => []
-                    ];
-                }
-            }
-            
-            if ($field['type'] === 'conditional-select' && isset($field['select_id'])) {
+        foreach ($form_data['fields'] as &$field) {
+            // Solo procesar conditional-select, ignorar el resto
+            if (isset($field['type']) && $field['type'] === 'conditional-select' && isset($field['select_id'])) {
                 // Para cada opción del select condicional, buscar sus campos asociados
                 foreach ($field['options'] as &$option) {
                     $conditional_fields = $wpdb->get_var($wpdb->prepare(
@@ -177,18 +136,11 @@ class NM_Model {
                             }
                         }
                         unset($cfield);                        $option['conditional_fields'] = $conditional_fields_array;
-                    }
-                }
+                    }                }
                 unset($option);
             }
-            
-            // Añadir el campo válido a la lista
-            $valid_fields[] = $field;
         }
-        
-        // Actualizar con solo los campos válidos
-        $form_data['fields'] = $valid_fields;
-        error_log('Valid fields after filtering: ' . count($valid_fields));
+        unset($field);
     }
 
     return $form_data;

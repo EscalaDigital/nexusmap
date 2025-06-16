@@ -397,51 +397,17 @@ function saveForm(formSelector, formType) {
                 name: fieldName || ('field_' + Math.random().toString(36).substr(2, 9))
             };
             
-            if (fieldOptions.length) fieldData.options = fieldOptions;// Manejo especial para el campo geográfico
-            if (fieldType === 'geographic-selector') {
-                // Leer la configuración desde el campo oculto
-                const configField = $field.find('.nm-field-config');
-                if (configField.length > 0) {
-                    try {
-                        const configData = JSON.parse(configField.val());
-                        if (configData && configData.config) {
-                            fieldData.config = configData.config;
-                            console.log('Geographic field config loaded:', fieldData.config);
-                        }
-                    } catch (e) {
-                        console.error('Error parsing geographic field config:', e);
-                    }
-                }
-                
-                // Fallback a la estructura antigua si no hay configuración nueva
-                if (!fieldData.config) {
-                    const geoConfig = {
-                        country: $field.find('.geo-country-select').val() || '',
-                        levels: [],
-                        geonames_user: $field.find('.nm-geonames-user').val() || ''
-                    };
+            if (fieldOptions.length) fieldData.options = fieldOptions;
 
-                    // Obtener configuración de niveles administrativos
-                    $field.find('.geo-levels-list .geo-level-item').each(function() {
-                        const $level = jQuery(this);
-                        const levelData = {
-                            geonameId: $level.find('.geo-level-id').val() || '',
-                            name: $level.find('.geo-level-name').val() || '',
-                            fieldName: $level.find('.geo-field-name').val() || ''
-                        };
-                        if (levelData.geonameId && levelData.name && levelData.fieldName) {
-                            geoConfig.levels.push(levelData);
-                        }
-                    });
-
-                    fieldData.config = geoConfig;
-                }
-                
-                // Log para debug
-                console.log('Final geographic field data being saved:', fieldData);
+            // NOTA: El procesamiento de geographic-selector se elimina para evitar guardado
+            // Solo se mantiene la funcionalidad de configuración en el admin
+            
+            // Solo agregamos el campo si NO es geographic-selector
+            if (fieldType !== 'geographic-selector') {
+                formFields.push(fieldData);
+            } else {
+                console.log('geographic-selector excluido durante la recopilación de campos:', fieldData);
             }
-
-            formFields.push(fieldData);
         }
     });    /* =========================================================
      * 3. PETICIONES AJAX
@@ -468,14 +434,28 @@ function saveForm(formSelector, formType) {
             field.label = 'Campo sin título';
         }
     }
-    
+      console.log('Campos a guardar:', formFields.length);
     console.log('Sending form data:', { fields: formFields });
+    console.log('AJAX URL:', nmAdmin.ajax_url);
+    console.log('Nonce:', nmAdmin.nonce);
+    
+    // Verificar que tenemos los datos necesarios
+    if (!nmAdmin.ajax_url) {
+        alert('Error: No se ha definido la URL de AJAX');
+        return;
+    }
+    
+    if (!nmAdmin.nonce) {
+        alert('Error: No se ha definido el nonce de seguridad');
+        return;
+    }
     
     jQuery.post(nmAdmin.ajax_url, {
-        action   : 'nm_save_form',
+        action: 'nm_save_form',
         form_type: formType,
         form_data: { fields: formFields },
-        nonce    : nmAdmin.nonce    }, function (response) {
+        nonce: nmAdmin.nonce
+    }, function (response) {
         console.log('AJAX Response:', response);
 
         if (!response.success) { 
