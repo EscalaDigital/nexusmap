@@ -175,8 +175,7 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                                 <input type="range" name="<?php echo esc_attr($field['name']); ?>">
                             </div>
                         <?php
-                            break;
-                        case 'geographic-selector':
+                            break;                        case 'geographic-selector':
                             $field_config = $field['config'] ?? [];
                             if (!empty($field_config)):
                         ?>
@@ -185,7 +184,10 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                                  data-config='<?php echo esc_attr(json_encode($field_config)); ?>'
                                  id="nm_field_<?php echo esc_attr($field['name']); ?>">
                                 <label><?php echo esc_html($field['label']); ?></label>
-                                <!-- Selectors will be populated via JavaScript -->
+                                <!-- Los selectores se generarán dinámicamente via JavaScript -->
+                                <div class="nm-geo-selectors-container">
+                                    <!-- Aquí se insertarán los campos select en cascada -->
+                                </div>
                             </div>
                         <?php 
                             endif;

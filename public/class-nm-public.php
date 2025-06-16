@@ -132,10 +132,11 @@ class NM_Public
                 wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form1.css', array(), NM_VERSION);
             } else {
                 wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form' . $selected_theme_form  . '.css', array(), NM_VERSION);
-            }
+            }            wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);
 
-
-            wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);
+            // Enqueue geographic selector scripts
+            wp_enqueue_style('nm-geographic-selector-css', NM_PLUGIN_URL . 'public/css/geographic-selector.css', array(), NM_VERSION);
+            wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);
 
             // Localize script for AJAX handling
             wp_localize_script('nm-form-js', 'nmPublic', array(

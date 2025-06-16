@@ -85,9 +85,10 @@
             console.error('GeoNames user not configured');
             showError($container, 'Usuario GeoNames no configurado');
             return;
-        }
-
-        // Create select elements
+        }        // Create select elements
+        const $selectorsContainer = $container.find('.nm-geo-selectors-container');
+        const $targetContainer = $selectorsContainer.length > 0 ? $selectorsContainer : $container;
+        
         levels.forEach((level, index) => {
             const fieldName = fieldNames[level] || level;
             const selectId = `${$container.attr('id')}_${level}`;
@@ -117,7 +118,7 @@
                 </div>
             `;
             
-            $container.append(selectHtml);
+            $targetContainer.append(selectHtml);
         });
 
         // Load first level (admin1 for the country)
@@ -308,9 +309,7 @@
 
     function hideError($levelContainer) {
         $levelContainer.find('.nm-geo-error').hide();
-    }
-
-    function getCountryGeonameId(countryCode) {
+    }    function getCountryGeonameId(countryCode) {
         // Common country GeoName IDs
         const countryIds = {
             'ES': '2510769', // Spain
@@ -325,7 +324,13 @@
             'BR': '3469034', // Brazil
             'CO': '3686110', // Colombia
             'PE': '3932488', // Peru
-            'CL': '3895114'  // Chile
+            'CL': '3895114', // Chile
+            'CA': '6251999', // Canada
+            'AU': '2077456', // Australia
+            'IN': '1269750', // India
+            'CN': '1814991', // China
+            'JP': '1861060', // Japan
+            'RU': '2017370'  // Russia
         };
         
         return countryIds[countryCode] || countryCode;

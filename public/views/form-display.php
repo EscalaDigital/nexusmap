@@ -170,6 +170,24 @@
                                 data-select-id="<?php echo esc_attr($field['select_id']); ?>"></div>                        </div>
         <?php break;
 
+                    case 'geographic-selector':
+                        $field_config = $field['config'] ?? [];
+                        if (!empty($field_config)):
+                    ?>
+                        <div class="nm-form-field nm-geographic-selector" 
+                             data-type="geographic-selector" 
+                             data-config='<?php echo esc_attr(json_encode($field_config)); ?>'
+                             id="<?php echo esc_attr($field_id); ?>">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <!-- Los selectores se generarán dinámicamente via JavaScript -->
+                            <div class="nm-geo-selectors-container">
+                                <!-- Aquí se insertarán los campos select en cascada -->
+                            </div>
+                        </div>
+                    <?php 
+                        endif;
+                        break;
+
                     default:
                         echo '<p>Unknown field type: ' . esc_html($field['type']) . '</p>';
                         break;
