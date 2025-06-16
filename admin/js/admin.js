@@ -399,15 +399,25 @@ function saveForm(formSelector, formType) {
             
             if (fieldOptions.length) fieldData.options = fieldOptions;
 
-            // NOTA: El procesamiento de geographic-selector se elimina para evitar guardado
-            // Solo se mantiene la funcionalidad de configuración en el admin
-            
-            // Solo agregamos el campo si NO es geographic-selector
-            if (fieldType !== 'geographic-selector') {
-                formFields.push(fieldData);
-            } else {
-                console.log('geographic-selector excluido durante la recopilación de campos:', fieldData);
+            // Procesamiento especial para geographic-selector
+            if (fieldType === 'geographic-selector') {
+                // Extraer la configuración del campo oculto
+                const configField = $field.find('.nm-field-config');
+                if (configField.length) {
+                    try {
+                        const configData = JSON.parse(configField.val());
+                        if (configData && configData.config) {
+                            fieldData.config = configData.config;
+                            // Asegurar que el JSON se serialice en una sola línea
+                            fieldData.config = JSON.parse(JSON.stringify(configData.config));
+                        }
+                    } catch (e) {
+                        console.error('Error parsing geographic-selector config:', e);
+                    }
+                }
             }
+
+            formFields.push(fieldData);
         }
     });    /* =========================================================
      * 3. PETICIONES AJAX

@@ -10,7 +10,8 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
 
 <div class="nm-form-field nm-geographic-field" data-type="geographic-selector" data-field-id="<?php echo esc_attr($field_id); ?>">
     <div class="nm-field-header">
-        <label><?php echo esc_html($field_label ?: 'Selector Geográfico'); ?></label>
+        <input type="text" class="field-label" placeholder="Título del campo" value="<?php echo esc_attr($field_label ?: 'Selector Geográfico'); ?>">
+        <input type="text" class="field-name" placeholder="Nombre del campo" value="<?php echo esc_attr($field_name ?: ''); ?>">
         <div class="nm-field-controls">
             <button type="button" class="nm-configure-geo-btn" title="Configurar">⚙️</button>
             <button type="button" class="nm-remove-field-btn" title="Eliminar">✕</button>
@@ -102,11 +103,25 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    gap: 10px;
 }
 
-.nm-field-header label {
-    font-weight: bold;
+.nm-field-header .field-label,
+.nm-field-header .field-name {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
     font-size: 14px;
+}
+
+.nm-field-header .field-label {
+    font-weight: bold;
+}
+
+.nm-field-controls {
+    display: flex;
+    align-items: center;
 }
 
 .nm-field-controls button {

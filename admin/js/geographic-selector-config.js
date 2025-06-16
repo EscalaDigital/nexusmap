@@ -648,14 +648,15 @@
         if (levels.length === 0) {
             alert('Por favor, seleccione al menos un nivel administrativo');
             return;
-        }
-
-        // Save configuration
+        }        // Save configuration
+        const fieldLabel = currentField.find('.field-label').val() || 'Selector Geográfico';
+        const fieldName = currentField.find('.field-name').val() || fieldLabel.toLowerCase().replace(/\s+/g, '_');
+        
         const config = {
             type: 'geographic-selector',
             id: currentField.data('field-id') || generateFieldId(),
-            name: currentField.find('.nm-field-header label').text().toLowerCase().replace(/\s+/g, '_'),
-            label: currentField.find('.nm-field-header label').text(),
+            name: fieldName,
+            label: fieldLabel,
             config: {
                 geonames_user: geonamesUser,
                 country: country,

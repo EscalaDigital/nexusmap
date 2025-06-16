@@ -25,10 +25,10 @@
                 <li data-type="select">Dropdown Menu</li>
                 <li data-type="file">File Upload</li>
                 <li data-type="number">Number Field</li>
-                <li data-type="date">Date Picker</li>
-                <li data-type="url">URL Field</li>
+                <li data-type="date">Date Picker</li>                <li data-type="url">URL Field</li>
                 <li data-type="range">Range Slider</li>
                 <li data-type="conditional-select">Conditional Dropdown</li>
+                <li data-type="geographic-selector">Geographic Selector</li>
 
             </ul>
         </div>
