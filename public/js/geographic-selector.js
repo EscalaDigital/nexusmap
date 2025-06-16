@@ -29,10 +29,13 @@
             timeout: timeout,
             dataType: 'json'
         });
-    }
-      $(document).ready(function() {
+    }    $(document).ready(function() {
         console.log('NexusMap Geographic Selector: Document ready, initializing...');
-        initializeGeographicSelectors();
+        
+        // Wait a bit for the page to fully load
+        setTimeout(function() {
+            initializeGeographicSelectors();
+        }, 100);
     });
 
     function initializeGeographicSelectors() {

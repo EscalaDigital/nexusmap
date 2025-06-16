@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Geographic Selector Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .debug-title {
+            font-weight: bold;
+            color: #0073aa;
+            margin-bottom: 10px;
+        }
+        pre {
+            background: #fff;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Geographic Selector - Debug y Test</h1>
+    
+    <div class="debug-section">
+        <div class="debug-title">Estado del Plugin</div>
+        <p>Este archivo es para depurar el funcionamiento del geographic-selector.</p>
+        <p><strong>Fecha de corrección:</strong> <?php echo date('Y-m-d H:i:s'); ?></p>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">Problemas Identificados y Solucionados</div>
+        <ul>
+            <li>✅ Modelo actualizado para preservar configuración de geographic-selector</li>
+            <li>✅ Form-display.php mejorado con mejor manejo de errores</li>
+            <li>✅ Admin.js actualizado para guardar configuración correctamente</li>
+            <li>✅ Proxy AJAX añadido para peticiones a GeoNames</li>
+            <li>✅ Estilos CSS mejorados con mensajes de error</li>
+            <li>✅ Debug añadido en template para desarrollo</li>
+        </ul>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">Pasos para Verificar la Corrección</div>
+        <ol>
+            <li>Ve al constructor de formularios en WordPress admin</li>
+            <li>Arrastra un "Selector Geográfico" al formulario</li>
+            <li>Configúralo con tu usuario de GeoNames</li>
+            <li>Selecciona un país y configura los niveles</li>
+            <li>Guarda el formulario</li>
+            <li>Verifica que la configuración se mantenga al recargar</li>
+            <li>Ve al frontend donde muestras el formulario</li>
+            <li>Verifica que aparezcan los selectores geográficos</li>
+        </ol>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">Archivos Modificados</div>
+        <ul>
+            <li><code>includes/models/class-nm-model.php</code> - Manejo de configuración</li>
+            <li><code>admin/views/field-templates/geographic-selector.php</code> - Template mejorado</li>
+            <li><code>admin/js/admin.js</code> - Guardado de configuración</li>
+            <li><code>public/views/form-display.php</code> - Mejor manejo de errores</li>
+            <li><code>public/css/geographic-selector.css</code> - Estilos de error</li>
+            <li><code>admin/NM_Ajax_Handlers.php</code> - Mejor procesamiento</li>
+            <li><code>public/class-nm-public.php</code> - Proxy para GeoNames</li>
+            <li><code>public/js/geographic-selector.js</code> - Mejora en inicialización</li>
+        </ul>
+    </div>
+    
+    <script>
+        console.log('Geographic Selector Debug Page Loaded');
+        console.log('Current time:', new Date().toISOString());
+    </script>
+</body>
+</html>

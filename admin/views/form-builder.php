@@ -78,18 +78,27 @@
                                 <label>Map Drawing</label>
                                 <div id="nm-map-canvas"></div>
                             </div>
-                        <?php endif; ?>
-
-                        <!-- Dynamic Fields -->
+                        <?php endif; ?>                        <!-- Dynamic Fields -->
                         <?php
                         if (!empty($form_data_a['fields'])) {
                             foreach ($form_data_a['fields'] as $field) {
                                 $field_name = $field['name'] ?? '';
                                 $field_label = $field['label'] ?? '';
                                 $field_options = $field['options'] ?? [];
+                                $field_type = $field['type'] ?? '';
 
-                                // Include the field template
-                                include 'field-templates/' . $field['type'] . '.php';
+                                // Verificar que el archivo del template existe antes de incluirlo
+                                $template_path = 'field-templates/' . $field_type . '.php';
+                                $full_template_path = __DIR__ . '/' . $template_path;
+                                
+                                if (file_exists($full_template_path)) {
+                                    include $template_path;
+                                } else {
+                                    echo '<div class="nm-field-error" style="padding: 10px; background: #fee; border: 1px solid #fcc; margin: 5px 0;">';
+                                    echo '<strong>Error:</strong> Template no encontrado para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
+                                    echo '</div>';
+                                    error_log("NexusMap: Missing field template: {$template_path} for field: " . print_r($field, true));
+                                }
                             }
                         } else {
                             echo '<p style="text-align: center;">Arrastra elementos bajo esta línea para crear tu formulario</p>';
@@ -124,18 +133,27 @@
                                 <label>Map Drawing</label>
                                 <div id="nm-map-canvas"></div>
                             </div>
-                        <?php endif; ?>
-
-                        <!-- Dynamic Fields -->
+                        <?php endif; ?>                        <!-- Dynamic Fields -->
                         <?php
                         if (!empty($form_data_b['fields'])) {
                             foreach ($form_data_b['fields'] as $field) {
                                 $field_name = $field['name'] ?? '';
                                 $field_label = $field['label'] ?? '';
                                 $field_options = $field['options'] ?? [];
+                                $field_type = $field['type'] ?? '';
 
-                                // Include the field template
-                                include 'field-templates/' . $field['type'] . '.php';
+                                // Verificar que el archivo del template existe antes de incluirlo
+                                $template_path = 'field-templates/' . $field_type . '.php';
+                                $full_template_path = __DIR__ . '/' . $template_path;
+                                
+                                if (file_exists($full_template_path)) {
+                                    include $template_path;
+                                } else {
+                                    echo '<div class="nm-field-error" style="padding: 10px; background: #fee; border: 1px solid #fcc; margin: 5px 0;">';
+                                    echo '<strong>Error:</strong> Template no encontrado para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
+                                    echo '</div>';
+                                    error_log("NexusMap: Missing field template: {$template_path} for field: " . print_r($field, true));
+                                }
                             }
                         } else {
                             echo '<p style="text-align: center;">Arrastra elementos bajo esta línea para crear tu formulario</p>';
@@ -171,18 +189,28 @@
                             <label>Map Drawing</label>
                             <div id="nm-map-canvas"></div>
                         </div>
-                    <?php endif; ?>
-
-                    <!-- Dynamic Fields -->
+                    <?php endif; ?>                    <!-- Dynamic Fields -->
                     <?php
                     if (isset($form_data['fields']) && is_array($form_data['fields'])) {
                         foreach ($form_data['fields'] as $field) {
                             $field_name = $field['name'] ?? '';
                             $field_label = $field['label'] ?? '';
                             $field_options = $field['options'] ?? [];
+                            $field_type = $field['type'] ?? '';
 
-                            // Include the field template
-                            include 'field-templates/' . $field['type'] . '.php';
+                            // Verificar que el archivo del template existe antes de incluirlo
+                            $template_path = 'field-templates/' . $field_type . '.php';
+                            $full_template_path = __DIR__ . '/' . $template_path;
+                            
+                            if (file_exists($full_template_path)) {
+                                include $template_path;
+                            } else {
+                                echo '<div class="nm-field-error" style="padding: 10px; background: #fee; border: 1px solid #fcc; margin: 5px 0;">';
+                                echo '<strong>Error:</strong> Template no encontrado para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
+                                echo '<br><small>Archivo buscado: ' . esc_html($template_path) . '</small>';
+                                echo '</div>';
+                                error_log("NexusMap: Missing field template: {$template_path} for field: " . print_r($field, true));
+                            }
                         }
                     } else {
                         echo '<p style="text-align: center;">Arrastra elementos bajo esta línea para crear tu formulario</p>';

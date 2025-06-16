@@ -46,17 +46,90 @@ class NM_Ajax_Handlers
         } else {
             wp_send_json_error(__('Option texts are missing', 'nexusmap'));
         }
-    }
-
-    public function save_form() {
+    }    public function save_form() {
         check_ajax_referer('nm_admin_nonce', 'nonce');
     
         $form_data = isset($_POST['form_data']) ? $_POST['form_data'] : '';
         $form_type = isset($_POST['form_type']) ? intval($_POST['form_type']) : 0;
     
         if ($form_data) {
-            $this->model->save_form($form_data, $form_type);
-            wp_send_json_success(__('Form saved successfully', 'nexusmap'));
+            // Log para debug
+            error_log('Saving form data: ' . print_r($form_data, true));
+            
+            // Validar que form_data es un array
+            if (!is_array($form_data)) {
+                error_log('Form data is not an array: ' . gettype($form_data));
+                wp_send_json_error(__('Invalid form data format', 'nexusmap'));
+                return;
+            }
+              // Procesar campos geographic-selector para asegurar que se guarden correctamente
+            if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+                $valid_fields = [];
+                
+                foreach ($form_data['fields'] as $index => $field) {
+                    // Validar que el campo tiene un tipo válido
+                    if (!isset($field['type']) || empty($field['type'])) {
+                        error_log("Field without type found at index {$index}: " . print_r($field, true));
+                        continue; // Saltar campos sin tipo
+                    }
+                    
+                    // Lista de tipos válidos
+                    $valid_types = [
+                        'text', 'textarea', 'select', 'checkbox', 'radio', 
+                        'file', 'image', 'number', 'date', 'url', 'range',
+                        'header', 'map', 'conditional-select', 'geographic-selector'
+                    ];
+                    
+                    if (!in_array($field['type'], $valid_types)) {
+                        error_log("Invalid field type '{$field['type']}' found at index {$index}. Skipping field.");
+                        continue; // Saltar campos con tipos inválidos
+                    }
+                    
+                    if ($field['type'] === 'geographic-selector') {
+                        // Asegurar que la configuración se guarde correctamente
+                        if (isset($field['config']) && is_string($field['config'])) {
+                            $field['config'] = json_decode($field['config'], true);
+                        }
+                        
+                        // Validar que las propiedades básicas estén presentes
+                        if (empty($field['name'])) {
+                            $field['name'] = 'geographic_selector_' . uniqid();
+                        }
+                        if (empty($field['label'])) {
+                            $field['label'] = 'Selector Geográfico';
+                        }
+                        if (!isset($field['config']) || !is_array($field['config'])) {
+                            $field['config'] = [
+                                'geonames_user' => '',
+                                'country' => 'ES',
+                                'levels' => [],
+                                'field_names' => []
+                            ];
+                        }
+                        
+                        // Log para debug
+                        error_log('Geographic selector field being saved: ' . print_r($field, true));
+                    }
+                    
+                    $valid_fields[] = $field;
+                }
+                
+                // Reemplazar con campos válidos
+                $form_data['fields'] = $valid_fields;
+                error_log("Valid fields to save: " . count($valid_fields) . " out of original " . count($form_data['fields'] ?? []));
+            }
+            
+            try {
+                $result = $this->model->save_form($form_data, $form_type);
+                if ($result !== false) {
+                    wp_send_json_success(__('Form saved successfully', 'nexusmap'));
+                } else {
+                    wp_send_json_error(__('Error saving form to database', 'nexusmap'));
+                }
+            } catch (Exception $e) {
+                error_log('Error saving form: ' . $e->getMessage());
+                wp_send_json_error(__('Database error: ', 'nexusmap') . $e->getMessage());
+            }
         } else {
             wp_send_json_error(__('Form data is missing', 'nexusmap'));
         }

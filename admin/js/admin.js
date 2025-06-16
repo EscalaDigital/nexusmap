@@ -391,10 +391,13 @@ function saveForm(formSelector, formType) {
                     const optVal = jQuery(this).val();
                     if (optVal) fieldOptions.push(optVal);
                 });
-            }
-
-            const fieldData = { type: fieldType, label: fieldLabel, name: fieldName };
-            if (fieldOptions.length) fieldData.options = fieldOptions;            // Manejo especial para el campo geográfico
+            }            const fieldData = { 
+                type: fieldType, 
+                label: fieldLabel || 'Campo sin título', 
+                name: fieldName || ('field_' + Math.random().toString(36).substr(2, 9))
+            };
+            
+            if (fieldOptions.length) fieldData.options = fieldOptions;// Manejo especial para el campo geográfico
             if (fieldType === 'geographic-selector') {
                 // Leer la configuración desde el campo oculto
                 const configField = $field.find('.nm-field-config');
@@ -414,7 +417,8 @@ function saveForm(formSelector, formType) {
                 if (!fieldData.config) {
                     const geoConfig = {
                         country: $field.find('.geo-country-select').val() || '',
-                        levels: []
+                        levels: [],
+                        geonames_user: $field.find('.nm-geonames-user').val() || ''
                     };
 
                     // Obtener configuración de niveles administrativos
@@ -432,23 +436,53 @@ function saveForm(formSelector, formType) {
 
                     fieldData.config = geoConfig;
                 }
+                
+                // Log para debug
+                console.log('Final geographic field data being saved:', fieldData);
             }
 
             formFields.push(fieldData);
         }
-    });
-
-    /* =========================================================
+    });    /* =========================================================
      * 3. PETICIONES AJAX
      * =======================================================*/
+    
+    // Validar datos antes de enviar
+    if (formFields.length === 0) {
+        alert('No hay campos para guardar en el formulario.');
+        return;
+    }
+    
+    // Validar que todos los campos tengan propiedades básicas
+    for (let i = 0; i < formFields.length; i++) {
+        const field = formFields[i];
+        if (!field.type) {
+            alert('Error: Campo sin tipo encontrado en posición ' + (i + 1));
+            console.error('Invalid field:', field);
+            return;
+        }
+        if (!field.name) {
+            field.name = 'field_' + Math.random().toString(36).substr(2, 9);
+        }
+        if (!field.label) {
+            field.label = 'Campo sin título';
+        }
+    }
+    
+    console.log('Sending form data:', { fields: formFields });
+    
     jQuery.post(nmAdmin.ajax_url, {
         action   : 'nm_save_form',
         form_type: formType,
         form_data: { fields: formFields },
-        nonce    : nmAdmin.nonce
-    }, function (response) {
+        nonce    : nmAdmin.nonce    }, function (response) {
+        console.log('AJAX Response:', response);
 
-        if (!response.success) { alert('Error al guardar el formulario'); return; }
+        if (!response.success) { 
+            console.error('Error response:', response);
+            alert('Error al guardar el formulario: ' + (response.data || 'Error desconocido')); 
+            return; 
+        }
 
         /*  Si no hay campos condicionales ya hemos terminado  */
         if (!conditionalFields.length) {
@@ -460,12 +494,33 @@ function saveForm(formSelector, formType) {
         jQuery.post(nmAdmin.ajax_url, {
             action          : 'nm_save_conditional_fields',
             conditional_data: conditionalFields,
-            nonce           : nmAdmin.nonce
-        }, function (condResp) {
+            nonce           : nmAdmin.nonce        }, function (condResp) {
             alert(condResp.success
                 ? 'Formulario guardado correctamente'
                 : 'Error al guardar los campos condicionales');
         });
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        // Error en la petición AJAX principal
+        console.error('AJAX Error:', {
+            status: jqXHR.status,
+            statusText: jqXHR.statusText,
+            textStatus: textStatus,
+            errorThrown: errorThrown,
+            responseText: jqXHR.responseText
+        });
+        
+        let errorMessage = 'Error de conexión: ';
+        if (jqXHR.status === 400) {
+            errorMessage += 'Datos inválidos enviados al servidor';
+        } else if (jqXHR.status === 403) {
+            errorMessage += 'Sin permisos para realizar esta acción';
+        } else if (jqXHR.status === 500) {
+            errorMessage += 'Error interno del servidor';
+        } else {
+            errorMessage += textStatus + ' (Código: ' + jqXHR.status + ')';
+        }
+        
+        alert(errorMessage);
     });
 }
 

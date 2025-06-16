@@ -6,6 +6,18 @@
     margin-bottom: 20px;
 }
 
+.nm-geographic-selector-error {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fef7f7;
+    border: 1px solid #d63638;
+    border-radius: 4px;
+}
+
+.nm-geographic-selector-error p {
+    margin: 5px 0 0 0;
+}
+
 .nm-geo-level {
     margin-bottom: 15px;
 }

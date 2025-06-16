@@ -169,10 +169,14 @@
                             <div class="conditional-target"
                                 data-select-id="<?php echo esc_attr($field['select_id']); ?>"></div>
                         </div>
-        <?php break;
-
-                    case 'geographic-selector':
+        <?php break;                    case 'geographic-selector':
                         $field_config = $field['config'] ?? [];
+                        
+                        // Debug para desarrollo
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            echo "<!-- Geographic selector debug: " . print_r($field, true) . " -->";
+                        }
+                        
                         if (!empty($field_config)):
                     ?>
                         <div class="nm-form-field nm-geographic-selector" 
@@ -181,8 +185,22 @@
                              id="<?php echo esc_attr($field_id); ?>">
                             <label><?php echo esc_html($field['label']); ?></label>
                             <!-- Selectors will be populated via JavaScript -->
+                            <div class="nm-geo-loading" style="display: none;">
+                                <span>Cargando selectors geográficos...</span>
+                            </div>
                         </div>
                     <?php 
+                        else:
+                            // Mostrar mensaje si no hay configuración
+                    ?>
+                        <div class="nm-form-field nm-geographic-selector-error">
+                            <label><?php echo esc_html($field['label']); ?></label>
+                            <p style="color: #d63638; font-style: italic;">
+                                Este selector geográfico no está configurado correctamente. 
+                                Por favor, configúralo desde el constructor de formularios.
+                            </p>
+                        </div>
+                    <?php
                         endif;
                         break;
 

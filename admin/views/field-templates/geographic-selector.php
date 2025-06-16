@@ -71,8 +71,7 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
             <p class="nm-geo-placeholder">Configure el selector geográfico para ver la vista previa</p>
         <?php endif; ?>
     </div>
-    
-    <!-- Hidden field to store configuration -->
+      <!-- Hidden field to store configuration -->
     <input type="hidden" class="nm-field-config" value='<?php echo esc_attr(json_encode([
         'type' => 'geographic-selector',
         'id' => $field_id,
@@ -80,6 +79,13 @@ $geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user'
         'label' => $field_label,
         'config' => $field_config
     ])); ?>'>
+    
+    <!-- Debug info for development -->
+    <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
+    <div class="nm-debug-info" style="font-size: 10px; color: #666; margin-top: 5px;">
+        Debug - Config: <?php echo esc_html(json_encode($field_config)); ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <style>
