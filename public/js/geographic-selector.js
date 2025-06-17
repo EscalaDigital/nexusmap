@@ -141,11 +141,11 @@
             const parentValue = getParentValue($container, level, config.levels);
             loadGeoData($container, country, parentValue, level, geonamesUser);
         });
-    }
-
-    function handleSelectChange($container, $select, config) {
+    }    function handleSelectChange($container, $select, config) {
         const currentLevel = $select.data('level');
         const selectedValue = $select.val();
+        const selectedOption = $select.find('option:selected');
+        const geonameId = selectedOption.data('geoname-id'); // Get the GeoNames ID for API calls
         const levels = config.levels;
         const currentIndex = levels.indexOf(currentLevel);
         
@@ -162,18 +162,20 @@
         }
 
         // Load next level if there is one and a value is selected
-        if (selectedValue && currentIndex < levels.length - 1) {
+        if (selectedValue && geonameId && currentIndex < levels.length - 1) {
             const nextLevel = levels[currentIndex + 1];
-            loadGeoData($container, config.country, selectedValue, nextLevel, config.geonames_user);
+            loadGeoData($container, config.country, geonameId, nextLevel, config.geonames_user);
         }
-    }
-
-    function getParentValue($container, currentLevel, levels) {
+    }    function getParentValue($container, currentLevel, levels) {
         const currentIndex = levels.indexOf(currentLevel);
         if (currentIndex <= 0) return null;
         
         const parentLevel = levels[currentIndex - 1];
-        return $container.find(`[data-level="${parentLevel}"]`).find('.nm-geo-select').val();
+        const $parentSelect = $container.find(`[data-level="${parentLevel}"]`).find('.nm-geo-select');
+        const $selectedOption = $parentSelect.find('option:selected');
+        
+        // Return the GeoNames ID for API calls, not the display value
+        return $selectedOption.data('geoname-id') || null;
     }
 
     function loadGeoData($container, country, parentCode, level, username) {
@@ -268,14 +270,12 @@
                 showError($levelContainer, errorMessage);
                 console.error('GeoNames API Error:', error, xhr.responseJSON);
             });
-    }
-
-    function populateSelect($select, data) {
+    }    function populateSelect($select, data) {
         const fieldName = $select.data('field-name');
         $select.empty().append(`<option value="">Seleccionar ${fieldName.toLowerCase()}...</option>`);
         
         data.forEach(item => {
-            $select.append(`<option value="${item.geonameId}">${item.name}</option>`);
+            $select.append(`<option value="${item.name}" data-geoname-id="${item.geonameId}">${item.name}</option>`);
         });
         
         $select.prop('disabled', false);
@@ -334,9 +334,7 @@
         };
         
         return countryIds[countryCode] || countryCode;
-    }
-
-    // Function to get selected values for form submission
+    }    // Function to get selected values for form submission
     function getSelectedValues($container) {
         const values = {};
         const config = getFieldConfig($container);
@@ -345,14 +343,19 @@
         
         config.levels.forEach(level => {
             const $select = $container.find(`[data-level="${level}"]`).find('.nm-geo-select');
-            const selectedValue = $select.val();
-            const selectedText = $select.find('option:selected').text();
+            const selectedValue = $select.val(); // This is now the name
+            const $selectedOption = $select.find('option:selected');
+            const geonameId = $selectedOption.data('geoname-id'); // GeoNames ID
             const fieldName = config.field_names[level] || level;
             
             if (selectedValue) {
-                // Save both ID and name, but use custom field names
-                values[`${fieldName.toLowerCase().replace(/\s+/g, '_')}_id`] = selectedValue;
-                values[`${fieldName.toLowerCase().replace(/\s+/g, '_')}`] = selectedText;
+                // Save the name as the main value (since that's what's now in the value attribute)
+                values[`${fieldName.toLowerCase().replace(/\s+/g, '_')}`] = selectedValue;
+                
+                // Optionally, also save the GeoNames ID if needed for other purposes
+                if (geonameId) {
+                    values[`${fieldName.toLowerCase().replace(/\s+/g, '_')}_id`] = geonameId;
+                }
             }
         });
         
