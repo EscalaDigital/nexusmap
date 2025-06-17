@@ -118,6 +118,13 @@ function performSearch(query) {
  */
 function showModal(properties) {
     /* ----------  Preparación y utilidades ---------- */
+    
+    console.log('=== DEBUG showModal ===');
+    console.log('Properties recibidas:', properties);
+    console.log('nmFormStructure disponible:', typeof nmFormStructure !== 'undefined');
+    if (typeof nmFormStructure !== 'undefined') {
+        console.log('nmFormStructure:', nmFormStructure);
+    }
 
     //Limpiar escapes excesivos
     const cleanValue = (value) => {
@@ -182,20 +189,84 @@ function showModal(properties) {
         return `<p class="nm-modal-field ${extraClass}">
                     <strong>${cleanedLabel}:</strong> ${cleanedValue}
                 </p>`;
-    };
-
-    /* ----------  Recorremos la estructura del formulario ---------- */
+    };    /* ----------  Recorremos la estructura del formulario ---------- */
 
     let currentSection = null;
     const sectionContent = {};     // { "Nombre sección": [html, html...] }
 
     if (nmFormStructure && nmFormStructure.fields) {
-        nmFormStructure.fields.forEach((field) => {
-
-            // --- Cabecera -> abre nueva sección --------------------
+        console.log('=== Procesando campos del formulario ===');
+        console.log('Número de campos:', nmFormStructure.fields.length);
+        
+        nmFormStructure.fields.forEach((field, index) => {
+            console.log(`Campo ${index}:`, field);            // --- Cabecera -> abre nueva sección --------------------
             if (field.type === 'header') {
+                console.log('Campo header encontrado:', field.label);
                 currentSection = field.label || 'Sección';
                 sectionContent[currentSection] = [];
+                return;
+            }            // --- Campo geographic-selector (manejo especial) -------------
+            if (field.type === 'geographic-selector') {
+                console.log('=== Campo geographic-selector encontrado ===');
+                console.log('Field:', field);
+                
+                let geoHtml = `<div class="nm-geographic-selector-group">
+                                <h4 class="nm-geographic-title">${cleanValue(field.label)}</h4>`;
+                
+                let hasValues = false;
+                
+                // Buscar automáticamente niveles geográficos comunes
+                const commonLevels = ['admin1', 'admin2', 'admin3', 'admin4'];
+                
+                // Si el campo tiene config, usar esa configuración
+                if (field.config && field.config.levels && field.config.field_names) {
+                    console.log('Usando configuración del campo:', field.config);
+                    field.config.levels.forEach((level) => {
+                        const levelKey = `nm_${level}`;
+                        const levelValue = properties[levelKey];
+                        
+                        console.log(`Buscando ${levelKey}:`, levelValue);
+                        
+                        if (levelValue) {
+                            hasValues = true;
+                            const levelLabel = field.config.field_names[level] || level;
+                            console.log(`Agregando ${levelLabel}: ${levelValue}`);
+                            geoHtml += `<p class="nm-modal-field nm-geographic-field">
+                                            <strong>${cleanValue(levelLabel)}:</strong> ${cleanValue(levelValue)}
+                                        </p>`;
+                        }
+                    });
+                } else {
+                    // Buscar automáticamente por niveles comunes
+                    console.log('No hay config, buscando niveles automáticamente');
+                    commonLevels.forEach((level, index) => {
+                        const levelKey = `nm_${level}`;
+                        const levelValue = properties[levelKey];
+                        
+                        console.log(`Buscando ${levelKey}:`, levelValue);
+                        
+                        if (levelValue) {
+                            hasValues = true;
+                            const levelLabel = `Nivel ${index + 1}`;
+                            console.log(`Agregando ${levelLabel}: ${levelValue}`);
+                            geoHtml += `<p class="nm-modal-field nm-geographic-field">
+                                            <strong>${cleanValue(levelLabel)}:</strong> ${cleanValue(levelValue)}
+                                        </p>`;
+                        }
+                    });                }
+                
+                geoHtml += '</div>';
+                
+                console.log('hasValues:', hasValues);
+                console.log('HTML generado:', geoHtml);
+                
+                // Solo agregar si tiene valores
+                if (hasValues) {
+                    (sectionContent[currentSection] ||= []).push(geoHtml);
+                    console.log('HTML agregado a sección:', currentSection);
+                } else {
+                    console.log('No se agregó HTML - sin valores');
+                }
                 return;
             }
 
@@ -279,13 +350,16 @@ function showModal(properties) {
             if (['layers', 'has_layer', 'text_layers', 'entry_id'].includes(key)) continue;
             const label = getFieldLabel(key);
             sectionContent[''].push(renderField(label, value));
-        }
-    }
+        }    }
 
-        /* ----------  Construir el HTML final del modal ---------- */
+    /* ----------  Construir el HTML final del modal ---------- */
+
+    console.log('=== Construyendo HTML final ===');
+    console.log('sectionContent:', sectionContent);
 
     let modalHtml = '<div class="nm-modal-content">';
     Object.entries(sectionContent).forEach(([secName, items]) => {
+        console.log(`Sección "${secName}" con ${items.length} items:`, items);
         if (!items.length) return;
         modalHtml += `
             <div class="nm-modal-section">
@@ -294,6 +368,8 @@ function showModal(properties) {
             </div>`;
     });
     modalHtml += '</div>';
+    
+    console.log('HTML final del modal:', modalHtml);
 
     /* ----------  Crear o refrescar el modal en el DOM ---------- */
 
