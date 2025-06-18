@@ -569,21 +569,22 @@
 
     function closeConfigPanel() {
         $('.nm-geo-config-panel').hide();
-        currentField = null;    }function loadConfigIntoPanel(panel, config) {
+        currentField = null;    }    function loadConfigIntoPanel(panel, config) {
         const $geonamesInput = panel.find('.nm-geonames-user');
         const $countryRow = panel.find('.nm-country-row');
         const $countrySelect = panel.find('.nm-country-selector');
         
-        // Load GeoNames user
-        $geonamesInput.val(config.geonames_user || '');
+        // Load GeoNames user from wp_option (global setting)
+        const globalGeonamesUser = nmAdmin.geonames_user || '';
+        $geonamesInput.val(globalGeonamesUser);
         
         // If user exists and country is configured, show country section
-        if (config.geonames_user && config.country) {
+        if (globalGeonamesUser && config.country) {
             $countryRow.show();
             $countrySelect.prop('disabled', false);
             
             // Load countries and set selected country
-            loadCountriesFromGeonames(config.geonames_user, panel.find('.nm-config-row').first());
+            loadCountriesFromGeonames(globalGeonamesUser, panel.find('.nm-config-row').first());
             
             setTimeout(() => {
                 $countrySelect.val(config.country || '').trigger('change');
@@ -658,7 +659,6 @@
             name: fieldName,
             label: fieldLabel,
             config: {
-                geonames_user: geonamesUser,
                 country: country,
                 levels: levels,
                 field_names: fieldNames

@@ -50,13 +50,11 @@ class NM_Admin
             wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), null, true);            // Cargar scripts específicos
             wp_enqueue_script('nm-admin-js', NM_PLUGIN_URL . 'admin/js/admin.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), NM_VERSION, true);
             wp_enqueue_script('nm-entries-js', NM_PLUGIN_URL . 'admin/js/entries.js', array('jquery', 'leaflet-js'), NM_VERSION, true);
-            wp_enqueue_script('nm-geographic-selector-config-js', NM_PLUGIN_URL . 'admin/js/geographic-selector-config.js', array('jquery'), NM_VERSION, true);
-            
-
-            // Agregar variables globales para AJAX
+            wp_enqueue_script('nm-geographic-selector-config-js', NM_PLUGIN_URL . 'admin/js/geographic-selector-config.js', array('jquery'), NM_VERSION, true);            // Agregar variables globales para AJAX
             wp_localize_script('nm-admin-js', 'nmAdmin', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_admin_nonce')
+                'nonce'    => wp_create_nonce('nm_admin_nonce'),
+                'geonames_user' => nm_get_geonames_user()
             ));
         }
     }

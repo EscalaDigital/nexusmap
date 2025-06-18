@@ -138,3 +138,13 @@ function nm_render_conditional_field( $field ) {
         </div>
     <?php endif;
 }
+
+/**
+ * Get GeoNames username from WordPress options
+ * Centralized function to get the GeoNames user to ensure consistency
+ *
+ * @return string The GeoNames username or empty string if not set
+ */
+function nm_get_geonames_user() {
+    return get_option('nm_geonames_user', '');
+}

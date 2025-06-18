@@ -74,18 +74,18 @@
         const levels = config.levels || [];
         const fieldNames = config.field_names || {};
         const country = config.country;
-        const geonamesUser = config.geonames_user;
+        const geonamesUser = nmGeoSelector.geonames_user || '';
 
         console.log('Levels:', levels);
         console.log('Field names:', fieldNames);
         console.log('Country:', country);
-        console.log('GeoNames user:', geonamesUser);
+       
 
         if (!geonamesUser) {
             console.error('GeoNames user not configured');
             showError($container, 'Usuario GeoNames no configurado');
             return;
-        }        // Create select elements
+        }// Create select elements
         const $selectorsContainer = $container.find('.nm-geo-selectors-container');
         const $targetContainer = $selectorsContainer.length > 0 ? $selectorsContainer : $container;
         
@@ -159,12 +159,10 @@
                 .prop('disabled', true);
                 
             hideError($container.find(`[data-level="${nextLevel}"]`));
-        }
-
-        // Load next level if there is one and a value is selected
+        }        // Load next level if there is one and a value is selected
         if (selectedValue && geonameId && currentIndex < levels.length - 1) {
             const nextLevel = levels[currentIndex + 1];
-            loadGeoData($container, config.country, geonameId, nextLevel, config.geonames_user);
+            loadGeoData($container, config.country, geonameId, nextLevel, nmGeoSelector.geonames_user);
         }
     }    function getParentValue($container, currentLevel, levels) {
         const currentIndex = levels.indexOf(currentLevel);

@@ -105,13 +105,11 @@ class NM_Public
             */
             // Enqueue functions related to the map
             wp_enqueue_script('nm-funcionesmaps-js', NM_PLUGIN_URL . 'public/js/funcionesmaps.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), NM_VERSION, true);
-            wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);
-
-            
-            // AGREGAR ESTA LOCALIZACIÓN PARA EL MAPA
+            wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);            // AGREGAR ESTA LOCALIZACIÓN PARA EL MAPA
             wp_localize_script('nm-public-js', 'nmPublic', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce')
+                'nonce'    => wp_create_nonce('nm_public_nonce'),
+                'geonames_user' => nm_get_geonames_user()
             ));
             
             // Para gráficos Chart.js
@@ -132,16 +130,18 @@ class NM_Public
                 wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form1.css', array(), NM_VERSION);
             } else {
                 wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form' . $selected_theme_form  . '.css', array(), NM_VERSION);
-            }            wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);
-
-            // Enqueue geographic selector scripts
+            }            wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);            // Enqueue geographic selector scripts
             wp_enqueue_style('nm-geographic-selector-css', NM_PLUGIN_URL . 'public/css/geographic-selector.css', array(), NM_VERSION);
-            wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);
-
-            // Localize script for AJAX handling
+            wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);            // Localize geographic selector script
+            wp_localize_script('nm-geographic-selector-js', 'nmGeoSelector', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('nm_public_nonce'),
+                'geonames_user' => nm_get_geonames_user()
+            ));// Localize script for AJAX handling
             wp_localize_script('nm-form-js', 'nmPublic', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce')
+                'nonce'    => wp_create_nonce('nm_public_nonce'),
+                'geonames_user' => nm_get_geonames_user()
             ));
         }
     }

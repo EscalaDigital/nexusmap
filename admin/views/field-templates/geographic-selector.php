@@ -5,7 +5,7 @@ $field_config = $field['config'] ?? [];
 $country = $field_config['country'] ?? 'ES';
 $levels = $field_config['levels'] ?? [];
 $field_names = $field_config['field_names'] ?? [];
-$geonames_user = $field_config['geonames_user'] ?? get_option('nm_geonames_user', '');
+$geonames_user = nm_get_geonames_user();
 ?>
 
 <div class="nm-form-field nm-geographic-field" data-type="geographic-selector" data-field-id="<?php echo esc_attr($field_id); ?>">
