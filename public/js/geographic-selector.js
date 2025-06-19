@@ -74,74 +74,80 @@
         const levels = config.levels || [];
         const fieldNames = config.field_names || {};
         const country = config.country;
-        const geonamesUser = nmGeoSelector.geonames_user || '';
 
         console.log('Levels:', levels);
         console.log('Field names:', fieldNames);
         console.log('Country:', country);
-       
 
-        if (!geonamesUser) {
-            console.error('GeoNames user not configured');
-            showError($container, 'Usuario GeoNames no configurado');
-            return;
-        }// Create select elements
-        const $selectorsContainer = $container.find('.nm-geo-selectors-container');
-        const $targetContainer = $selectorsContainer.length > 0 ? $selectorsContainer : $container;
-        
-        levels.forEach((level, index) => {
-            const fieldName = fieldNames[level] || level;
-            const selectId = `${$container.attr('id')}_${level}`;
-            const isRequired = $container.data('required') || false;
-            
-            const selectHtml = `
-                <div class="nm-geo-level" data-level="${level}">
-                    <label for="${selectId}">${fieldName}:</label>
-                    <select 
-                        id="${selectId}" 
-                        name="${level}" 
-                        class="nm-geo-select" 
-                        data-level="${level}"
-                        data-field-name="${fieldName}"
-                        ${isRequired ? 'required' : ''}
-                        ${index > 0 ? 'disabled' : ''}
-                    >
-                        <option value="">Seleccionar ${fieldName.toLowerCase()}...</option>
-                    </select>
-                    <div class="nm-geo-loading" style="display: none;">
-                        <span>Cargando...</span>
-                    </div>
-                    <div class="nm-geo-error" style="display: none; color: red;">
-                        <span></span>
-                        <button type="button" class="nm-retry-btn">Reintentar</button>
-                    </div>
-                </div>
-            `;
-            
-            $targetContainer.append(selectHtml);
-        });
+        // Check if GeoNames is configured via AJAX (secure way)
+        checkGeonamesConfig(function(isConfigured) {
+            if (!isConfigured) {
+                console.error('GeoNames user not configured');
+                showError($container, 'Usuario GeoNames no configurado');
+                return;
+            }
 
-        // Load first level (admin1 for the country)
-        if (levels.length > 0) {
-            loadGeoData($container, country, null, levels[0], geonamesUser);
+            // Continue with setup if configured
+            continueSetup();
+        });        function continueSetup() {
+            // Create select elements
+            const $selectorsContainer = $container.find('.nm-geo-selectors-container');
+            const $targetContainer = $selectorsContainer.length > 0 ? $selectorsContainer : $container;
+            
+            levels.forEach((level, index) => {
+                const fieldName = fieldNames[level] || level;
+                const selectId = `${$container.attr('id')}_${level}`;
+                const isRequired = $container.data('required') || false;
+                
+                const selectHtml = `
+                    <div class="nm-geo-level" data-level="${level}">
+                        <label for="${selectId}">${fieldName}:</label>
+                        <select 
+                            id="${selectId}" 
+                            name="${level}" 
+                            class="nm-geo-select" 
+                            data-level="${level}"
+                            data-field-name="${fieldName}"
+                            ${isRequired ? 'required' : ''}
+                            ${index > 0 ? 'disabled' : ''}
+                        >
+                            <option value="">Seleccionar ${fieldName.toLowerCase()}...</option>
+                        </select>
+                        <div class="nm-geo-loading" style="display: none;">
+                            <span>Cargando...</span>
+                        </div>
+                        <div class="nm-geo-error" style="display: none; color: red;">
+                            <span></span>
+                            <button type="button" class="nm-retry-btn">Reintentar</button>
+                        </div>
+                    </div>
+                `;
+                
+                $targetContainer.append(selectHtml);
+            });
+
+            // Load first level (admin1 for the country)
+            if (levels.length > 0) {
+                loadGeoDataSecure($container, country, null, levels[0]);
+            }
+
+            // Setup change handlers
+            $container.on('change', '.nm-geo-select', function() {
+                handleSelectChange($container, $(this), config);
+            });
+
+            // Setup retry handlers
+            $container.on('click', '.nm-retry-btn', function() {
+                const $level = $(this).closest('.nm-geo-level');
+                const level = $level.data('level');
+                const $select = $level.find('.nm-geo-select');
+                
+                // Find parent value
+                const parentValue = getParentValue($container, level, config.levels);
+                loadGeoDataSecure($container, country, parentValue, level);
+            });
         }
-
-        // Setup change handlers
-        $container.on('change', '.nm-geo-select', function() {
-            handleSelectChange($container, $(this), config);
-        });
-
-        // Setup retry handlers
-        $container.on('click', '.nm-retry-btn', function() {
-            const $level = $(this).closest('.nm-geo-level');
-            const level = $level.data('level');
-            const $select = $level.find('.nm-geo-select');
-            
-            // Find parent value
-            const parentValue = getParentValue($container, level, config.levels);
-            loadGeoData($container, country, parentValue, level, geonamesUser);
-        });
-    }    function handleSelectChange($container, $select, config) {
+    }function handleSelectChange($container, $select, config) {
         const currentLevel = $select.data('level');
         const selectedValue = $select.val();
         const selectedOption = $select.find('option:selected');
@@ -162,7 +168,7 @@
         }        // Load next level if there is one and a value is selected
         if (selectedValue && geonameId && currentIndex < levels.length - 1) {
             const nextLevel = levels[currentIndex + 1];
-            loadGeoData($container, config.country, geonameId, nextLevel, nmGeoSelector.geonames_user);
+            loadGeoDataSecure($container, config.country, geonameId, nextLevel);
         }
     }    function getParentValue($container, currentLevel, levels) {
         const currentIndex = levels.indexOf(currentLevel);
@@ -174,101 +180,15 @@
         
         // Return the GeoNames ID for API calls, not the display value
         return $selectedOption.data('geoname-id') || null;
-    }
-
+    }    /* 
+    // DEPRECATED: loadGeoData function replaced by loadGeoDataSecure for security
     function loadGeoData($container, country, parentCode, level, username) {
-        const $levelContainer = $container.find(`[data-level="${level}"]`);
-        const $select = $levelContainer.find('.nm-geo-select');
-        
-        // Build cache key
-        const cacheKey = `${country}_${parentCode || 'root'}_${level}`;
-        
-        // Check cache first
-        if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp < CACHE_DURATION)) {
-            populateSelect($select, cache[cacheKey].data);
-            return;
-        }
-
-        // Avoid duplicate requests
-        if (requestQueue[cacheKey]) {
-            return;
-        }        showLoading($levelContainer);
-        hideError($levelContainer);
-        
-        // Prepare parameters for proxy call
-        let proxyParams = {
-            username: username
-        };
-        
-        if (!parentCode) {
-            // First level - get admin1 divisions for country
-            proxyParams.geonameId = getCountryGeonameId(country);
-        } else {
-            // Subsequent levels - get children of selected area
-            proxyParams.geonameId = parentCode;
-        }
-
-        requestQueue[cacheKey] = true;
-
-        callGeonamesProxy('childrenJSON', proxyParams)
-            .done(function(response) {
-                delete requestQueue[cacheKey];
-                hideLoading($levelContainer);
-                
-                if (response.success && response.data && response.data.geonames) {
-                    // Filter by feature class/code if needed
-                    let filteredData = response.data.geonames;
-                      // For administrative divisions, filter by feature code
-                    if (level === 'admin1') {
-                        filteredData = filteredData.filter(item => 
-                            item.fcode === 'ADM1' || item.fcode === 'ADMD'
-                        );
-                    } else if (level === 'admin2') {
-                        filteredData = filteredData.filter(item => 
-                            item.fcode === 'ADM2' || item.fcode === 'ADMD'
-                        );
-                    } else if (level === 'admin3') {
-                        filteredData = filteredData.filter(item => 
-                            item.fcode === 'ADM3' || item.fcode === 'ADMD' || item.fcode === 'PPL' || item.fcode === 'PPLA'
-                        );
-                    }
-                    
-                    // Sort alphabetically
-                    filteredData.sort((a, b) => a.name.localeCompare(b.name));
-                    
-                    // Cache the result
-                    cache[cacheKey] = {
-                        data: filteredData,
-                        timestamp: Date.now()
-                    };
-                    
-                    populateSelect($select, filteredData);
-                } else {
-                    showError($levelContainer, 'No se encontraron datos para esta ubicación');
-                }
-            })
-            .fail(function(xhr, status, error) {
-                delete requestQueue[cacheKey];
-                hideLoading($levelContainer);
-                
-                let errorMessage = 'Error al cargar los datos';
-                if (status === 'timeout') {
-                    errorMessage = 'Tiempo de espera agotado. Verifique su conexión a internet';
-                } else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.geonames_error) {
-                    const geonamesError = xhr.responseJSON.data.geonames_error;
-                    if (geonamesError.includes('user account not found')) {
-                        errorMessage = 'Usuario GeoNames no válido';
-                    } else if (geonamesError.includes('daily limit')) {
-                        errorMessage = 'Límite diario de consultas alcanzado';
-                    }
-                } else if (xhr.status === 429) {
-                    errorMessage = 'Demasiadas solicitudes. Intente nuevamente en unos minutos';
-                }
-                
-                showError($levelContainer, errorMessage);
-                console.error('GeoNames API Error:', error, xhr.responseJSON);
-            });
-    }    function populateSelect($select, data) {
+        // This function is deprecated and replaced by loadGeoDataSecure
+        // to avoid exposing GeoNames username to frontend
+        console.warn('loadGeoData is deprecated, use loadGeoDataSecure instead');
+        loadGeoDataSecure($container, country, parentCode, level);
+    }
+    */function populateSelect($select, data) {
         const fieldName = $select.data('field-name');
         $select.empty().append(`<option value="">Seleccionar ${fieldName.toLowerCase()}...</option>`);
         
@@ -370,8 +290,7 @@
     $(document).on('submit', 'form', function() {
         const $form = $(this);
         
-        $form.find('.nm-geographic-selector').each(function() {
-            const $container = $(this);
+        $form.find('.nm-geographic-selector').each(function() {            const $container = $(this);
             const values = getSelectedValues($container);
             
             // Add hidden inputs for each selected value
@@ -382,5 +301,88 @@
             });
         });
     });
+
+    /**
+     * Check if GeoNames is configured (secure way without exposing username)
+     */
+    function checkGeonamesConfig(callback) {
+        $.ajax({
+            url: nmGeoSelector.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'nm_check_geonames_config',
+                nonce: nmGeoSelector.nonce
+            },
+            timeout: 5000,
+            success: function(response) {
+                if (response.success) {
+                    callback(response.data.configured || false);
+                } else {
+                    callback(false);
+                }
+            },
+            error: function() {
+                callback(false);
+            }
+        });
+    }
+
+    /**
+     * Load geographic data via secure AJAX (without exposing username)
+     */
+    function loadGeoDataSecure($container, country, parentCode, level) {
+        const $levelContainer = $container.find(`[data-level="${level}"]`);
+        const $select = $levelContainer.find('.nm-geo-select');
+        const $loading = $levelContainer.find('.nm-geo-loading');
+        const $error = $levelContainer.find('.nm-geo-error');
+
+        // Show loading state
+        $loading.show();
+        $error.hide();
+        $select.prop('disabled', true);
+
+        $.ajax({
+            url: nmGeoSelector.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'nm_get_geo_data',
+                nonce: nmGeoSelector.nonce,
+                country: country,
+                parent_code: parentCode,
+                level: level
+            },
+            timeout: 15000,
+            success: function(response) {
+                $loading.hide();
+                
+                if (response.success && response.data && response.data.length > 0) {
+                    // Clear existing options
+                    $select.empty().append('<option value="">Seleccionar...</option>');
+                    
+                    // Add new options
+                    response.data.forEach(function(item) {
+                        $select.append(`<option value="${item.name}" data-geoname-id="${item.geonameId}">${item.name}</option>`);
+                    });
+                    
+                    $select.prop('disabled', false);
+                    hideError($levelContainer);
+                } else {
+                    showError($levelContainer, response.data && response.data.message ? response.data.message : 'Error al cargar datos');
+                }
+            },
+            error: function(xhr, status, error) {
+                $loading.hide();
+                let errorMessage = 'Error de conexión';
+                
+                if (status === 'timeout') {
+                    errorMessage = 'Tiempo de espera agotado';
+                } else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                    errorMessage = xhr.responseJSON.data.message;
+                }
+                
+                showError($levelContainer, errorMessage);
+            }
+        });
+    }
 
 })(jQuery);

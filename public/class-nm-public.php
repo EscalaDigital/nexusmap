@@ -108,8 +108,7 @@ class NM_Public
             wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);            // AGREGAR ESTA LOCALIZACIÓN PARA EL MAPA
             wp_localize_script('nm-public-js', 'nmPublic', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce'),
-                'geonames_user' => nm_get_geonames_user()
+                'nonce'    => wp_create_nonce('nm_public_nonce')
             ));
             
             // Para gráficos Chart.js
@@ -135,13 +134,11 @@ class NM_Public
             wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);            // Localize geographic selector script
             wp_localize_script('nm-geographic-selector-js', 'nmGeoSelector', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce'),
-                'geonames_user' => nm_get_geonames_user()
+                'nonce'    => wp_create_nonce('nm_public_nonce')
             ));// Localize script for AJAX handling
             wp_localize_script('nm-form-js', 'nmPublic', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce'),
-                'geonames_user' => nm_get_geonames_user()
+                'nonce'    => wp_create_nonce('nm_public_nonce')
             ));
         }
     }

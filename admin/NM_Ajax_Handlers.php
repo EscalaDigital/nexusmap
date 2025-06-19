@@ -19,10 +19,15 @@ class NM_Ajax_Handlers
         $this->loader->add_action('wp_ajax_nm_save_conditional_fields', $this, 'save_conditional_fields');
         $this->loader->add_action('wp_ajax_nm_get_entry_for_edit', $this, 'get_entry_for_edit');
         $this->loader->add_action('wp_ajax_nm_update_entry_data', $this, 'update_entry_data');
-        $this->loader->add_action('wp_ajax_nm_delete_entry', $this, 'delete_entry');
-        $this->loader->add_action('wp_ajax_nm_save_geonames_user', $this, 'save_geonames_user');
+        $this->loader->add_action('wp_ajax_nm_delete_entry', $this, 'delete_entry');        $this->loader->add_action('wp_ajax_nm_save_geonames_user', $this, 'save_geonames_user');
         $this->loader->add_action('wp_ajax_nm_geonames_proxy', $this, 'geonames_proxy');
-        $this->loader->add_action('wp_ajax_nopriv_nm_geonames_proxy', $this, 'geonames_proxy');    }
+        $this->loader->add_action('wp_ajax_nopriv_nm_geonames_proxy', $this, 'geonames_proxy');
+        
+        // Secure endpoints for frontend (no username exposure)
+        $this->loader->add_action('wp_ajax_nm_check_geonames_config', $this, 'check_geonames_config');
+        $this->loader->add_action('wp_ajax_nopriv_nm_check_geonames_config', $this, 'check_geonames_config');
+        $this->loader->add_action('wp_ajax_nm_get_geo_data', $this, 'get_geo_data');
+        $this->loader->add_action('wp_ajax_nopriv_nm_get_geo_data', $this, 'get_geo_data');}
 
     public function save_ab_option()
     {
@@ -385,5 +390,167 @@ class NM_Ajax_Handlers
         
         // Devolver datos exitosamente
         wp_send_json_success($data);
+    }
+
+    /**
+     * Check if GeoNames is configured (secure - doesn't expose username)
+     */
+    public function check_geonames_config()
+    {
+        // Verificar nonce - aceptar tanto admin como público
+        $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
+        
+        if (!wp_verify_nonce($nonce, 'nm_admin_nonce') && !wp_verify_nonce($nonce, 'nm_public_nonce')) {
+            wp_send_json_error(__('Security check failed', 'nexusmap'));
+            return;
+        }
+
+        $geonames_user = nm_get_geonames_user();
+        
+        wp_send_json_success(array(
+            'configured' => !empty($geonames_user)
+        ));
+    }
+
+    /**
+     * Get geographic data via secure proxy (doesn't expose username to frontend)
+     */
+    public function get_geo_data()
+    {
+        // Verificar nonce - aceptar tanto admin como público
+        $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
+        
+        if (!wp_verify_nonce($nonce, 'nm_admin_nonce') && !wp_verify_nonce($nonce, 'nm_public_nonce')) {
+            wp_send_json_error(__('Security check failed', 'nexusmap'));
+            return;
+        }
+
+        $geonames_user = nm_get_geonames_user();
+        
+        if (empty($geonames_user)) {
+            wp_send_json_error(array('message' => __('GeoNames user not configured', 'nexusmap')));
+            return;
+        }
+
+        // Obtener parámetros
+        $country = isset($_POST['country']) ? sanitize_text_field($_POST['country']) : '';
+        $parent_code = isset($_POST['parent_code']) ? sanitize_text_field($_POST['parent_code']) : '';
+        $level = isset($_POST['level']) ? sanitize_text_field($_POST['level']) : '';
+
+        if (empty($country) || empty($level)) {
+            wp_send_json_error(array('message' => __('Missing required parameters', 'nexusmap')));
+            return;
+        }
+
+        // Determinar el endpoint y parámetros según el nivel
+        if (empty($parent_code)) {
+            // Primer nivel - obtener admin1 del país
+            $endpoint = 'childrenJSON';
+            $params = array(
+                'geonameId' => $this->get_country_geoname_id($country, $geonames_user),
+                'username' => $geonames_user
+            );
+        } else {
+            // Niveles subsecuentes - obtener children del parent
+            $endpoint = 'childrenJSON';
+            $params = array(
+                'geonameId' => $parent_code,
+                'username' => $geonames_user
+            );
+        }
+
+        if (!$params['geonameId']) {
+            wp_send_json_error(array('message' => __('Country not found', 'nexusmap')));
+            return;
+        }
+
+        // Hacer la petición a GeoNames
+        $url = 'http://api.geonames.org/' . $endpoint . '?' . http_build_query($params);
+        
+        $response = wp_remote_get($url, array(
+            'timeout' => 15,
+            'headers' => array(
+                'User-Agent' => 'WordPress/' . get_bloginfo('version') . '; ' . home_url()
+            )
+        ));
+
+        if (is_wp_error($response)) {
+            wp_send_json_error(array('message' => __('Connection error', 'nexusmap')));
+            return;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!$data || isset($data['status'])) {
+            $error_message = __('Error from GeoNames service', 'nexusmap');
+            if (isset($data['status']['message'])) {
+                $error_message = $data['status']['message'];
+            }
+            wp_send_json_error(array('message' => $error_message));
+            return;
+        }
+
+        // Formatear datos para el frontend
+        $formatted_data = array();
+        if (isset($data['geonames']) && is_array($data['geonames'])) {
+            foreach ($data['geonames'] as $item) {
+                $formatted_data[] = array(
+                    'geonameId' => $item['geonameId'],
+                    'name' => $item['name'],
+                    'adminName1' => isset($item['adminName1']) ? $item['adminName1'] : '',
+                    'adminName2' => isset($item['adminName2']) ? $item['adminName2'] : ''
+                );
+            }
+        }
+
+        wp_send_json_success($formatted_data);
+    }
+
+    /**
+     * Get country GeoName ID from country code
+     */
+    private function get_country_geoname_id($country_code, $username)
+    {
+        // Cache de IDs de países más comunes
+        $country_ids = array(
+            'ES' => '2510769', // España
+            'US' => '6252001', // Estados Unidos
+            'FR' => '3017382', // Francia
+            'DE' => '2921044', // Alemania
+            'IT' => '3175395', // Italia
+            'GB' => '2635167', // Reino Unido
+            'PT' => '2264397', // Portugal
+            'MX' => '3996063', // México
+            'AR' => '3865483', // Argentina
+            'CO' => '3686110', // Colombia
+            'BR' => '3469034', // Brasil
+            'PE' => '3932488', // Perú
+            'CL' => '3895114', // Chile
+            'VE' => '3625428'  // Venezuela
+        );
+
+        if (isset($country_ids[$country_code])) {
+            return $country_ids[$country_code];
+        }
+
+        // Si no está en cache, buscar via API
+        $url = 'http://api.geonames.org/countryInfoJSON?' . http_build_query(array(
+            'country' => $country_code,
+            'username' => $username
+        ));
+
+        $response = wp_remote_get($url, array('timeout' => 10));
+        
+        if (!is_wp_error($response)) {
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+            
+            if (isset($data['geonames'][0]['geonameId'])) {
+                return $data['geonames'][0]['geonameId'];
+            }
+        }
+
+        return false;
     }
 }
