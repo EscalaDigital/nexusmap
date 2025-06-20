@@ -185,20 +185,12 @@
                             </div>
                         </div>                    <?php 
                         endif;
-                        break;
-
-                    case 'audio':
-                        $audio_options = $field['options'] ?? [];
-                        $allow_recording = $audio_options['allow_recording'] ?? false;
-                        $allow_upload = $audio_options['allow_upload'] ?? true;
-                        $max_duration = $audio_options['max_duration'] ?? '300';
-                        $accepted_formats = $audio_options['accepted_formats'] ?? 'mp3,wav,ogg';
+                        break;                    case 'audio':
                     ?>
                         <div class="nm-form-field" data-type="audio">
                             <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
                             
-                            <div class="nm-audio-field" data-max-duration="<?php echo esc_attr($max_duration); ?>" data-accepted-formats="<?php echo esc_attr($accepted_formats); ?>">
-                                  <?php if ($allow_upload): ?>
+                            <div class="nm-audio-field">
                                 <div class="nm-audio-upload">
                                     <label for="<?php echo esc_attr($field_id . '_upload'); ?>">
                                         📁 Upload Audio File
@@ -206,32 +198,13 @@
                                     <input type="file" 
                                            id="<?php echo esc_attr($field_id . '_upload'); ?>"
                                            name="<?php echo esc_attr($field_name . '_file'); ?>"
-                                           accept=".<?php echo str_replace(',', ',.', esc_attr($accepted_formats)); ?>"
+                                           accept=".mp3,.wav,.ogg,.flac,.m4a,.aac"
                                            class="nm-audio-upload-input">
                                     <div class="nm-audio-preview" style="display: none;">
                                         <audio controls style="width: 100%;"></audio>
                                         <button type="button" class="nm-remove-audio">Remove</button>
                                     </div>
                                 </div>
-                                <?php endif; ?>
-
-                                <?php if ($allow_recording): ?>
-                                <div class="nm-audio-recorder" style="<?php echo $allow_upload ? 'margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;' : ''; ?>">
-                                    <div class="nm-recorder-controls">
-                                        <button type="button" class="nm-record-btn" data-field="<?php echo esc_attr($field_name); ?>">
-                                            🎤 Start Recording
-                                        </button>
-                                        <button type="button" class="nm-stop-btn" style="display: none;">
-                                            ⏹️ Stop Recording
-                                        </button>
-                                        <span class="nm-recording-time" style="display: none;">00:00</span>
-                                    </div>
-                                    <div class="nm-recording-preview" style="display: none;">
-                                        <audio controls style="width: 100%;"></audio>
-                                        <button type="button" class="nm-remove-recording">Remove Recording</button>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
 
                                 <input type="hidden" name="<?php echo esc_attr($field_name); ?>" class="nm-audio-data" value="">
                                 

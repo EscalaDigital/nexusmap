@@ -413,20 +413,8 @@ function saveForm(formSelector, formType) {
                         console.error('Error parsing geographic-selector config:', e);
                     }
                 }
-            }
-
-            // Procesamiento especial para audio
-            if (fieldType === 'audio') {
-                const audioOptions = {};
-                
-                // Capturar opciones específicas del audio
-                audioOptions.allow_recording = $field.find('.allow-recording').is(':checked');
-                audioOptions.allow_upload = $field.find('.allow-upload').is(':checked');
-                audioOptions.max_duration = $field.find('.max-duration').val() || '300';
-                audioOptions.accepted_formats = $field.find('.accepted-formats').val() || 'mp3,wav,ogg';
-                
-                fieldData.options = audioOptions;
-            }
+            }            // No hay procesamiento especial necesario para audio
+            // Solo mantenemos la funcionalidad básica de subida
 
             formFields.push(fieldData);
         }
