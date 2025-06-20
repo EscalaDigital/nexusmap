@@ -335,14 +335,22 @@ jQuery(document).ready(function ($) {
                         visibleCount++;
                     }
                 }
-            });
-
-            const pointsCountElement = document.getElementById('nm-points-count');
+            });            const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
             }
 
             console.log('Total de puntos visibles:', visibleCount);
+            
+            // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
+            const chartsModal = jQuery('#nm-charts-modal');
+            if (chartsModal.length && chartsModal.hasClass('active')) {
+                const visibleMarkers = getVisibleMarkers();
+                const features = getUniqueFeatures(visibleMarkers);
+                if (features.length > 0) {
+                    processCharts(features);
+                }
+            }
         }
 
         // Llamar a la función después de inicializar el mapa
@@ -598,25 +606,25 @@ jQuery(document).ready(function ($) {
                   console.error('Error 403: Verificar permisos y nonce');
                 console.error('Nonce being sent:', nmMapData.nonce);
             }
-        });
-
-        // Botón para ver gráficos
+        });        // Botón para ver gráficos
         if (nmMapData.charts_enabled) {
             var $chartsButton = jQuery('<button>', {
                 class: 'nm-control-button',
-                title: 'Ver gráficos',
+                title: 'Ver gráficos (responde a filtros activos)',
                 html: '<i class="fa fa-chart-bar"></i>'
             });
 
             $chartsButton.on('click', function (e) {
                 e.stopPropagation();
 
-                const features = getUniqueFeatures(allMarkers);
+                // Obtener solo los marcadores visibles (filtrados)
+                const visibleMarkers = getVisibleMarkers();
+                const features = getUniqueFeatures(visibleMarkers);
 
                 if (features.length) {
                     showChartsModal(features);
                 } else {
-                    alert('No hay datos para mostrar en los gráficos');
+                    alert('No hay datos para mostrar en los gráficos con los filtros actuales');
                 }
             });
 
@@ -652,11 +660,21 @@ jQuery(document).ready(function ($) {
                 $modal.hide();
             }, 300);
         });
-    }
-
-    function processCharts(features) {
+    }    function processCharts(features) {
         const chartsContainer = document.getElementById('nm-charts-container');
         chartsContainer.innerHTML = '';
+
+        // Agregar indicador de filtros activos
+        const totalMarkers = allMarkers.length;
+        const visibleMarkers = getVisibleMarkers().length;
+        const isFiltered = visibleMarkers < totalMarkers;
+        
+        if (isFiltered) {
+            const filterIndicator = document.createElement('div');
+            filterIndicator.style.cssText = 'background: #e3f2fd; border: 1px solid #1976d2; border-radius: 4px; padding: 10px; margin-bottom: 15px; text-align: center; color: #1976d2; font-weight: bold;';
+            filterIndicator.innerHTML = `📊 Mostrando gráficos filtrados: ${visibleMarkers} de ${totalMarkers} puntos`;
+            chartsContainer.appendChild(filterIndicator);
+        }
 
         nmMapData.chart_settings.forEach((chartConfig, index) => {
             const canvasWrapper = document.createElement('div');
@@ -913,6 +931,23 @@ jQuery(document).ready(function ($) {
             data: data,
             options: options
         });
+    }    /**
+     * Devuelve un array de marcadores que están actualmente visibles en el mapa
+     * (es decir, que están añadidos a sus LayerGroups y esos LayerGroups están en el mapa)
+     */
+    function getVisibleMarkers() {
+        const visibleMarkers = [];
+        
+        allMarkers.forEach(marker => {
+            // Verificar si el marcador está en su grupo original y ese grupo está en el mapa
+            if (marker.originalLayerGroup && 
+                marker.originalLayerGroup.hasLayer(marker) && 
+                map.hasLayer(marker.originalLayerGroup)) {
+                visibleMarkers.push(marker);
+            }
+        });
+        
+        return visibleMarkers;
     }
 
     /**
