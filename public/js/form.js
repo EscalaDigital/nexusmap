@@ -236,14 +236,27 @@ function performSearch(query) {
 
                 /* ------------------------------------------------
                  * 1.  VALIDAR ARCHIVOS (tamaño y tipo)
-                 * ---------------------------------------------- */
-                let hasFileError = false;
+                 * ---------------------------------------------- */                let hasFileError = false;
                 jQuery('input[type="file"]').each(function () {
                     if (this.files.length === 0) return;
 
                     const file = this.files[0];
                     const maxSize = 5 * 1024 * 1024;                     // 5 MB
-                    const allowedMime = ['image/jpeg', 'image/png', 'image/gif'];
+                    const $input = jQuery(this);
+                    
+                    // Detectar si es un campo de audio
+                    const isAudioField = $input.closest('.nm-audio-field').length > 0;
+                    
+                    let allowedMime;
+                    let errorMessage;
+                    
+                    if (isAudioField) {
+                        allowedMime = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac'];
+                        errorMessage = 'Tipo de archivo de audio no permitido. Use: MP3, WAV, OGG, FLAC, M4A, AAC.';
+                    } else {
+                        allowedMime = ['image/jpeg', 'image/png', 'image/gif'];
+                        errorMessage = 'Tipo de archivo no permitido (solo JPG, PNG o GIF).';
+                    }
 
                     if (file.size > maxSize) {
                         showMessage('El archivo es demasiado grande. Tamaño máximo: 5 MB.', 'error');
@@ -251,7 +264,7 @@ function performSearch(query) {
                         return false;                                       // break
                     }
                     if (!allowedMime.includes(file.type)) {
-                        showMessage('Tipo de archivo no permitido (solo JPG, PNG o GIF).', 'error');
+                        showMessage(errorMessage, 'error');
                         hasFileError = true;
                         return false;                                       // break
                     }

@@ -556,28 +556,68 @@ class NM_Public
                 continue;
             }
 
-            $store_key = 'nm_' . $inkey;
-
-            /* file suelto */
+            $store_key = 'nm_' . $inkey;            /* file suelto */
             if (isset($_FILES[$inkey]) && $_FILES[$inkey]['error'] === UPLOAD_ERR_OK) {
 
-                $up = wp_handle_upload($_FILES[$inkey], array(
-                    'test_form' => false,
-                    'mimes'     => array(
-                        'jpg|jpeg|jpe' => 'image/jpeg',
-                        'png'          => 'image/png',
-                        'gif'          => 'image/gif',
-                        'pdf'          => 'application/pdf',
-                    ),
-                ));
+                // Detectar si es un archivo de audio basado en el nombre del campo o tipo MIME
+                $is_audio_file = false;
+                $file_mime = $_FILES[$inkey]['type'];
+                $audio_mimes = array('audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac');
+                
+                // Verificar si es audio por MIME type
+                if (in_array($file_mime, $audio_mimes)) {
+                    $is_audio_file = true;
+                }
+                
+                // También verificar si hay datos de audio asociados
+                if (isset($_POST[$inkey . '_data']) && !empty($_POST[$inkey . '_data'])) {
+                    $is_audio_file = true;
+                }
 
-                if ($up && ! isset($up['error'])) {
-                    $form_fields[$store_key] = esc_url_raw(
-                        str_replace('http://', 'https://', $up['url'])
+                if ($is_audio_file) {
+                    // Procesar como archivo de audio
+                    $audio_allowed = array(
+                        'mp3'  => 'audio/mpeg',
+                        'wav'  => 'audio/wav',
+                        'ogg'  => 'audio/ogg',
+                        'flac' => 'audio/flac',
+                        'm4a'  => 'audio/mp4',
+                        'aac'  => 'audio/aac'
                     );
+
+                    $audio_up = wp_handle_upload($_FILES[$inkey], array(
+                        'test_form' => false,
+                        'mimes'     => $audio_allowed,
+                    ));
+
+                    if ($audio_up && ! isset($audio_up['error'])) {
+                        $form_fields[$store_key] = esc_url_raw(
+                            str_replace('http://', 'https://', $audio_up['url'])
+                        );
+                    } else {
+                        wp_send_json_error('Error al subir audio "' . esc_html($inkey) . '": ' . $audio_up['error']);
+                        wp_die();
+                    }
                 } else {
-                    wp_send_json_error('Error al subir "' . esc_html($inkey) . '": ' . $up['error']);
-                    wp_die();
+                    // Procesar como archivo normal (imagen/documento)
+                    $up = wp_handle_upload($_FILES[$inkey], array(
+                        'test_form' => false,
+                        'mimes'     => array(
+                            'jpg|jpeg|jpe' => 'image/jpeg',
+                            'png'          => 'image/png',
+                            'gif'          => 'image/gif',
+                            'pdf'          => 'application/pdf',
+                        ),
+                    ));
+
+                    if ($up && ! isset($up['error'])) {
+                        $form_fields[$store_key] = esc_url_raw(
+                            str_replace('http://', 'https://', $up['url'])
+                        );
+                    } else {
+                        wp_send_json_error('Error al subir "' . esc_html($inkey) . '": ' . $up['error']);
+                        wp_die();
+                    }
                 }
             } elseif (isset($_POST[$inkey])) {
                 $v = $_POST[$inkey];
