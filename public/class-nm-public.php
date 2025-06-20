@@ -479,51 +479,55 @@ class NM_Public
                     wp_send_json_error('Error al subir "' . esc_html($orig_name) . '": ' . $up['error']);
                     wp_die();
                 }
-            }
-
-            /* ---- AUDIO ---- */
+            }            /* ---- AUDIO ---- */
             elseif ($field['type'] === 'audio') {
-                $audio_data = isset($_POST[$html_name . '_data']) ? $_POST[$html_name . '_data'] : '';
+                // También marcar el campo de archivo asociado como procesado
+                $already_processed[] = $html_name . '_file';
                 
-                if (!empty($audio_data)) {
-                    if (strpos($audio_data, 'upload:') === 0) {
-                        // Manejar archivo subido
-                        if (isset($_FILES[$html_name]) && $_FILES[$html_name]['error'] === UPLOAD_ERR_OK) {
-                            $audio_allowed = array(
-                                'mp3'  => 'audio/mpeg',
-                                'wav'  => 'audio/wav',
-                                'ogg'  => 'audio/ogg',
-                                'flac' => 'audio/flac',
-                                'm4a'  => 'audio/mp4',
-                                'aac'  => 'audio/aac'
+                try {
+                    $audio_data = isset($_POST[$html_name]) ? $_POST[$html_name] : '';
+                    $file_field_name = $html_name . '_file';
+                    
+                    error_log("Processing audio field '{$html_name}', data: '{$audio_data}'");
+                    error_log("Looking for file field: '{$file_field_name}'");
+                    error_log("FILES data: " . print_r($_FILES, true));
+                    error_log("POST data: " . print_r($_POST, true));
+                    
+                    // Simplificar: solo procesar si hay un archivo cargado
+                    if (isset($_FILES[$file_field_name]) && $_FILES[$file_field_name]['error'] === UPLOAD_ERR_OK) {
+                        $audio_allowed = array(
+                            'mp3'  => 'audio/mpeg',
+                            'wav'  => 'audio/wav',
+                            'ogg'  => 'audio/ogg',
+                            'flac' => 'audio/flac',
+                            'm4a'  => 'audio/mp4',
+                            'aac'  => 'audio/aac'
+                        );
+
+                        $audio_up = wp_handle_upload($_FILES[$file_field_name], array(
+                            'test_form' => false,
+                            'mimes'     => $audio_allowed,
+                        ));
+
+                        if ($audio_up && ! isset($audio_up['error'])) {
+                            $form_fields[$store_key] = esc_url_raw(
+                                str_replace('http://', 'https://', $audio_up['url'])
                             );
-
-                            $audio_up = wp_handle_upload($_FILES[$html_name], array(
-                                'test_form' => false,
-                                'mimes'     => $audio_allowed,
-                            ));
-
-                            if ($audio_up && ! isset($audio_up['error'])) {
-                                $form_fields[$store_key] = esc_url_raw(
-                                    str_replace('http://', 'https://', $audio_up['url'])
-                                );
-                            } else {
-                                wp_send_json_error('Error al subir audio "' . esc_html($orig_name) . '": ' . $audio_up['error']);
-                                wp_die();
-                            }
-                        }
-                    } elseif (strpos($audio_data, 'recording:') === 0) {
-                        // Manejar grabación de audio
-                        $base64_data = substr($audio_data, 10); // Remover "recording:" prefix
-                        $audio_result = $this->save_audio_recording($base64_data, $html_name);
-                        
-                        if ($audio_result['success']) {
-                            $form_fields[$store_key] = $audio_result['url'];
+                            error_log("Audio file uploaded successfully: " . $form_fields[$store_key]);
                         } else {
-                            wp_send_json_error('Error al guardar grabación de audio "' . esc_html($orig_name) . '": ' . $audio_result['error']);
+                            error_log("Audio upload error: " . print_r($audio_up, true));
+                            wp_send_json_error('Error al subir audio "' . esc_html($orig_name) . '": ' . ($audio_up['error'] ?? 'Error desconocido'));
                             wp_die();
                         }
+                    } else {
+                        // Si no hay archivo pero el campo se envía, guardarlo como valor vacío
+                        error_log("No audio file uploaded for field: " . $file_field_name);
+                        // No hacer nada, dejar que se procese como campo normal si tiene datos
                     }
+                } catch (Exception $e) {
+                    error_log("Exception in audio processing: " . $e->getMessage());
+                    wp_send_json_error('Error interno al procesar audio: ' . $e->getMessage());
+                    wp_die();
                 }
             }
 
@@ -557,9 +561,7 @@ class NM_Public
             }
 
             $store_key = 'nm_' . $inkey;            /* file suelto */
-            if (isset($_FILES[$inkey]) && $_FILES[$inkey]['error'] === UPLOAD_ERR_OK) {
-
-                // Detectar si es un archivo de audio basado en el nombre del campo o tipo MIME
+            if (isset($_FILES[$inkey]) && $_FILES[$inkey]['error'] === UPLOAD_ERR_OK) {                // Detectar si es un archivo de audio basado en el nombre del campo o tipo MIME
                 $is_audio_file = false;
                 $file_mime = $_FILES[$inkey]['type'];
                 $audio_mimes = array('audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac');
@@ -569,9 +571,13 @@ class NM_Public
                     $is_audio_file = true;
                 }
                 
-                // También verificar si hay datos de audio asociados
-                if (isset($_POST[$inkey . '_data']) && !empty($_POST[$inkey . '_data'])) {
-                    $is_audio_file = true;
+                // Verificar si el nombre del campo termina en '_file' (indica campo de audio)
+                if (strpos($inkey, '_file') !== false) {
+                    $base_field = str_replace('_file', '', $inkey);
+                    // Verificar si existe el campo de datos correspondiente
+                    if (isset($_POST[$base_field])) {
+                        $is_audio_file = true;
+                    }
                 }
 
                 if ($is_audio_file) {

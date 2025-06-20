@@ -1033,7 +1033,11 @@ jQuery(document).ready(function ($) {
     }    // Manejar carga de archivos de audio
     function handleAudioUpload(event, $field, acceptedFormats) {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) {
+            // Limpiar si no hay archivo
+            $field.find('.nm-audio-data').val('');
+            return;
+        }
 
         // Validar formato
         const fileExtension = file.name.split('.').pop().toLowerCase();
@@ -1042,6 +1046,7 @@ jQuery(document).ready(function ($) {
         if (!allowedFormats.includes(fileExtension)) {
             showAudioError($field, `Formato no permitido. Use: ${acceptedFormats}`);
             event.target.value = '';
+            $field.find('.nm-audio-data').val('');
             return;
         }
 
@@ -1053,7 +1058,7 @@ jQuery(document).ready(function ($) {
         $audio[0].src = audioURL;
         $preview.show();
         
-        // Marcar que hay un archivo cargado
+        // Marcar que hay un archivo cargado en el campo hidden
         $field.find('.nm-audio-data').val('upload:' + file.name);
         
         // Limpiar grabación si existe
@@ -1152,7 +1157,7 @@ jQuery(document).ready(function ($) {
         $field.find('.nm-audio-upload-input').val('');
         $field.find('.nm-audio-preview').hide();
         
-        // Si no hay grabación, limpiar el campo de datos
+        // Si no hay grabación, limpiar completamente el campo de datos
         if ($field.find('.nm-recording-preview').is(':hidden')) {
             $field.find('.nm-audio-data').val('');
         }
@@ -1164,7 +1169,7 @@ jQuery(document).ready(function ($) {
     function removeRecording($field) {
         $field.find('.nm-recording-preview').hide();
         
-        // Si no hay archivo cargado, limpiar el campo de datos
+        // Si no hay archivo cargado, limpiar completamente el campo de datos
         if (!$field.find('.nm-audio-upload-input').val()) {
             $field.find('.nm-audio-data').val('');
         }

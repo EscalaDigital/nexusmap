@@ -198,15 +198,14 @@
                             <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
                             
                             <div class="nm-audio-field" data-max-duration="<?php echo esc_attr($max_duration); ?>" data-accepted-formats="<?php echo esc_attr($accepted_formats); ?>">
-                                
-                                <?php if ($allow_upload): ?>
+                                  <?php if ($allow_upload): ?>
                                 <div class="nm-audio-upload">
                                     <label for="<?php echo esc_attr($field_id . '_upload'); ?>">
                                         📁 Upload Audio File
                                     </label>
                                     <input type="file" 
                                            id="<?php echo esc_attr($field_id . '_upload'); ?>"
-                                           name="<?php echo esc_attr($field_name); ?>"
+                                           name="<?php echo esc_attr($field_name . '_file'); ?>"
                                            accept=".<?php echo str_replace(',', ',.', esc_attr($accepted_formats)); ?>"
                                            class="nm-audio-upload-input">
                                     <div class="nm-audio-preview" style="display: none;">
@@ -234,7 +233,7 @@
                                 </div>
                                 <?php endif; ?>
 
-                                <input type="hidden" name="<?php echo esc_attr($field_name . '_data'); ?>" class="nm-audio-data">
+                                <input type="hidden" name="<?php echo esc_attr($field_name); ?>" class="nm-audio-data" value="">
                                 
                             </div>
                         </div>
