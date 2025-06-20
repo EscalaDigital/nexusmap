@@ -257,14 +257,14 @@ jQuery(document).ready(function ($) {
 
             $filterPanel.on('click', '.nm-close-filters', function (e) {
                 $filterPanel.addClass('collapsed');
-            });
-
-            // Manejar clicks en los filtros
+            });            // Manejar clicks en los filtros
             const activeFilters = {};
             $filterPanel.on('click', '.nm-filter-button', function (e) {
                 const $button = jQuery(this);
                 const field = $button.data('field');
-                const value = $button.data('value');
+                const value = String($button.data('value')); // Convertir siempre a string
+
+                console.log('Filtro clickeado - Campo:', field, 'Valor:', value, 'Tipo:', typeof value);
 
                 $button.toggleClass('active');
 
@@ -281,6 +281,7 @@ jQuery(document).ready(function ($) {
                     }
                 }
 
+                console.log('activeFilters después del click:', activeFilters);
                 updateVisiblePoints(activeFilters);
             });
 
@@ -290,57 +291,58 @@ jQuery(document).ready(function ($) {
 
 
         function updateVisiblePoints(activeFilters) {
+            console.log('=== DEBUG updateVisiblePoints ===');
+            console.log('Active Filters:', activeFilters);
+
             let visibleCount = 0;
 
             // Limpiar el contenido de todos los LayerGroup definidos en la variable global 'overlays'
-
             for (const overlayName in overlays) {
                 if (overlays.hasOwnProperty(overlayName)) {
                     const layerGroup = overlays[overlayName];
-                    // Asegurarse de que es un LayerGroup y no otro tipo de capa (ej. TileLayer si se mezclaran)
+                    console.log(`Limpiando LayerGroup: ${overlayName}`, layerGroup);
                     if (layerGroup && typeof layerGroup.clearLayers === 'function') {
                         layerGroup.clearLayers();
                     }
                 }
             }
 
-
             // Recorrer todos los marcadores guardados
             allMarkers.forEach(function (marker) {
                 let isVisibleByFilter = true;
-
-
+                console.log('Procesando marcador:', marker);
+                console.log('Propiedades del marcador:', marker.feature.properties);
 
                 for (const field in activeFilters) {
                     if (activeFilters[field].size > 0) {
-                        // Añadir prefijo 'nm_' al campo
                         const fieldName = 'nm_' + field;
                         const fieldValue = marker.feature.properties[fieldName];
+                        console.log(`Campo: ${fieldName}, Valor: ${fieldValue}, Filtro Activo:`, activeFilters[field]);
 
-                        if (!fieldValue || !activeFilters[field].has(fieldValue.toString())) {
+                        if (!fieldValue || !activeFilters[field].has(String(fieldValue))) {
                             isVisibleByFilter = false;
+                            console.log(`Marcador filtrado por campo: ${fieldName}`);
                             break;
                         }
                     }
                 }
 
                 if (isVisibleByFilter && marker.originalLayerGroup) {
-                    // Añadir el marcador a su grupo de capa original si pasa el filtro
+                    console.log('Marcador visible, añadiendo a su grupo original:', marker);
                     marker.originalLayerGroup.addLayer(marker);
 
-                    // Si el grupo de capa original del marcador está actualmente visible en el mapa,
-                    // contar este marcador.
                     if (map.hasLayer(marker.originalLayerGroup)) {
                         visibleCount++;
                     }
                 }
             });
 
-
             const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
             }
+
+            console.log('Total de puntos visibles:', visibleCount);
         }
 
         // Llamar a la función después de inicializar el mapa
@@ -354,6 +356,12 @@ jQuery(document).ready(function ($) {
         }, function (response) {
             console.log('Response received:', response);
             const textLayerName = nmMapData.text_layer_name || 'Capas de Texto';
+
+            // Agregar logs para depurar los datos iniciales que recibe el mapa
+            console.log('=== DEBUG Datos iniciales del mapa ===');
+            console.log('Response completo:', response);
+            console.log('Features:', response.features);
+            console.log('Layer Settings:', response.layer_settings);
 
             if (response && response.features) {
                 var layerGroups = {};
@@ -377,7 +385,9 @@ jQuery(document).ready(function ($) {
 
                     // Procesar cada feature
                     response.features.forEach(function (feature) {
-
+                        console.log('Procesando feature:', feature);
+                        console.log('Propiedades del feature:', feature.properties);
+                        console.log('Geometría del feature:', feature.geometry);
 
                         // Si el feature tiene capas de texto o textarea
                         if (feature.properties && feature.properties.text_layers) {
