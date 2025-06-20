@@ -664,16 +664,31 @@ jQuery(document).ready(function ($) {
         const chartsContainer = document.getElementById('nm-charts-container');
         chartsContainer.innerHTML = '';
 
-        // Agregar indicador de filtros activos
+        // Agregar indicador de filtros activos ANTES del contenedor de gráficos
         const totalMarkers = allMarkers.length;
         const visibleMarkers = getVisibleMarkers().length;
         const isFiltered = visibleMarkers < totalMarkers;
         
         if (isFiltered) {
+            // Buscar si ya existe un indicador y eliminarlo
+            const existingIndicator = document.querySelector('.nm-filter-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
             const filterIndicator = document.createElement('div');
-            filterIndicator.style.cssText = 'background: #e3f2fd; border: 1px solid #1976d2; border-radius: 4px; padding: 10px; margin-bottom: 15px; text-align: center; color: #1976d2; font-weight: bold;';
+            filterIndicator.className = 'nm-filter-indicator';
+            filterIndicator.style.cssText = 'background: #e3f2fd; border: 1px solid #1976d2; border-radius: 4px; padding: 10px; margin-bottom: 20px; text-align: center; color: #1976d2; font-weight: bold; width: 100%; box-sizing: border-box;';
             filterIndicator.innerHTML = `📊 Mostrando gráficos filtrados: ${visibleMarkers} de ${totalMarkers} puntos`;
-            chartsContainer.appendChild(filterIndicator);
+            
+            // Insertar ANTES del contenedor de gráficos
+            chartsContainer.parentNode.insertBefore(filterIndicator, chartsContainer);
+        } else {
+            // Si no hay filtros, eliminar el indicador si existe
+            const existingIndicator = document.querySelector('.nm-filter-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
         }
 
         nmMapData.chart_settings.forEach((chartConfig, index) => {
