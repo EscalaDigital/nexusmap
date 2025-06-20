@@ -1,7 +1,7 @@
 jQuery(document).ready(function ($) {
 
     const fieldTpl = {};    ['header', 'text', 'textarea', 'checkbox', 'radio',
-        'select', 'file', 'number', 'date', 'url', 'geographic-selector'].forEach(function (type) {
+        'select', 'file', 'number', 'date', 'url', 'audio', 'geographic-selector'].forEach(function (type) {
             $.post(nmAdmin.ajax_url, {
                 action: 'nm_get_field_template',
                 field_type: type,
@@ -397,9 +397,7 @@ function saveForm(formSelector, formType) {
                 name: fieldName || ('field_' + Math.random().toString(36).substr(2, 9))
             };
             
-            if (fieldOptions.length) fieldData.options = fieldOptions;
-
-            // Procesamiento especial para geographic-selector
+            if (fieldOptions.length) fieldData.options = fieldOptions;            // Procesamiento especial para geographic-selector
             if (fieldType === 'geographic-selector') {
                 // Extraer la configuración del campo oculto
                 const configField = $field.find('.nm-field-config');
@@ -415,6 +413,19 @@ function saveForm(formSelector, formType) {
                         console.error('Error parsing geographic-selector config:', e);
                     }
                 }
+            }
+
+            // Procesamiento especial para audio
+            if (fieldType === 'audio') {
+                const audioOptions = {};
+                
+                // Capturar opciones específicas del audio
+                audioOptions.allow_recording = $field.find('.allow-recording').is(':checked');
+                audioOptions.allow_upload = $field.find('.allow-upload').is(':checked');
+                audioOptions.max_duration = $field.find('.max-duration').val() || '300';
+                audioOptions.accepted_formats = $field.find('.accepted-formats').val() || 'mp3,wav,ogg';
+                
+                fieldData.options = audioOptions;
             }
 
             formFields.push(fieldData);

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campo de Audio - Ejemplo de Uso</title>
+    <style>
+        /* Estilos similares a los implementados en el plugin */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .demo-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nm-form-field {
+            margin-bottom: 30px;
+        }
+        
+        .nm-form-field label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .nm-audio-field {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+        }
+        
+        .nm-audio-upload {
+            margin-bottom: 15px;
+        }
+        
+        .nm-audio-upload label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        .nm-audio-upload-input {
+            width: 100%;
+            padding: 8px;
+            border: 2px dashed #007cba;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        
+        .nm-audio-upload-input:hover {
+            border-color: #005a87;
+        }
+        
+        .nm-audio-preview {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .nm-audio-preview audio {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .nm-recorder-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .nm-record-btn, .nm-stop-btn {
+            background-color: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nm-record-btn:hover, .nm-stop-btn:hover {
+            background-color: #005a87;
+        }
+        
+        .nm-record-btn.recording {
+            background-color: #dc3545;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .nm-recording-time {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .nm-recording-preview {
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .nm-remove-audio, .nm-remove-recording {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .nm-remove-audio:hover, .nm-remove-recording:hover {
+            background-color: #c82333;
+        }
+        
+        .nm-audio-field .nm-audio-upload + .nm-audio-recorder {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        
+        .nm-audio-error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .nm-audio-success {
+            color: #28a745;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #007cba;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .config-info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .features-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .features-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .features-list li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎵 Campo de Audio - NexusMap Plugin</h1>
+        
+        <div class="info-box">
+            <strong>Información:</strong> Este es un ejemplo de cómo se ve el campo de audio implementado en el plugin NexusMap. Los usuarios pueden tanto subir archivos de audio como grabar directamente desde su micrófono.
+        </div>
+        
+        <div class="config-info">
+            <strong>Configuración de Ejemplo:</strong><br>
+            • Grabación: Habilitada<br>
+            • Carga de archivos: Habilitada<br>
+            • Duración máxima: 300 segundos (5 minutos)<br>
+            • Formatos aceptados: mp3, wav, ogg, flac, m4a, aac
+        </div>
+        
+        <div class="features-list">
+            <h3>Características Implementadas:</h3>
+            <ul>
+                <li>✅ Interfaz intuitiva con iconos descriptivos</li>
+                <li>✅ Grabación de audio usando MediaRecorder API</li>
+                <li>✅ Carga de archivos con validación de formato</li>
+                <li>✅ Preview de audio con reproductor HTML5</li>
+                <li>✅ Timer de grabación con formato MM:SS</li>
+                <li>✅ Auto-stop al alcanzar duración máxima</li>
+                <li>✅ Validaciones en tiempo real</li>
+                <li>✅ Mensajes de estado y error</li>
+                <li>✅ Botones de eliminación para ambos tipos</li>
+                <li>✅ Diseño responsive y moderno</li>
+            </ul>
+        </div>
+        
+        <!-- Ejemplo del campo de audio -->
+        <form id="demo-form">
+            <div class="nm-form-field" data-type="audio">
+                <label for="nm_field_audio_demo">Testimonio de Audio</label>
+                
+                <div class="nm-audio-field" data-max-duration="300" data-accepted-formats="mp3,wav,ogg,flac,m4a,aac">
+                    
+                    <!-- Sección de carga de archivos -->
+                    <div class="nm-audio-upload">
+                        <label for="nm_field_audio_demo_upload">
+                            📁 Upload Audio File
+                        </label>
+                        <input type="file" 
+                               id="nm_field_audio_demo_upload"
+                               name="audio_demo"
+                               accept=".mp3,.wav,.ogg,.flac,.m4a,.aac"
+                               class="nm-audio-upload-input">
+                        <div class="nm-audio-preview" style="display: none;">
+                            <audio controls style="width: 100%;"></audio>
+                            <button type="button" class="nm-remove-audio">Remove</button>
+                        </div>
+                    </div>
+
+                    <!-- Sección de grabación -->
+                    <div class="nm-audio-recorder" style="border-top: 1px solid #ddd; padding-top: 15px;">
+                        <div class="nm-recorder-controls">
+                            <button type="button" class="nm-record-btn" data-field="audio_demo">
+                                🎤 Start Recording
+                            </button>
+                            <button type="button" class="nm-stop-btn" style="display: none;">
+                                ⏹️ Stop Recording
+                            </button>
+                            <span class="nm-recording-time" style="display: none;">00:00</span>
+                        </div>
+                        <div class="nm-recording-preview" style="display: none;">
+                            <audio controls style="width: 100%;"></audio>
+                            <button type="button" class="nm-remove-recording">Remove Recording</button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="audio_demo_data" class="nm-audio-data">
+                    
+                </div>
+            </div>
+            
+            <button type="submit" style="background: #007cba; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                Enviar Formulario
+            </button>
+        </form>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f1f1f1; border-radius: 5px;">
+            <h3>Cómo funciona:</h3>
+            <ol>
+                <li><strong>Para subir un archivo:</strong> Haga clic en el área de carga y seleccione un archivo de audio de su dispositivo.</li>
+                <li><strong>Para grabar audio:</strong> Haga clic en "Start Recording", permita el acceso al micrófono y comience a hablar.</li>
+                <li><strong>Reproducir:</strong> Use el reproductor de audio para escuchar el archivo cargado o la grabación.</li>
+                <li><strong>Eliminar:</strong> Use los botones "Remove" para eliminar el audio si es necesario.</li>
+                <li><strong>Enviar:</strong> Una vez satisfecho con el audio, envíe el formulario normalmente.</li>
+            </ol>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #d4edda; border-radius: 5px; border-left: 4px solid #28a745;">
+            <strong>Estado:</strong> El campo de audio está completamente implementado y funcional en el plugin NexusMap. Los archivos se suben al servidor de WordPress y las URLs se almacenan en la base de datos junto con el resto de datos del formulario.
+        </div>
+    </div>
+
+    <script>
+        // Ejemplo básico de funcionalidad (versión simplificada para demo)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar mensaje informativo
+            const infoDiv = document.createElement('div');
+            infoDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #007cba; color: white; padding: 15px; border-radius: 5px; max-width: 300px; z-index: 1000;';
+            infoDiv.innerHTML = '<strong>Demo:</strong> Esta es una representación visual del campo de audio. En el plugin real, toda la funcionalidad JavaScript está completamente implementada.';
+            document.body.appendChild(infoDiv);
+            
+            // Auto-hide después de 5 segundos
+            setTimeout(() => {
+                infoDiv.style.display = 'none';
+            }, 5000);
+            
+            // Manejar demo de carga de archivo
+            const fileInput = document.querySelector('.nm-audio-upload-input');
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const preview = document.querySelector('.nm-audio-preview');
+                    preview.style.display = 'block';
+                    
+                    // Mostrar mensaje de éxito
+                    showDemoMessage('Archivo cargado correctamente (demo)', 'success');
+                }
+            });
+            
+            // Manejar demo de grabación
+            const recordBtn = document.querySelector('.nm-record-btn');
+            recordBtn.addEventListener('click', function() {
+                showDemoMessage('En el plugin real, aquí iniciaría la grabación de audio', 'info');
+            });
+            
+            function showDemoMessage(message, type) {
+                const msg = document.createElement('div');
+                msg.style.cssText = `position: fixed; bottom: 20px; left: 20px; padding: 10px 15px; border-radius: 4px; z-index: 1000; max-width: 300px;`;
+                
+                if (type === 'success') {
+                    msg.style.background = '#d4edda';
+                    msg.style.borderLeft = '4px solid #28a745';
+                    msg.style.color = '#155724';
+                } else if (type === 'info') {
+                    msg.style.background = '#d1ecf1';
+                    msg.style.borderLeft = '4px solid #17a2b8';
+                    msg.style.color = '#0c5460';
+                }
+                
+                msg.textContent = message;
+                document.body.appendChild(msg);
+                
+                setTimeout(() => {
+                    msg.remove();
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

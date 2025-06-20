@@ -296,3 +296,134 @@
     min-height: 300px;
 }
 }
+
+/* Estilos para el campo de audio */
+.nm-audio-field {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    margin-top: 10px;
+}
+
+.nm-audio-upload {
+    margin-bottom: 15px;
+}
+
+.nm-audio-upload label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+}
+
+.nm-audio-upload-input {
+    width: 100%;
+    padding: 8px;
+    border: 2px dashed #007cba;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.nm-audio-upload-input:hover {
+    border-color: #005a87;
+}
+
+.nm-audio-preview {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.nm-audio-preview audio {
+    margin-bottom: 10px;
+}
+
+.nm-recorder-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.nm-record-btn, .nm-stop-btn {
+    background-color: #007cba;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.nm-record-btn:hover, .nm-stop-btn:hover {
+    background-color: #005a87;
+}
+
+.nm-record-btn.recording {
+    background-color: #dc3545;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.nm-recording-time {
+    font-family: monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: #dc3545;
+}
+
+.nm-recording-preview {
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.nm-recording-preview audio {
+    margin-bottom: 10px;
+}
+
+.nm-remove-audio, .nm-remove-recording {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nm-remove-audio:hover, .nm-remove-recording:hover {
+    background-color: #c82333;
+}
+
+.nm-audio-field .nm-audio-upload + .nm-audio-recorder {
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+/* Indicador de error */
+.nm-audio-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Indicador de éxito */
+.nm-audio-success {
+    color: #28a745;
+    font-size: 12px;
+    margin-top: 5px;
+}

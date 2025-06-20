@@ -396,3 +396,46 @@
     background: #f1f1f1;
 }
 
+/* Estilos específicos para el campo de audio */
+.nm-form-field[data-type="audio"] .audio-options {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.nm-form-field[data-type="audio"] .audio-options label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.nm-form-field[data-type="audio"] .audio-options input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.nm-form-field[data-type="audio"] .audio-options input[type="number"],
+.nm-form-field[data-type="audio"] .audio-options input[type="text"] {
+    width: 100%;
+    max-width: 200px;
+    padding: 5px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.nm-form-field[data-type="audio"] .audio-options input[type="number"]:focus,
+.nm-form-field[data-type="audio"] .audio-options input[type="text"]:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+}
+
+/* Icono visual para el campo de audio en la lista */
+#nm-form-elements li[data-type="audio"]::before {
+    content: "🎵 ";
+    margin-right: 5px;
+}
+

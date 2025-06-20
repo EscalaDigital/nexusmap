@@ -453,9 +453,7 @@ class NM_Public
             $html_name   = $normalize($orig_name);  // ej: "Imagen_principal"
             $store_key   = 'nm_' . $orig_name;        // mantenemos nombre original en BD
 
-            $already_processed[] = $html_name;        // marcarlo
-
-            /* ---- FILE ---- */
+            $already_processed[] = $html_name;        // marcarlo            /* ---- FILE ---- */
             if (
                 $field['type'] === 'file' && isset($_FILES[$html_name])
                 && $_FILES[$html_name]['error'] === UPLOAD_ERR_OK
@@ -480,6 +478,52 @@ class NM_Public
                 } else {
                     wp_send_json_error('Error al subir "' . esc_html($orig_name) . '": ' . $up['error']);
                     wp_die();
+                }
+            }
+
+            /* ---- AUDIO ---- */
+            elseif ($field['type'] === 'audio') {
+                $audio_data = isset($_POST[$html_name . '_data']) ? $_POST[$html_name . '_data'] : '';
+                
+                if (!empty($audio_data)) {
+                    if (strpos($audio_data, 'upload:') === 0) {
+                        // Manejar archivo subido
+                        if (isset($_FILES[$html_name]) && $_FILES[$html_name]['error'] === UPLOAD_ERR_OK) {
+                            $audio_allowed = array(
+                                'mp3'  => 'audio/mpeg',
+                                'wav'  => 'audio/wav',
+                                'ogg'  => 'audio/ogg',
+                                'flac' => 'audio/flac',
+                                'm4a'  => 'audio/mp4',
+                                'aac'  => 'audio/aac'
+                            );
+
+                            $audio_up = wp_handle_upload($_FILES[$html_name], array(
+                                'test_form' => false,
+                                'mimes'     => $audio_allowed,
+                            ));
+
+                            if ($audio_up && ! isset($audio_up['error'])) {
+                                $form_fields[$store_key] = esc_url_raw(
+                                    str_replace('http://', 'https://', $audio_up['url'])
+                                );
+                            } else {
+                                wp_send_json_error('Error al subir audio "' . esc_html($orig_name) . '": ' . $audio_up['error']);
+                                wp_die();
+                            }
+                        }
+                    } elseif (strpos($audio_data, 'recording:') === 0) {
+                        // Manejar grabación de audio
+                        $base64_data = substr($audio_data, 10); // Remover "recording:" prefix
+                        $audio_result = $this->save_audio_recording($base64_data, $html_name);
+                        
+                        if ($audio_result['success']) {
+                            $form_fields[$store_key] = $audio_result['url'];
+                        } else {
+                            wp_send_json_error('Error al guardar grabación de audio "' . esc_html($orig_name) . '": ' . $audio_result['error']);
+                            wp_die();
+                        }
+                    }
                 }
             }
 
@@ -702,5 +746,56 @@ class NM_Public
         foreach ($fields as $subfield) {
             nm_render_conditional_field($subfield);   // misma función del paso 1
         }        wp_send_json_success(ob_get_clean());
+    }
+
+    /**
+     * Guarda una grabación de audio desde datos base64
+     * 
+     * @param string $base64_data Los datos de audio en base64
+     * @param string $field_name El nombre del campo para generar el nombre de archivo
+     * @return array Array con 'success', 'url' o 'error'
+     */
+    private function save_audio_recording($base64_data, $field_name) {
+        try {
+            // Verificar que tenemos datos válidos
+            if (empty($base64_data) || !preg_match('/^data:audio\/([a-zA-Z0-9]+);base64,(.+)$/', $base64_data, $matches)) {
+                return array('success' => false, 'error' => 'Datos de audio inválidos');
+            }
+            
+            $audio_type = $matches[1]; // wav, mp3, etc.
+            $encoded_data = $matches[2];
+            
+            // Decodificar base64
+            $audio_data = base64_decode($encoded_data);
+            if ($audio_data === false) {
+                return array('success' => false, 'error' => 'Error al decodificar datos de audio');
+            }
+            
+            // Generar nombre de archivo único
+            $upload_dir = wp_upload_dir();
+            $filename = 'audio_' . $field_name . '_' . time() . '.' . $audio_type;
+            $file_path = $upload_dir['path'] . '/' . $filename;
+            $file_url = $upload_dir['url'] . '/' . $filename;
+            
+            // Escribir archivo
+            $bytes_written = file_put_contents($file_path, $audio_data);
+            if ($bytes_written === false) {
+                return array('success' => false, 'error' => 'No se pudo escribir el archivo de audio');
+            }
+            
+            // Verificar que el archivo se creó correctamente
+            if (!file_exists($file_path) || filesize($file_path) === 0) {
+                return array('success' => false, 'error' => 'El archivo de audio no se guardó correctamente');
+            }
+            
+            // Convertir a HTTPS si es necesario
+            $secure_url = str_replace('http://', 'https://', $file_url);
+            
+            return array('success' => true, 'url' => esc_url_raw($secure_url));
+            
+        } catch (Exception $e) {
+            error_log('Error saving audio recording: ' . $e->getMessage());
+            return array('success' => false, 'error' => 'Error interno al guardar grabación');
+        }
     }
 }

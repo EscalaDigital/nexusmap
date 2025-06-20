@@ -990,7 +990,211 @@ jQuery(document).ready(function ($) {
         return unicos;
     }
 
-});
+// ================================
+// FUNCIONALIDAD CAMPO DE AUDIO
+// ================================
+    
+    // Variables globales para el manejo de audio
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingTimer = null;
+    let startTime = null;
+
+    // Inicializar campos de audio
+    function initAudioFields() {
+        $('.nm-audio-field').each(function() {
+            const $field = $(this);
+            const maxDuration = parseInt($field.data('max-duration')) || 300;
+            const acceptedFormats = $field.data('accepted-formats') || 'mp3,wav,ogg';
+            
+            // Manejar carga de archivos
+            $field.find('.nm-audio-upload-input').on('change', function(e) {
+                handleAudioUpload(e, $field, acceptedFormats);
+            });
+            
+            // Manejar grabación
+            $field.find('.nm-record-btn').on('click', function() {
+                startRecording($field, maxDuration);
+            });
+            
+            $field.find('.nm-stop-btn').on('click', function() {
+                stopRecording($field);
+            });
+            
+            // Manejar eliminación de archivos
+            $field.find('.nm-remove-audio').on('click', function() {
+                removeUploadedAudio($field);
+            });
+            
+            $field.find('.nm-remove-recording').on('click', function() {
+                removeRecording($field);
+            });
+        });
+    }    // Manejar carga de archivos de audio
+    function handleAudioUpload(event, $field, acceptedFormats) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validar formato
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const allowedFormats = acceptedFormats.split(',').map(f => f.trim());
+        
+        if (!allowedFormats.includes(fileExtension)) {
+            showAudioError($field, `Formato no permitido. Use: ${acceptedFormats}`);
+            event.target.value = '';
+            return;
+        }
+
+        // Crear URL del archivo para preview
+        const audioURL = URL.createObjectURL(file);
+        const $preview = $field.find('.nm-audio-preview');
+        const $audio = $preview.find('audio');
+        
+        $audio[0].src = audioURL;
+        $preview.show();
+        
+        // Marcar que hay un archivo cargado
+        $field.find('.nm-audio-data').val('upload:' + file.name);
+        
+        // Limpiar grabación si existe
+        $field.find('.nm-recording-preview').hide();
+        
+        showAudioSuccess($field, 'Archivo cargado correctamente');
+    }
+
+    // Iniciar grabación de audio
+    function startRecording($field, maxDuration) {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showAudioError($field, 'La grabación de audio no está soportada en este navegador');
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioURL = URL.createObjectURL(audioBlob);
+                    
+                    const $preview = $field.find('.nm-recording-preview');
+                    const $audio = $preview.find('audio');
+                    
+                    $audio[0].src = audioURL;
+                    $preview.show();
+                    
+                    // Convertir blob a base64 para envío
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        $field.find('.nm-audio-data').val('recording:' + reader.result);
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    
+                    // Limpiar stream
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    showAudioSuccess($field, 'Grabación completada');
+                };
+                
+                mediaRecorder.start();
+                startTime = Date.now();
+                
+                // Actualizar UI
+                $field.find('.nm-record-btn').hide().removeClass('recording');
+                $field.find('.nm-stop-btn').show();
+                $field.find('.nm-recording-time').show();
+                
+                // Iniciar timer visual
+                recordingTimer = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    $field.find('.nm-recording-time').text(
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                    );
+                    
+                    // Detener automáticamente al alcanzar duración máxima
+                    if (elapsed >= maxDuration) {
+                        stopRecording($field);
+                    }
+                }, 1000);
+                
+                showAudioSuccess($field, 'Grabando...');
+            })
+            .catch(err => {
+                console.error('Error accessing microphone:', err);
+                showAudioError($field, 'No se pudo acceder al micrófono');
+            });
+    }
+
+    // Detener grabación
+    function stopRecording($field) {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+        
+        if (recordingTimer) {
+            clearInterval(recordingTimer);
+            recordingTimer = null;
+        }
+        
+        // Restaurar UI
+        $field.find('.nm-record-btn').show();
+        $field.find('.nm-stop-btn').hide();
+        $field.find('.nm-recording-time').hide();
+    }    // Eliminar archivo cargado
+    function removeUploadedAudio($field) {
+        $field.find('.nm-audio-upload-input').val('');
+        $field.find('.nm-audio-preview').hide();
+        
+        // Si no hay grabación, limpiar el campo de datos
+        if ($field.find('.nm-recording-preview').is(':hidden')) {
+            $field.find('.nm-audio-data').val('');
+        }
+        
+        clearAudioMessages($field);
+    }
+
+    // Eliminar grabación
+    function removeRecording($field) {
+        $field.find('.nm-recording-preview').hide();
+        
+        // Si no hay archivo cargado, limpiar el campo de datos
+        if (!$field.find('.nm-audio-upload-input').val()) {
+            $field.find('.nm-audio-data').val('');
+        }
+        
+        clearAudioMessages($field);
+    }
+
+    // Mostrar mensaje de error
+    function showAudioError($field, message) {
+        clearAudioMessages($field);
+        $field.append(`<div class="nm-audio-error">${message}</div>`);
+        setTimeout(() => clearAudioMessages($field), 5000);
+    }
+
+    // Mostrar mensaje de éxito
+    function showAudioSuccess($field, message) {
+        clearAudioMessages($field);
+        $field.append(`<div class="nm-audio-success">${message}</div>`);
+        setTimeout(() => clearAudioMessages($field), 3000);
+    }
+
+    // Limpiar mensajes
+    function clearAudioMessages($field) {
+        $field.find('.nm-audio-error, .nm-audio-success').remove();
+    }
+
+    // Inicializar cuando el documento esté listo
+    $(document).ready(function() {
+        initAudioFields();
+    });
 
 
 
