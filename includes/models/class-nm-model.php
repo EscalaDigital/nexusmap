@@ -213,4 +213,32 @@ class NM_Model {
             array( '%d' )
         );
     }
+
+    /**
+     * Obtener entradas con paginación
+     */
+    public function get_entries_paginated( $limit = 10, $offset = 0, $status = 'approved' ) {
+        global $wpdb;
+        $results = $wpdb->get_results( 
+            $wpdb->prepare( 
+                "SELECT * FROM $this->entries_table WHERE status = %s ORDER BY date_submitted DESC LIMIT %d OFFSET %d", 
+                $status, $limit, $offset 
+            ) 
+        );
+        return $results;
+    }
+
+    /**
+     * Contar el total de entradas por estado
+     */
+    public function count_entries( $status = 'approved' ) {
+        global $wpdb;
+        $count = $wpdb->get_var( 
+            $wpdb->prepare( 
+                "SELECT COUNT(*) FROM $this->entries_table WHERE status = %s", 
+                $status 
+            ) 
+        );
+        return intval($count);
+    }
 }

@@ -32,30 +32,26 @@ class NM_Public
 
         $this->loader->add_action('wp_ajax_nm_get_conditional_fields',  $this, 'get_conditional_fields');
         $this->loader->add_action('wp_ajax_nopriv_nm_get_conditional_fields', $this, 'get_conditional_fields');
-    }
-
-    /**
+    }    /**
      * Register shortcodes
      */
     public function register_shortcodes()
     {
         add_shortcode('nm_map', array($this, 'display_main_map'));
         add_shortcode('nm_form', array($this, 'display_custom_form'));
+        add_shortcode('nm_entries_list', array($this, 'display_entries_list'));
     }
 
 
     /**
      * Enqueue public assets
-     */
-    public function enqueue_public_assets()
+     */    public function enqueue_public_assets()
     {
         global $post;
 
         // Enqueue styles that are needed in both cases
         wp_enqueue_style('nm-public-css', NM_PLUGIN_URL . 'public/css/public.css', array(), NM_VERSION);
-        wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-
-        // Obtener el tema seleccionado de las opciones y cargarlo
+        wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');        // Obtener el tema seleccionado de las opciones y cargarlo
         $selected_theme = get_option('nm_selected_theme', 'default');
         // Cargar el CSS del tema seleccionado después del CSS base
         if ($selected_theme === 'default') {
@@ -64,9 +60,17 @@ class NM_Public
             wp_enqueue_style('nm-theme-css', NM_PLUGIN_URL . 'public/css/themes/theme' . $selected_theme . '.css', array('nm-public-css'), NM_VERSION);
         }
 
+        // Always load entries list CSS (it's lightweight)
+        wp_enqueue_style('nm-entries-list-css', NM_PLUGIN_URL . 'public/css/entries-list.css', array('nm-public-css'), NM_VERSION);
+
+        // Check if we have post content to check for shortcodes
+        $post_content = '';
+        if (is_object($post) && isset($post->post_content)) {
+            $post_content = $post->post_content;
+        }
 
         // Check if the [nm_map] shortcode is used in the content
-        if (has_shortcode($post->post_content, 'nm_map')) {
+        if (has_shortcode($post_content, 'nm_map')) {
             // Enqueue Leaflet CSS and JS
             // wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
             //   wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);
@@ -112,9 +116,10 @@ class NM_Public
             ));
             
             // Para gráficos Chart.js
-            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
-        }        // Check if the [nm_form] shortcode is used in the content
-        if (has_shortcode($post->post_content, 'nm_form')) {
+            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);        }        
+
+        // Check if the [nm_form] shortcode is used in the content
+        if (has_shortcode($post_content, 'nm_form')) {
             // Enqueue Leaflet CSS and JS
             wp_enqueue_style('nm-leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
             wp_enqueue_script('nm-leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), '1.7.1', true);            // Enqueue Leaflet Draw CSS and JS
@@ -213,10 +218,147 @@ class NM_Public
             // If A/B option is not enabled, retrieve the single form
             $form_data = $this->model->get_form(0); // form_type = 0
 
-            // Include the single form view
-            ob_start();
+            // Include the single form view            ob_start();
             include NM_PLUGIN_DIR . 'public/views/form-display.php';
             return ob_get_clean();
+        }
+    }    /**
+     * Display entries list shortcode
+     */
+    public function display_entries_list($atts)
+    {
+        // Verificar si el modelo existe
+        if (!$this->model) {
+            return '<div style="border: 1px solid red; padding: 10px;">Error: Modelo no encontrado</div>';
+        }        // Extract attributes and set defaults
+        $atts = shortcode_atts(array(
+            'per_page' => 10,
+            'show_pagination' => 'true',
+            'show_title' => 'true',
+            'show_image' => 'true',
+            'show_category' => 'true',
+            'show_date' => 'true'
+        ), $atts, 'nm_entries_list');
+
+        $per_page = intval($atts['per_page']);
+        $status = 'approved'; // Solo entradas aprobadas
+        $show_pagination = ($atts['show_pagination'] === 'true');
+        $show_title = ($atts['show_title'] === 'true');
+        $show_image = ($atts['show_image'] === 'true');
+        $show_category = ($atts['show_category'] === 'true');
+        $show_date = ($atts['show_date'] === 'true');
+
+        // Get current page
+        $current_page = isset($_GET['entries_page']) ? max(1, intval($_GET['entries_page'])) : 1;
+        $offset = ($current_page - 1) * $per_page;
+
+        try {
+            // Get entries
+            $entries = $this->model->get_entries_paginated($per_page, $offset, $status);
+            $total_entries = $this->model->count_entries($status);
+            $total_pages = ceil($total_entries / $per_page);
+
+            // Generate output
+            ob_start();
+            ?>
+            <div class="nm-entries-list-container">
+                <?php if (!empty($entries)): ?>
+                    <div class="nm-entries-grid">
+                        <?php foreach ($entries as $entry): ?>
+                            <?php 
+                            $entry_data = json_decode($entry->entry_data, true);
+                            $title = $this->get_entry_field_value($entry_data, 'title', 'Conflicto');
+                            $image_url = $this->get_entry_image_url($entry_data);
+                            $category = $this->get_entry_field_value($entry_data, 'category', '');
+                            $date = date('d/m/Y', strtotime($entry->date_submitted));
+                            ?>
+                            <div class="nm-entry-card" data-category="<?php echo esc_attr($category); ?>">
+                                <?php if ($show_image): ?>
+                                    <div class="nm-entry-image <?php echo $image_url ? '' : 'no-image'; ?>">
+                                        <?php if ($image_url): ?>
+                                            <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($title); ?>">
+                                        <?php else: ?>
+                                            <div class="nm-placeholder-icon">📷</div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="nm-entry-content">
+                                    <?php if ($show_title): ?>
+                                        <h3 class="nm-entry-title"><?php echo esc_html($title); ?></h3>
+                                    <?php endif; ?>
+                                    <?php if ($show_category && $category): ?>
+                                        <div class="nm-entry-category">
+                                            <span class="nm-category-badge"><?php echo esc_html($category); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($show_date): ?>
+                                        <div class="nm-entry-date"><?php echo esc_html($date); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($show_pagination && $total_pages > 1): ?>
+                        <div class="nm-entries-pagination">
+                            <?php
+                            $base_url = remove_query_arg('entries_page');
+                            
+                            // Previous page
+                            if ($current_page > 1): ?>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', $current_page - 1, $base_url)); ?>" 
+                                   class="nm-page-link nm-prev">← Anterior</a>
+                            <?php endif;
+
+                            // Page numbers (limitamos a mostrar solo algunas páginas)
+                            $start_page = max(1, $current_page - 2);
+                            $end_page = min($total_pages, $current_page + 2);
+                            
+                            // Primera página si no está en el rango
+                            if ($start_page > 1): ?>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', 1, $base_url)); ?>" 
+                                   class="nm-page-link">1</a>
+                                <?php if ($start_page > 2): ?>
+                                    <span class="nm-page-dots">...</span>
+                                <?php endif;
+                            endif;
+
+                            // Páginas en el rango
+                            for ($i = $start_page; $i <= $end_page; $i++):
+                                if ($i == $current_page): ?>
+                                    <span class="nm-page-link nm-current"><?php echo $i; ?></span>
+                                <?php else: ?>
+                                    <a href="<?php echo esc_url(add_query_arg('entries_page', $i, $base_url)); ?>" 
+                                       class="nm-page-link"><?php echo $i; ?></a>
+                                <?php endif;
+                            endfor;
+
+                            // Última página si no está en el rango
+                            if ($end_page < $total_pages): ?>
+                                <?php if ($end_page < $total_pages - 1): ?>
+                                    <span class="nm-page-dots">...</span>
+                                <?php endif; ?>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', $total_pages, $base_url)); ?>" 
+                                   class="nm-page-link"><?php echo $total_pages; ?></a>
+                            <?php endif;
+
+                            // Next page
+                            if ($current_page < $total_pages): ?>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', $current_page + 1, $base_url)); ?>" 
+                                   class="nm-page-link nm-next">Siguiente →</a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>                <?php else: ?>
+                    <div class="nm-no-entries">
+                        <p>No se encontraron entradas aprobadas.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <?php
+            return ob_get_clean();
+            
+        } catch (Exception $e) {
+            return '<div style="border: 1px solid red; padding: 10px;">Error: ' . esc_html($e->getMessage()) . '</div>';
         }
     }
 
@@ -843,5 +985,53 @@ class NM_Public
             error_log('Error saving audio recording: ' . $e->getMessage());
             return array('success' => false, 'error' => 'Error interno al guardar grabación');
         }
+    }
+
+    /**
+     * Helper function to get field value from entry data
+     */
+    private function get_entry_field_value($entry_data, $field_name, $default = '') {
+        if (isset($entry_data[$field_name])) {
+            return $entry_data[$field_name];
+        }
+        
+        // Look for field by name in nested structure
+        if (isset($entry_data['fields'])) {
+            foreach ($entry_data['fields'] as $field) {
+                if (isset($field['name']) && $field['name'] === $field_name && isset($field['value'])) {
+                    return $field['value'];
+                }
+            }
+        }
+        
+        return $default;
+    }
+
+    /**
+     * Helper function to get image URL from entry data
+     */
+    private function get_entry_image_url($entry_data) {
+        // Look for image field
+        $image_fields = ['image', 'foto', 'imagen', 'picture'];
+        
+        foreach ($image_fields as $field_name) {
+            $image_value = $this->get_entry_field_value($entry_data, $field_name);
+            if (!empty($image_value)) {
+                // If it's already a URL, return it
+                if (filter_var($image_value, FILTER_VALIDATE_URL)) {
+                    return $image_value;
+                }
+                // If it's an attachment ID, get the URL
+                if (is_numeric($image_value)) {
+                    $url = wp_get_attachment_url(intval($image_value));
+                    if ($url) {
+                        return $url;
+                    }
+                }
+            }
+        }
+        
+        // Return null if no image found (will be handled in the template)
+        return null;
     }
 }

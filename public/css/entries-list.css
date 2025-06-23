@@ -1,0 +1,255 @@
+/* Estilos para el listado de entradas de NexusMap */
+
+.nm-entries-list-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.nm-entries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.nm-entry-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e1e5e9;
+}
+
+.nm-entry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.nm-entry-image {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.nm-entry-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.nm-entry-card:hover .nm-entry-image img {
+    transform: scale(1.05);
+}
+
+.nm-entry-image.no-image {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.nm-placeholder-icon {
+    font-size: 48px;
+    opacity: 0.7;
+}
+
+.nm-entry-content {
+    padding: 16px;
+}
+
+.nm-entry-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+    min-height: 40px;    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.nm-entry-category {
+    margin-bottom: 8px;
+}
+
+.nm-category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Colores para diferentes categorías */
+.nm-category-badge {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+/* Colores específicos basados en el contenido */
+.nm-entry-card[data-category*="contaminación"] .nm-category-badge,
+.nm-entry-card[data-category*="Contaminación"] .nm-category-badge {
+    background-color: #3f51b5;
+    color: white;
+}
+
+.nm-entry-card[data-category*="regulación"] .nm-category-badge,
+.nm-entry-card[data-category*="alteración"] .nm-category-badge,
+.nm-entry-card[data-category*="morfológicas"] .nm-category-badge {
+    background-color: #4caf50;
+    color: white;
+}
+
+.nm-entry-card[data-category*="abastecimiento"] .nm-category-badge,
+.nm-entry-card[data-category*="servicios"] .nm-category-badge {
+    background-color: #ff9800;
+    color: white;
+}
+
+.nm-entry-card[data-category*="suelo"] .nm-category-badge {
+    background-color: #795548;
+    color: white;
+}
+
+.nm-entry-date {
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+}
+
+/* Paginación */
+.nm-entries-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.nm-page-link {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 2px;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.nm-page-link:hover {
+    background-color: #f5f5f5;
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.nm-page-link.nm-current {
+    background-color: #0073aa;
+    color: white;
+    border-color: #0073aa;
+    font-weight: 600;
+}
+
+.nm-page-link.nm-prev,
+.nm-page-link.nm-next {
+    font-weight: 600;
+}
+
+.nm-page-dots {
+    display: inline-block;
+    padding: 8px 4px;
+    color: #999;
+    font-weight: bold;
+}
+
+/* Mensaje cuando no hay entradas */
+.nm-no-entries {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.nm-no-entries p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nm-entries-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    .nm-entry-card {
+        margin-bottom: 15px;
+    }
+    
+    .nm-entries-pagination {
+        gap: 4px;
+    }
+    
+    .nm-page-link {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nm-entries-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .nm-entries-list-container {
+        padding: 15px 10px;
+    }
+}
+
+/* Animaciones de carga */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nm-entry-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Efectos hover mejorados */
+.nm-entry-card {
+    cursor: pointer;
+}
+
+.nm-entry-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+}
+
+.nm-entry-card:hover::before {
+    left: 100%;
+}
