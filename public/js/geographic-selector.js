@@ -30,8 +30,6 @@
             dataType: 'json'
         });
     }    $(document).ready(function() {
-        console.log('NexusMap Geographic Selector: Document ready, initializing...');
-        
         // Wait a bit for the page to fully load
         setTimeout(function() {
             initializeGeographicSelectors();
@@ -39,15 +37,11 @@
     });
 
     function initializeGeographicSelectors() {
-        console.log('Looking for .nm-geographic-selector elements...');
         const $selectors = $('.nm-geographic-selector');
-        console.log('Found', $selectors.length, 'geographic selector(s)');
         
         $selectors.each(function() {
             const $container = $(this);
-            console.log('Processing geographic selector:', $container.attr('id'));
             const config = getFieldConfig($container);
-            console.log('Config for selector:', config);
             
             if (config) {
                 setupCascadingSelects($container, config);
@@ -58,26 +52,17 @@
     }    function getFieldConfig($container) {
         try {
             const configData = $container.data('config');
-            console.log('Raw config data:', configData);
-            console.log('Config data type:', typeof configData);
             
             const result = configData ? (typeof configData === 'string' ? JSON.parse(configData) : configData) : null;
-            console.log('Parsed config result:', result);
             return result;
         } catch (e) {
             console.error('Error parsing geographic selector config:', e);
             return null;
         }
     }    function setupCascadingSelects($container, config) {
-        console.log('Setting up cascading selects with config:', config);
-        
         const levels = config.levels || [];
         const fieldNames = config.field_names || {};
         const country = config.country;
-
-        console.log('Levels:', levels);
-        console.log('Field names:', fieldNames);
-        console.log('Country:', country);
 
         // Check if GeoNames is configured via AJAX (secure way)
         checkGeonamesConfig(function(isConfigured) {

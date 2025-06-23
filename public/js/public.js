@@ -264,8 +264,6 @@ jQuery(document).ready(function ($) {
                 const field = $button.data('field');
                 const value = String($button.data('value')); // Convertir siempre a string
 
-                console.log('Filtro clickeado - Campo:', field, 'Valor:', value, 'Tipo:', typeof value);
-
                 $button.toggleClass('active');
 
                 if (!activeFilters[field]) {
@@ -278,10 +276,8 @@ jQuery(document).ready(function ($) {
                     activeFilters[field].delete(value);
                     if (activeFilters[field].size === 0) {
                         delete activeFilters[field];
-                    }
-                }
+                    }                }
 
-                console.log('activeFilters después del click:', activeFilters);
                 updateVisiblePoints(activeFilters);
             });
 
@@ -291,16 +287,11 @@ jQuery(document).ready(function ($) {
 
 
         function updateVisiblePoints(activeFilters) {
-            console.log('=== DEBUG updateVisiblePoints ===');
-            console.log('Active Filters:', activeFilters);
-
             let visibleCount = 0;
 
             // Limpiar el contenido de todos los LayerGroup definidos en la variable global 'overlays'
             for (const overlayName in overlays) {
-                if (overlays.hasOwnProperty(overlayName)) {
-                    const layerGroup = overlays[overlayName];
-                    console.log(`Limpiando LayerGroup: ${overlayName}`, layerGroup);
+                if (overlays.hasOwnProperty(overlayName)) {                    const layerGroup = overlays[overlayName];
                     if (layerGroup && typeof layerGroup.clearLayers === 'function') {
                         layerGroup.clearLayers();
                     }
@@ -310,25 +301,18 @@ jQuery(document).ready(function ($) {
             // Recorrer todos los marcadores guardados
             allMarkers.forEach(function (marker) {
                 let isVisibleByFilter = true;
-                console.log('Procesando marcador:', marker);
-                console.log('Propiedades del marcador:', marker.feature.properties);
 
                 for (const field in activeFilters) {
                     if (activeFilters[field].size > 0) {
                         const fieldName = 'nm_' + field;
-                        const fieldValue = marker.feature.properties[fieldName];
-                        console.log(`Campo: ${fieldName}, Valor: ${fieldValue}, Filtro Activo:`, activeFilters[field]);
-
-                        if (!fieldValue || !activeFilters[field].has(String(fieldValue))) {
+                        const fieldValue = marker.feature.properties[fieldName];                        if (!fieldValue || !activeFilters[field].has(String(fieldValue))) {
                             isVisibleByFilter = false;
-                            console.log(`Marcador filtrado por campo: ${fieldName}`);
                             break;
                         }
                     }
                 }
 
                 if (isVisibleByFilter && marker.originalLayerGroup) {
-                    console.log('Marcador visible, añadiendo a su grupo original:', marker);
                     marker.originalLayerGroup.addLayer(marker);
 
                     if (map.hasLayer(marker.originalLayerGroup)) {
@@ -339,8 +323,6 @@ jQuery(document).ready(function ($) {
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
             }
-
-            console.log('Total de puntos visibles:', visibleCount);
 
             // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
             const chartsModal = jQuery('#nm-charts-modal');
@@ -354,22 +336,12 @@ jQuery(document).ready(function ($) {
         }
 
         // Llamar a la función después de inicializar el mapa
-        createFilterPanel();
-
-
-        // Load points via AJAX
+        createFilterPanel();        // Load points via AJAX
         $.post(nmMapData.ajax_url, {
             action: 'nm_get_map_points',
             nonce: nmMapData.nonce
         }, function (response) {
-            console.log('Response received:', response);
             const textLayerName = nmMapData.text_layer_name || 'Capas de Texto';
-
-            // Agregar logs para depurar los datos iniciales que recibe el mapa
-            console.log('=== DEBUG Datos iniciales del mapa ===');
-            console.log('Response completo:', response);
-            console.log('Features:', response.features);
-            console.log('Layer Settings:', response.layer_settings);
 
             if (response && response.features) {
                 var layerGroups = {};
@@ -389,13 +361,8 @@ jQuery(document).ready(function ($) {
                         if (layerConfig.type !== 'text') {
                             layerGroups[layerConfig.field] = L.layerGroup();
                         }
-                    });
-
-                    // Procesar cada feature
+                    });                    // Procesar cada feature
                     response.features.forEach(function (feature) {
-                        console.log('Procesando feature:', feature);
-                        console.log('Propiedades del feature:', feature.properties);
-                        console.log('Geometría del feature:', feature.geometry);
 
                         // Si el feature tiene capas de texto o textarea
                         if (feature.properties && feature.properties.text_layers) {

@@ -118,13 +118,6 @@ function performSearch(query) {
  */
 function showModal(properties) {
     /* ----------  Preparación y utilidades ---------- */
-    
-    console.log('=== DEBUG showModal ===');
-    console.log('Properties recibidas:', properties);
-    console.log('nmFormStructure disponible:', typeof nmFormStructure !== 'undefined');
-    if (typeof nmFormStructure !== 'undefined') {
-        console.log('nmFormStructure:', nmFormStructure);
-    }
 
     //Limpiar escapes excesivos
     const cleanValue = (value) => {
@@ -204,20 +197,15 @@ function showModal(properties) {
     const sectionContent = {};     // { "Nombre sección": [html, html...] }
 
     if (nmFormStructure && nmFormStructure.fields) {
-        console.log('=== Procesando campos del formulario ===');
-        console.log('Número de campos:', nmFormStructure.fields.length);
-        
+      
         nmFormStructure.fields.forEach((field, index) => {
-            console.log(`Campo ${index}:`, field);            // --- Cabecera -> abre nueva sección --------------------
+            // --- Cabecera -> abre nueva sección --------------------
             if (field.type === 'header') {
-                console.log('Campo header encontrado:', field.label);
                 currentSection = field.label || 'Sección';
                 sectionContent[currentSection] = [];
                 return;
             }            // --- Campo geographic-selector (manejo especial) -------------
             if (field.type === 'geographic-selector') {
-                console.log('=== Campo geographic-selector encontrado ===');
-                console.log('Field:', field);
                 
                 let geoHtml = `<div class="nm-geographic-selector-group">
                                 <h4 class="nm-geographic-title">${cleanValue(field.label)}</h4>`;
@@ -226,20 +214,15 @@ function showModal(properties) {
                 
                 // Buscar automáticamente niveles geográficos comunes
                 const commonLevels = ['admin1', 'admin2', 'admin3', 'admin4'];
-                
-                // Si el campo tiene config, usar esa configuración
+                  // Si el campo tiene config, usar esa configuración
                 if (field.config && field.config.levels && field.config.field_names) {
-                    console.log('Usando configuración del campo:', field.config);
                     field.config.levels.forEach((level) => {
                         const levelKey = `nm_${level}`;
                         const levelValue = properties[levelKey];
                         
-                        console.log(`Buscando ${levelKey}:`, levelValue);
-                        
                         if (levelValue) {
                             hasValues = true;
                             const levelLabel = field.config.field_names[level] || level;
-                            console.log(`Agregando ${levelLabel}: ${levelValue}`);
                             geoHtml += `<p class="nm-modal-field nm-geographic-field">
                                             <strong>${cleanValue(levelLabel)}:</strong> ${cleanValue(levelValue)}
                                         </p>`;
@@ -247,34 +230,23 @@ function showModal(properties) {
                     });
                 } else {
                     // Buscar automáticamente por niveles comunes
-                    console.log('No hay config, buscando niveles automáticamente');
                     commonLevels.forEach((level, index) => {
                         const levelKey = `nm_${level}`;
                         const levelValue = properties[levelKey];
                         
-                        console.log(`Buscando ${levelKey}:`, levelValue);
-                        
                         if (levelValue) {
                             hasValues = true;
                             const levelLabel = `Nivel ${index + 1}`;
-                            console.log(`Agregando ${levelLabel}: ${levelValue}`);
                             geoHtml += `<p class="nm-modal-field nm-geographic-field">
                                             <strong>${cleanValue(levelLabel)}:</strong> ${cleanValue(levelValue)}
                                         </p>`;
                         }
-                    });                }
-                
-                geoHtml += '</div>';
-                
-                console.log('hasValues:', hasValues);
-                console.log('HTML generado:', geoHtml);
-                
-                // Solo agregar si tiene valores
+                    });
+                }
+                  geoHtml += '</div>';
+                  // Solo agregar si tiene valores
                 if (hasValues) {
                     (sectionContent[currentSection] ||= []).push(geoHtml);
-                    console.log('HTML agregado a sección:', currentSection);
-                } else {
-                    console.log('No se agregó HTML - sin valores');
                 }
                 return;
             }
@@ -359,16 +331,13 @@ function showModal(properties) {
             if (['layers', 'has_layer', 'text_layers', 'entry_id'].includes(key)) continue;
             const label = getFieldLabel(key);
             sectionContent[''].push(renderField(label, value));
-        }    }
+        }
+    }
 
     /* ----------  Construir el HTML final del modal ---------- */
 
-    console.log('=== Construyendo HTML final ===');
-    console.log('sectionContent:', sectionContent);
-
     let modalHtml = '<div class="nm-modal-content">';
     Object.entries(sectionContent).forEach(([secName, items]) => {
-        console.log(`Sección "${secName}" con ${items.length} items:`, items);
         if (!items.length) return;
         modalHtml += `
             <div class="nm-modal-section">
@@ -377,22 +346,20 @@ function showModal(properties) {
             </div>`;
     });
     modalHtml += '</div>';
-    
-    console.log('HTML final del modal:', modalHtml);
 
     /* ----------  Crear o refrescar el modal en el DOM ---------- */
 
     const $map = jQuery('#nm-main-map');
-    let $modal = jQuery('#nm-modal');
-
-    if ($modal.length === 0) {
+    let $modal = jQuery('#nm-modal');    if ($modal.length === 0) {
         $modal = jQuery(`
             <div id="nm-modal" class="nm-modal">
                 <span id="nm-modal-close" class="nm-modal-close">&times;</span>
                 <div id="nm-modal-body"></div>
             </div>`);
         $map.append($modal);
-    }    // Mostrar contenido y animar
+    }
+
+    // Mostrar contenido y animar
     jQuery('#nm-modal-body').html(modalHtml);
     $modal.css('display', 'block');
     void $modal[0].offsetWidth; // forzar reflow
@@ -401,13 +368,13 @@ function showModal(properties) {
     // Inicializar reproductores de audio si los hay
     setTimeout(() => {
         initializeAudioPlayers();
-    }, 100);
-
-    /* ----------  Cierre del modal (click X o exterior) ---------- */
+    }, 100);    /* ----------  Cierre del modal (click X o exterior) ---------- */
     jQuery('#nm-modal-close').off('click').on('click', closeModal);
     jQuery(window).off('click.modal').on('click.modal', (e) => {
         if (jQuery(e.target).is('#nm-modal')) closeModal();
-    });    function closeModal() {
+    });
+
+    function closeModal() {
         // Pausar todos los audios antes de cerrar el modal
         jQuery('.nm-audio-element').each(function() {
             if (!this.paused) {
@@ -638,12 +605,9 @@ function initializeAudioPlayers() {
         const $audio = jQuery(audio);
         const $container = $audio.closest('.nm-audio-player');
         
-        console.log('Inicializando reproductor de audio:', audio.src);
-        
         // Event listener para cuando se carga la metadata del audio
         audio.addEventListener('loadedmetadata', function() {
             $audio.removeAttr('data-loading');
-            console.log('Audio metadata cargada correctamente:', audio.src);
             // Remover cualquier mensaje de error anterior
             $container.find('.nm-audio-error').remove();
         });
@@ -682,21 +646,17 @@ function initializeAudioPlayers() {
                 </div>
             `);
         });
-        
-        // Event listener para cuando el audio puede empezar a reproducirse
+          // Event listener para cuando el audio puede empezar a reproducirse
         audio.addEventListener('canplay', function() {
             $audio.removeAttr('data-loading');
-            console.log('Audio listo para reproducir:', audio.src);
         });
         
         // Event listener para cuando comienza a cargar
         audio.addEventListener('loadstart', function() {
-            console.log('Iniciando carga de audio:', audio.src);
         });
         
         // Event listener para progreso de carga
         audio.addEventListener('progress', function() {
-            console.log('Progreso de carga de audio:', audio.src);
         });
         
         // Marcar como cargando inicialmente
