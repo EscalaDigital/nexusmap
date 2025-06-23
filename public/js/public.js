@@ -335,13 +335,13 @@ jQuery(document).ready(function ($) {
                         visibleCount++;
                     }
                 }
-            });            const pointsCountElement = document.getElementById('nm-points-count');
+            }); const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
             }
 
             console.log('Total de puntos visibles:', visibleCount);
-            
+
             // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
             const chartsModal = jQuery('#nm-charts-modal');
             if (chartsModal.length && chartsModal.hasClass('active')) {
@@ -602,8 +602,8 @@ jQuery(document).ready(function ($) {
 
             // Log adicional para debug
             if (jqXHR.status === 403) {
-                
-                  console.error('Error 403: Verificar permisos y nonce');
+
+                console.error('Error 403: Verificar permisos y nonce');
                 console.error('Nonce being sent:', nmMapData.nonce);
             }
         });        // Botón para ver gráficos
@@ -660,7 +660,7 @@ jQuery(document).ready(function ($) {
                 $modal.hide();
             }, 300);
         });
-    }    function processCharts(features) {
+    } function processCharts(features) {
         const chartsContainer = document.getElementById('nm-charts-container');
         chartsContainer.innerHTML = '';
 
@@ -668,19 +668,19 @@ jQuery(document).ready(function ($) {
         const totalMarkers = allMarkers.length;
         const visibleMarkers = getVisibleMarkers().length;
         const isFiltered = visibleMarkers < totalMarkers;
-        
+
         if (isFiltered) {
             // Buscar si ya existe un indicador y eliminarlo
             const existingIndicator = document.querySelector('.nm-filter-indicator');
             if (existingIndicator) {
                 existingIndicator.remove();
             }
-            
+
             const filterIndicator = document.createElement('div');
             filterIndicator.className = 'nm-filter-indicator';
             filterIndicator.style.cssText = 'background: #e3f2fd; border: 1px solid #1976d2; border-radius: 4px; padding: 10px; margin-bottom: 20px; text-align: center; color: #1976d2; font-weight: bold; width: 100%; box-sizing: border-box;';
             filterIndicator.innerHTML = `📊 Mostrando gráficos filtrados: ${visibleMarkers} de ${totalMarkers} puntos`;
-            
+
             // Insertar ANTES del contenedor de gráficos
             chartsContainer.parentNode.insertBefore(filterIndicator, chartsContainer);
         } else {
@@ -952,16 +952,16 @@ jQuery(document).ready(function ($) {
      */
     function getVisibleMarkers() {
         const visibleMarkers = [];
-        
+
         allMarkers.forEach(marker => {
             // Verificar si el marcador está en su grupo original y ese grupo está en el mapa
-            if (marker.originalLayerGroup && 
-                marker.originalLayerGroup.hasLayer(marker) && 
+            if (marker.originalLayerGroup &&
+                marker.originalLayerGroup.hasLayer(marker) &&
                 map.hasLayer(marker.originalLayerGroup)) {
                 visibleMarkers.push(marker);
             }
         });
-        
+
         return visibleMarkers;
     }
 
@@ -990,25 +990,25 @@ jQuery(document).ready(function ($) {
         return unicos;
     }
 
-// ================================
-// FUNCIONALIDAD CAMPO DE AUDIO
-// ================================
+    // ================================
+    // FUNCIONALIDAD CAMPO DE AUDIO
+    // ================================
     // MANEJO SIMPLIFICADO DE CAMPOS DE AUDIO
     // Solo permite subida de archivos
     // ================================
-    
+
     // Inicializar campos de audio
     function initAudioFields() {
-        $('.nm-audio-field').each(function() {
+        $('.nm-audio-field').each(function () {
             const $field = $(this);
-            
+
             // Manejar carga de archivos
-            $field.find('.nm-audio-upload-input').on('change', function(e) {
+            $field.find('.nm-audio-upload-input').on('change', function (e) {
                 handleAudioUpload(e, $field);
             });
-            
+
             // Manejar eliminación de archivos
-            $field.find('.nm-remove-audio').on('click', function() {
+            $field.find('.nm-remove-audio').on('click', function () {
                 removeUploadedAudio($field);
             });
         });
@@ -1026,7 +1026,7 @@ jQuery(document).ready(function ($) {
         // Validar formato
         const fileExtension = file.name.split('.').pop().toLowerCase();
         const allowedFormats = ['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'];
-        
+
         if (!allowedFormats.includes(fileExtension)) {
             showAudioError($field, `Formato no permitido. Use: ${allowedFormats.join(', ')}`);
             event.target.value = '';
@@ -1038,13 +1038,13 @@ jQuery(document).ready(function ($) {
         const audioURL = URL.createObjectURL(file);
         const $preview = $field.find('.nm-audio-preview');
         const $audio = $preview.find('audio');
-        
+
         $audio[0].src = audioURL;
         $preview.show();
-        
+
         // Marcar que hay un archivo cargado en el campo hidden
         $field.find('.nm-audio-data').val('upload:' + file.name);
-        
+
         showAudioSuccess($field, 'Archivo cargado correctamente');
     }
 
@@ -1053,7 +1053,7 @@ jQuery(document).ready(function ($) {
         $field.find('.nm-audio-upload-input').val('');
         $field.find('.nm-audio-preview').hide();
         $field.find('.nm-audio-data').val('');
-        
+
         clearAudioMessages($field);
     }
 
@@ -1077,14 +1077,8 @@ jQuery(document).ready(function ($) {
     }
 
     // Inicializar cuando el documento esté listo
-    $(document).ready(function() {
+
         initAudioFields();
-    });
 
 
-
-
-
-
-
-
+});
