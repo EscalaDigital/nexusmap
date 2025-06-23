@@ -163,14 +163,23 @@ function showModal(properties) {
         // Limpiar el valor antes de procesarlo
         const cleanedValue = cleanValue(value);
         const cleanedLabel = cleanValue(label);
-        
-        // Archivos / URLs
+          // Archivos / URLs
         if (isValidURL(cleanedValue) && isFile(cleanedValue)) {
             const ext = getFileExtension(cleanedValue).toLowerCase();
             if (isImage(ext)) {
                 return `<p class="nm-modal-field ${extraClass}">
                             <strong>${cleanedLabel}:</strong><br>
                             <img src="${cleanedValue}" alt="${cleanedLabel}" style="max-width:100%;height:auto;">
+                        </p>`;
+            }            if (isAudio(ext)) {
+                return `<p class="nm-modal-field ${extraClass}">
+                            <strong>${cleanedLabel}:</strong><br>
+                            <div class="nm-audio-player">
+                                <audio controls preload="metadata" class="nm-audio-element">
+                                    <source src="${cleanedValue}" type="audio/${ext}">
+                                    Tu navegador no soporta la reproducción de audio.
+                                </audio>
+                            </div>
                         </p>`;
             }
             if (ext === 'pdf') {
@@ -383,21 +392,29 @@ function showModal(properties) {
                 <div id="nm-modal-body"></div>
             </div>`);
         $map.append($modal);
-    }
-
-    // Mostrar contenido y animar
+    }    // Mostrar contenido y animar
     jQuery('#nm-modal-body').html(modalHtml);
     $modal.css('display', 'block');
     void $modal[0].offsetWidth; // forzar reflow
     $modal.addClass('active');
 
+    // Inicializar reproductores de audio si los hay
+    setTimeout(() => {
+        initializeAudioPlayers();
+    }, 100);
+
     /* ----------  Cierre del modal (click X o exterior) ---------- */
     jQuery('#nm-modal-close').off('click').on('click', closeModal);
     jQuery(window).off('click.modal').on('click.modal', (e) => {
         if (jQuery(e.target).is('#nm-modal')) closeModal();
-    });
-
-    function closeModal() {
+    });    function closeModal() {
+        // Pausar todos los audios antes de cerrar el modal
+        jQuery('.nm-audio-element').each(function() {
+            if (!this.paused) {
+                this.pause();
+            }
+        });
+        
         $modal.removeClass('active');
         setTimeout(() => $modal.css('display', 'none'), 300);
     }
@@ -576,6 +593,16 @@ function isImage(extension) {
 }
 
 /**
+ * Verifica si una extensión corresponde a un formato de audio
+ * @param {string} extension - La extensión a verificar
+ * @returns {boolean} - true si es un archivo de audio, false en caso contrario
+ */
+function isAudio(extension) {
+    var audioExtensions = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'mp4', 'webm'];
+    return audioExtensions.includes(extension.toLowerCase());
+}
+
+/**
  * Sistema de caché para las etiquetas de los campos del formulario
  * Almacena y recupera las etiquetas para evitar procesarlas múltiples veces
  */
@@ -599,6 +626,85 @@ function getFieldLabel(field) {
     // Soporta tanto 'field' como 'nm_field'
     var key = field.startsWith('nm_') ? field : 'nm_' + field;
     return fieldLabels[key] || field.replace(/^nm_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Inicializa los reproductores de audio en el modal
+ * Añade event listeners y funcionalidades adicionales a los elementos de audio
+ */
+function initializeAudioPlayers() {
+    jQuery('.nm-audio-element').each(function() {
+        const audio = this;
+        const $audio = jQuery(audio);
+        const $container = $audio.closest('.nm-audio-player');
+        
+        console.log('Inicializando reproductor de audio:', audio.src);
+        
+        // Event listener para cuando se carga la metadata del audio
+        audio.addEventListener('loadedmetadata', function() {
+            $audio.removeAttr('data-loading');
+            console.log('Audio metadata cargada correctamente:', audio.src);
+            // Remover cualquier mensaje de error anterior
+            $container.find('.nm-audio-error').remove();
+        });
+        
+        // Event listener para errores de carga
+        audio.addEventListener('error', function(e) {
+            $audio.removeAttr('data-loading');
+            console.error('Error cargando audio:', audio.src, e);
+            
+            // Remover errores anteriores
+            $container.find('.nm-audio-error').remove();
+            
+            // Mostrar mensaje de error específico
+            let errorMessage = 'Error al cargar el archivo de audio';
+            if (audio.error) {
+                switch(audio.error.code) {
+                    case audio.error.MEDIA_ERR_ABORTED:
+                        errorMessage = 'Reproducción de audio cancelada por el usuario';
+                        break;
+                    case audio.error.MEDIA_ERR_NETWORK:
+                        errorMessage = 'Error de red al cargar el audio. Verifica la URL y tu conexión.';
+                        break;
+                    case audio.error.MEDIA_ERR_DECODE:
+                        errorMessage = 'Error al decodificar el archivo de audio';
+                        break;
+                    case audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        errorMessage = 'Formato de audio no soportado o archivo no encontrado';
+                        break;
+                }
+            }
+            
+            $container.append(`
+                <div class="nm-audio-error">
+                    ${errorMessage}
+                    <br><small>URL: ${audio.src}</small>
+                </div>
+            `);
+        });
+        
+        // Event listener para cuando el audio puede empezar a reproducirse
+        audio.addEventListener('canplay', function() {
+            $audio.removeAttr('data-loading');
+            console.log('Audio listo para reproducir:', audio.src);
+        });
+        
+        // Event listener para cuando comienza a cargar
+        audio.addEventListener('loadstart', function() {
+            console.log('Iniciando carga de audio:', audio.src);
+        });
+        
+        // Event listener para progreso de carga
+        audio.addEventListener('progress', function() {
+            console.log('Progreso de carga de audio:', audio.src);
+        });
+        
+        // Marcar como cargando inicialmente
+        $audio.attr('data-loading', 'true');
+        
+        // Intentar cargar el audio
+        audio.load();
+    });
 }
 
 
