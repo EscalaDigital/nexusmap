@@ -58,15 +58,24 @@ class NM_Public
             wp_enqueue_style('nm-theme-css', NM_PLUGIN_URL . 'public/css/themes/theme1.css', array('nm-public-css'), NM_VERSION);
         } else {
             wp_enqueue_style('nm-theme-css', NM_PLUGIN_URL . 'public/css/themes/theme' . $selected_theme . '.css', array('nm-public-css'), NM_VERSION);
-        }
-
-        // Always load entries list CSS (it's lightweight)
+        }        // Always load entries list CSS (it's lightweight)
         wp_enqueue_style('nm-entries-list-css', NM_PLUGIN_URL . 'public/css/entries-list.css', array('nm-public-css'), NM_VERSION);
 
         // Check if we have post content to check for shortcodes
         $post_content = '';
         if (is_object($post) && isset($post->post_content)) {
             $post_content = $post->post_content;
+        }
+
+        // Load entries modal JS if entries list shortcode is used
+        if (has_shortcode($post_content, 'nm_entries_list')) {
+            wp_enqueue_script('nm-entries-modal-js', NM_PLUGIN_URL . 'public/js/entries-modal.js', array('jquery'), NM_VERSION, true);
+            
+            // Localize script for modal AJAX
+            wp_localize_script('nm-entries-modal-js', 'nm_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('nm_public_nonce')
+            ));
         }
 
         // Check if the [nm_map] shortcode is used in the content
@@ -259,8 +268,7 @@ class NM_Public
             ob_start();
             ?>
             <div class="nm-entries-list-container">
-                <?php if (!empty($entries)): ?>
-                    <div class="nm-entries-grid">                        <?php foreach ($entries as $entry): ?>
+                <?php if (!empty($entries)): ?>                    <div class="nm-entries-grid">                        <?php foreach ($entries as $index => $entry): ?>
                             <?php 
                             // Intentar deserializar primero (formato correcto)
                             $entry_data = maybe_unserialize($entry->entry_data);
@@ -270,7 +278,7 @@ class NM_Public
                                 $entry_data = json_decode($entry->entry_data, true);
                             }
                             ?>
-                            <div class="nm-entry-card">
+                            <div class="nm-entry-card" data-entry-index="<?php echo esc_attr($index); ?>">
                                 <?php
                                 // Renderizar campos según configuración de galería
                                 $this->render_gallery_card_content($entry_data, $entry, $selected_fields);
@@ -501,32 +509,150 @@ class NM_Public
         );
 
         wp_send_json($response);
-    }
-    // Método para obtener detalles de la entrada
+    }    // Método para obtener detalles de la entrada
     public function get_entry_details()
     {
         check_ajax_referer('nm_public_nonce', 'nonce');
-        $entry_id = isset($_POST['entry_id']) ? intval($_POST['entry_id']) : 0;
+        
+        // Obtener el índice de la entrada en lugar del ID
+        $entry_index = isset($_POST['entry_index']) ? intval($_POST['entry_index']) : -1;
 
-        if ($entry_id > 0) {
-            $entry = $this->model->get_entry_by_id($entry_id);
-
-            if ($entry) {
-                $entry_data = maybe_unserialize($entry->entry_data);
-                // Puedes seleccionar qué campos enviar al cliente
-                $response_data = array(
-                    'title'       => isset($entry_data['title']) ? esc_html($entry_data['title']) : 'Sin título',
-                    'description' => isset($entry_data['description']) ? esc_html($entry_data['description']) : '',
-                    // Agrega más campos según tus necesidades
-                    // 'date' => $entry->date_created,
-                    // 'other_field' => isset( $entry_data['other_field'] ) ? esc_html( $entry_data['other_field'] ) : '',
-                );
-                wp_send_json_success($response_data);
-            } else {
-                wp_send_json_error('Entrada no encontrada.');
+        if ($entry_index >= 0) {
+            try {
+                // Obtener todas las entradas aprobadas de la misma manera que en display_entries_list
+                $per_page = 1000; // Un número alto para obtener todas las entradas
+                $offset = 0;
+                $status = 'approved';
+                
+                $entries = $this->model->get_entries_paginated($per_page, $offset, $status);
+                
+                // Verificar si el índice existe
+                if (isset($entries[$entry_index])) {
+                    $entry = $entries[$entry_index];
+                    
+                    // Deserializar los datos de la entrada
+                    $entry_data = maybe_unserialize($entry->entry_data);
+                    
+                    // Si no es array, intentar JSON decode como fallback
+                    if (!is_array($entry_data)) {
+                        $entry_data = json_decode($entry->entry_data, true);
+                    }
+                    
+                    // Obtener configuración de la galería para conocer los campos disponibles
+                    $gallery_settings = get_option('nm_gallery_settings', array());
+                    $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
+                    
+                    // Preparar respuesta con todos los datos disponibles
+                    $response_data = array(
+                        'id' => $entry->id,
+                        'date_created' => $entry->date_created,
+                        'custom_fields' => array()
+                    );
+                    
+                    // Extraer campos principales
+                    $response_data['title'] = $this->get_entry_field_value($entry_data, $selected_fields['text'] ?? 'titulo', 'Sin título');
+                    $response_data['description'] = $this->get_entry_field_value($entry_data, $selected_fields['textarea'] ?? 'descripcion', '');
+                    
+                    // Obtener imagen
+                    $image_field = $selected_fields['image'] ?? '';
+                    if (!empty($image_field)) {
+                        $image_value = $this->get_entry_field_value($entry_data, $image_field);
+                        if (!empty($image_value)) {
+                            if (filter_var($image_value, FILTER_VALIDATE_URL)) {
+                                $response_data['image'] = $image_value;
+                            } elseif (is_numeric($image_value)) {
+                                $url = wp_get_attachment_url(intval($image_value));
+                                if ($url) {
+                                    $response_data['image'] = $url;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Obtener audio
+                    $audio_field = $selected_fields['audio'] ?? '';
+                    if (!empty($audio_field)) {
+                        $audio_value = $this->get_entry_field_value($entry_data, $audio_field);
+                        if (!empty($audio_value) && filter_var($audio_value, FILTER_VALIDATE_URL)) {
+                            $response_data['audio'] = $audio_value;
+                        }
+                    }
+                    
+                    // Obtener archivo/documento
+                    $file_field = $selected_fields['file'] ?? '';
+                    if (!empty($file_field)) {
+                        $file_value = $this->get_entry_field_value($entry_data, $file_field);
+                        if (!empty($file_value) && filter_var($file_value, FILTER_VALIDATE_URL)) {
+                            $response_data['file'] = $file_value;
+                        }
+                    }
+                    
+                    // Obtener fecha
+                    $date_field = $selected_fields['date'] ?? '';
+                    if (!empty($date_field)) {
+                        $date_value = $this->get_entry_field_value($entry_data, $date_field);
+                        if (!empty($date_value)) {
+                            // Formatear fecha si es posible
+                            if (strtotime($date_value)) {
+                                $response_data['date'] = date('d/m/Y', strtotime($date_value));
+                            } else {
+                                $response_data['date'] = $date_value;
+                            }
+                        }
+                    }
+                    
+                    // Obtener todos los campos adicionales disponibles en los datos
+                    if (is_array($entry_data)) {
+                        foreach ($entry_data as $key => $value) {
+                            // Saltar campos que ya hemos procesado
+                            if (in_array($key, ['map_data', 'geometry']) || empty($value)) {
+                                continue;
+                            }
+                            
+                            // Añadir a campos personalizados si no está ya en los campos principales
+                            if (!in_array($key, array_values($selected_fields))) {
+                                $response_data['custom_fields'][$key] = $value;
+                            }
+                        }
+                    }
+                    
+                    // También extraer campos del map_data si existen
+                    if (isset($entry_data['map_data'])) {
+                        try {
+                            $raw_json = wp_unslash($entry_data['map_data']);
+                            $map_data = json_decode($raw_json, true, 512, JSON_THROW_ON_ERROR);
+                            
+                            if (is_array($map_data)) {
+                                foreach ($map_data as $feature) {
+                                    if (isset($feature['properties']) && is_array($feature['properties'])) {
+                                        foreach ($feature['properties'] as $prop_key => $prop_value) {
+                                            if (!empty($prop_value) && !isset($response_data['custom_fields'][$prop_key])) {
+                                                // No añadir si ya está en los campos principales
+                                                $is_main_field = in_array($prop_key, array_values($selected_fields));
+                                                if (!$is_main_field) {
+                                                    $response_data['custom_fields'][$prop_key] = $prop_value;
+                                                }
+                                            }
+                                        }
+                                        break; // Solo procesar el primer feature
+                                    }
+                                }
+                            }
+                        } catch (\JsonException $e) {
+                            error_log('Error decoding map_data in get_entry_details: ' . $e->getMessage());
+                        }
+                    }
+                    
+                    wp_send_json_success($response_data);
+                } else {
+                    wp_send_json_error('Índice de entrada no válido.');
+                }
+            } catch (Exception $e) {
+                error_log('Error in get_entry_details: ' . $e->getMessage());
+                wp_send_json_error('Error al obtener los detalles de la entrada.');
             }
         } else {
-            wp_send_json_error('ID de entrada no válido.');
+            wp_send_json_error('Índice de entrada no válido.');
         }
     }
 
