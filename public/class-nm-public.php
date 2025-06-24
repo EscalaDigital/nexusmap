@@ -230,9 +230,7 @@ class NM_Public
         // Verificar si el modelo existe
         if (!$this->model) {
             return '<div style="border: 1px solid red; padding: 10px;">Error: Modelo no encontrado</div>';
-        }
-
-        // Obtener configuración de la galería
+        }        // Obtener configuración de la galería
         $gallery_settings = get_option('nm_gallery_settings', array());
         $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
 
@@ -1022,9 +1020,7 @@ class NM_Public
         
         // Return null if no image found (will be handled in the template)
         return null;
-    }
-
-    /**
+    }    /**
      * Render gallery card content based on selected fields
      */    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
         // Verificar si hay algún campo seleccionado
@@ -1174,5 +1170,74 @@ class NM_Public
             }
             echo '<div class="nm-entry-date">📅 Fecha: ' . esc_html($formatted_date) . '</div>';
         }
+    }
+
+    /**
+     * Get available fields from entry data
+     */
+    private function get_available_fields_from_entry($entry_data) {
+        $fields = array();
+        
+        if (!is_array($entry_data)) {
+            return $fields;
+        }
+        
+        foreach ($entry_data as $key => $value) {
+            $fields[$key] = array(
+                'label' => ucfirst(str_replace('_', ' ', $key)),
+                'type' => $this->detect_field_type($key, $value),
+                'sample' => $value
+            );
+        }
+        
+        return $fields;
+    }
+    
+    /**
+     * Detect field type based on key and value
+     */
+    private function detect_field_type($key, $value) {
+        $key_lower = strtolower($key);
+        
+        // Detectar por nombre del campo
+        if (in_array($key_lower, ['image', 'imagen', 'foto', 'picture', 'nm_imagen'])) {
+            return 'image';
+        }
+        
+        if (in_array($key_lower, ['audio', 'sonido', 'recording', 'nm_audio', 'nm_audio2'])) {
+            return 'audio';
+        }
+        
+        if (in_array($key_lower, ['file', 'archivo', 'document', 'documento', 'nm_documento', 'nm_file'])) {
+            return 'file';
+        }
+        
+        // Detectar por contenido/URL
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $value)) {
+                return 'image';
+            }
+            if (preg_match('/\.(mp3|wav|ogg|flac|m4a|aac)$/i', $value)) {
+                return 'audio';
+            }
+            if (preg_match('/\.(pdf|doc|docx|xls|xlsx|txt|rtf)$/i', $value)) {
+                return 'file';
+            }
+        }
+        
+        // Detectar por longitud y patrón
+        if (strlen($value) > 100) {
+            return 'textarea';
+        }
+        
+        if (is_numeric($value)) {
+            return 'number';
+        }
+        
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+            return 'date';
+        }
+        
+        return 'text';
     }
 }

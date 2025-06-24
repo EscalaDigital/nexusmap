@@ -271,34 +271,39 @@ class NM_Entries_Display_Settings {
         }
         
         return $fields;
-    }
-
-    /**
+    }    /**
      * Detectar tipo de campo
      */
     private function detect_field_type($key, $value) {
         $key_lower = strtolower($key);
         
-        if (in_array($key_lower, ['image', 'imagen', 'foto', 'picture'])) {
+        // Detectar por nombre del campo
+        if (in_array($key_lower, ['image', 'imagen', 'foto', 'picture', 'nm_imagen'])) {
             return 'image';
         }
         
-        if (in_array($key_lower, ['audio', 'sonido', 'recording'])) {
+        if (in_array($key_lower, ['audio', 'sonido', 'recording', 'nm_audio', 'nm_audio2'])) {
             return 'audio';
         }
         
-        if (in_array($key_lower, ['file', 'archivo', 'document'])) {
+        if (in_array($key_lower, ['file', 'archivo', 'document', 'documento', 'nm_documento', 'nm_file'])) {
             return 'file';
         }
         
-        if (filter_var($value, FILTER_VALIDATE_URL) && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $value)) {
-            return 'image';
+        // Detectar por contenido/URL
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $value)) {
+                return 'image';
+            }
+            if (preg_match('/\.(mp3|wav|ogg|flac|m4a|aac)$/i', $value)) {
+                return 'audio';
+            }
+            if (preg_match('/\.(pdf|doc|docx|xls|xlsx|txt|rtf)$/i', $value)) {
+                return 'file';
+            }
         }
         
-        if (filter_var($value, FILTER_VALIDATE_URL) && preg_match('/\.(mp3|wav|ogg)$/i', $value)) {
-            return 'audio';
-        }
-        
+        // Detectar por longitud y patrón
         if (strlen($value) > 100) {
             return 'textarea';
         }
