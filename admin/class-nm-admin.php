@@ -9,6 +9,8 @@ require_once 'NM_Form_To_Map.php';
 require_once 'NM_Form_Filters.php';
 require_once 'NM_Chart_Manager.php';
 require_once 'NM_Style_Manager.php';
+require_once 'NM_Gallery.php';
+// Temporalmente comentado: require_once 'NM_Entries_Display_Settings.php';
 
 class NM_Admin
 {
@@ -18,27 +20,24 @@ class NM_Admin
     public function __construct($loader)
     {
         $this->loader = $loader;
-        $this->model = new NM_Model();
-
-        // Cargar funcionalidades divididas
+        $this->model = new NM_Model();        // Cargar funcionalidades divididas
         new NM_Menu_Main($this->loader, $this->model);
         new NM_Entries($this->loader, $this->model);
         new NM_Map_Settings($this->loader);
         new NM_Manage_Layers($this->loader);
         new NM_Ajax_Handlers($this->loader, $this->model);
         new NM_Form_To_Map($this->loader); 
-        new NM_Form_Filters($this->loader);
-        new NM_Chart_Manager($this->loader);
-        new NM_Style_Manager($this->loader);
+        new NM_Form_Filters($this->loader);        new NM_Chart_Manager($this->loader);        new NM_Style_Manager($this->loader);
+        new NM_Gallery($this->loader);
+        // Temporalmente comentado: new NM_Entries_Display_Settings($this->loader);
 
         // Cargar estilos y scripts en las páginas específicas del plugin
         $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_admin_assets');
     }
 
     public function enqueue_admin_assets($hook_suffix)
-    {
-        // Verificar que solo se carguen en las páginas de NexusMap
-        $plugin_pages = ['toplevel_page_nm', 'nexusmap_page_nm-entries', 'nexusmap_page_nm_map_settings', 'nexusmap_page_nm_manage_layers', 'nexusmap_page_nm-form-to-map', 'nexusmap_page_nm-form-filters', 'nexusmap_page_nm-chart-manager', 'nexusmap_page_nm_style_manager'];
+    {        // Verificar que solo se carguen en las páginas de NexusMap
+        $plugin_pages = ['toplevel_page_nm', 'nexusmap_page_nm-entries', 'nexusmap_page_nm_map_settings', 'nexusmap_page_nm_manage_layers', 'nexusmap_page_nm-form-to-map', 'nexusmap_page_nm-form-filters', 'nexusmap_page_nm-chart-manager', 'nexusmap_page_nm_style_manager', 'nexusmap_page_nm-gallery'];
 
         if (in_array($hook_suffix, $plugin_pages)) {            // Cargar CSS
             wp_enqueue_style('nm-admin-css', NM_PLUGIN_URL . 'admin/css/admin.css', array(), NM_VERSION);

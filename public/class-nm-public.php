@@ -230,23 +230,21 @@ class NM_Public
         // Verificar si el modelo existe
         if (!$this->model) {
             return '<div style="border: 1px solid red; padding: 10px;">Error: Modelo no encontrado</div>';
-        }        // Extract attributes and set defaults
+        }
+
+        // Obtener configuración de la galería
+        $gallery_settings = get_option('nm_gallery_settings', array());
+        $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
+
+        // Extract attributes and set defaults
         $atts = shortcode_atts(array(
             'per_page' => 10,
-            'show_pagination' => 'true',
-            'show_title' => 'true',
-            'show_image' => 'true',
-            'show_category' => 'true',
-            'show_date' => 'true'
+            'show_pagination' => 'true'
         ), $atts, 'nm_entries_list');
 
         $per_page = intval($atts['per_page']);
         $status = 'approved'; // Solo entradas aprobadas
         $show_pagination = ($atts['show_pagination'] === 'true');
-        $show_title = ($atts['show_title'] === 'true');
-        $show_image = ($atts['show_image'] === 'true');
-        $show_category = ($atts['show_category'] === 'true');
-        $show_date = ($atts['show_date'] === 'true');
 
         // Get current page
         $current_page = isset($_GET['entries_page']) ? max(1, intval($_GET['entries_page'])) : 1;
@@ -267,34 +265,12 @@ class NM_Public
                         <?php foreach ($entries as $entry): ?>
                             <?php 
                             $entry_data = json_decode($entry->entry_data, true);
-                            $title = $this->get_entry_field_value($entry_data, 'title', 'Conflicto');
-                            $image_url = $this->get_entry_image_url($entry_data);
-                            $category = $this->get_entry_field_value($entry_data, 'category', '');
-                            $date = date('d/m/Y', strtotime($entry->date_submitted));
                             ?>
-                            <div class="nm-entry-card" data-category="<?php echo esc_attr($category); ?>">
-                                <?php if ($show_image): ?>
-                                    <div class="nm-entry-image <?php echo $image_url ? '' : 'no-image'; ?>">
-                                        <?php if ($image_url): ?>
-                                            <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($title); ?>">
-                                        <?php else: ?>
-                                            <div class="nm-placeholder-icon">📷</div>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="nm-entry-content">
-                                    <?php if ($show_title): ?>
-                                        <h3 class="nm-entry-title"><?php echo esc_html($title); ?></h3>
-                                    <?php endif; ?>
-                                    <?php if ($show_category && $category): ?>
-                                        <div class="nm-entry-category">
-                                            <span class="nm-category-badge"><?php echo esc_html($category); ?></span>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if ($show_date): ?>
-                                        <div class="nm-entry-date"><?php echo esc_html($date); ?></div>
-                                    <?php endif; ?>
-                                </div>
+                            <div class="nm-entry-card">
+                                <?php
+                                // Renderizar campos según configuración de galería
+                                $this->render_gallery_card_content($entry_data, $entry, $selected_fields);
+                                ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -1033,5 +1009,142 @@ class NM_Public
         
         // Return null if no image found (will be handled in the template)
         return null;
+    }
+
+    /**
+     * Render gallery card content based on selected fields
+     */
+    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
+        // Renderizar imagen si está seleccionada
+        if (!empty($selected_fields['image'])) {
+            $this->render_gallery_image_field($entry_data, $selected_fields['image']);
+        }
+        
+        // Contenido de la tarjeta
+        echo '<div class="nm-entry-content">';
+        
+        // Renderizar título si está seleccionado
+        if (!empty($selected_fields['text'])) {
+            $this->render_gallery_text_field($entry_data, $selected_fields['text']);
+        }
+        
+        // Renderizar texto largo si está seleccionado
+        if (!empty($selected_fields['textarea'])) {
+            $this->render_gallery_textarea_field($entry_data, $selected_fields['textarea']);
+        }
+        
+        // Renderizar audio si está seleccionado
+        if (!empty($selected_fields['audio'])) {
+            $this->render_gallery_audio_field($entry_data, $selected_fields['audio']);
+        }
+        
+        // Renderizar archivo si está seleccionado
+        if (!empty($selected_fields['file'])) {
+            $this->render_gallery_file_field($entry_data, $selected_fields['file']);
+        }
+        
+        // Renderizar fecha si está seleccionada
+        if (!empty($selected_fields['date'])) {
+            $this->render_gallery_date_field($entry_data, $selected_fields['date']);
+        } else {
+            // Si no hay campo de fecha seleccionado, mostrar fecha de envío como fallback
+            echo '<div class="nm-entry-date"><small>Enviado: ' . date('d/m/Y', strtotime($entry->date_submitted)) . '</small></div>';
+        }
+        
+        echo '</div>';
+    }
+    
+    /**
+     * Render image field for gallery card
+     */
+    private function render_gallery_image_field($entry_data, $field_name) {
+        $image_value = $this->get_entry_field_value($entry_data, $field_name);
+        $image_url = null;
+        
+        if (!empty($image_value)) {
+            // If it's already a URL, use it
+            if (filter_var($image_value, FILTER_VALIDATE_URL)) {
+                $image_url = $image_value;
+            }
+            // If it's an attachment ID, get the URL
+            elseif (is_numeric($image_value)) {
+                $url = wp_get_attachment_url(intval($image_value));
+                if ($url) {
+                    $image_url = $url;
+                }
+            }
+        }
+        
+        echo '<div class="nm-entry-image ' . ($image_url ? '' : 'no-image') . '">';
+        if ($image_url) {
+            echo '<img src="' . esc_url($image_url) . '" alt="Imagen">';
+        } else {
+            echo '<div class="nm-placeholder-icon">📷</div>';
+        }
+        echo '</div>';
+    }
+    
+    /**
+     * Render text field for gallery card
+     */
+    private function render_gallery_text_field($entry_data, $field_name) {
+        $text_value = $this->get_entry_field_value($entry_data, $field_name, 'Sin título');
+        echo '<h3 class="nm-entry-title">' . esc_html($text_value) . '</h3>';
+    }
+    
+    /**
+     * Render textarea field for gallery card
+     */
+    private function render_gallery_textarea_field($entry_data, $field_name) {
+        $textarea_value = $this->get_entry_field_value($entry_data, $field_name);
+        if (!empty($textarea_value)) {
+            $truncated_text = strlen($textarea_value) > 120 ? substr($textarea_value, 0, 120) . '...' : $textarea_value;
+            echo '<div class="nm-entry-description">' . esc_html($truncated_text) . '</div>';
+        }
+    }
+    
+    /**
+     * Render audio field for gallery card
+     */
+    private function render_gallery_audio_field($entry_data, $field_name) {
+        $audio_value = $this->get_entry_field_value($entry_data, $field_name);
+        if (!empty($audio_value) && filter_var($audio_value, FILTER_VALIDATE_URL)) {
+            echo '<div class="nm-entry-audio">';
+            echo '<audio controls preload="none" style="width: 100%; max-width: 300px;">';
+            echo '<source src="' . esc_url($audio_value) . '" type="audio/mpeg">';
+            echo 'Tu navegador no soporta el elemento de audio.';
+            echo '</audio>';
+            echo '</div>';
+        }
+    }
+    
+    /**
+     * Render file field for gallery card
+     */
+    private function render_gallery_file_field($entry_data, $field_name) {
+        $file_value = $this->get_entry_field_value($entry_data, $field_name);
+        if (!empty($file_value) && filter_var($file_value, FILTER_VALIDATE_URL)) {
+            $filename = basename(parse_url($file_value, PHP_URL_PATH));
+            echo '<div class="nm-entry-file">';
+            echo '<a href="' . esc_url($file_value) . '" target="_blank" class="nm-download-btn">';
+            echo '📥 Descargar ' . esc_html($filename);
+            echo '</a>';
+            echo '</div>';
+        }
+    }
+    
+    /**
+     * Render date field for gallery card
+     */
+    private function render_gallery_date_field($entry_data, $field_name) {
+        $date_value = $this->get_entry_field_value($entry_data, $field_name);
+        if (!empty($date_value)) {
+            // Try to format the date
+            $formatted_date = $date_value;
+            if (strtotime($date_value)) {
+                $formatted_date = date('d/m/Y', strtotime($date_value));
+            }
+            echo '<div class="nm-entry-date">📅 Fecha: ' . esc_html($formatted_date) . '</div>';
+        }
     }
 }
