@@ -571,30 +571,43 @@ class NM_Public
             $html_name   = $normalize($orig_name);  // ej: "Imagen_principal"
             $store_key   = 'nm_' . $orig_name;        // mantenemos nombre original en BD
 
-            $already_processed[] = $html_name;        // marcarlo            /* ---- FILE ---- */
+            $already_processed[] = $html_name;        // marcarlo            /* ---- FILE & IMAGE ---- */
             if (
-                $field['type'] === 'file' && isset($_FILES[$html_name])
+                ($field['type'] === 'file' || $field['type'] === 'image') && isset($_FILES[$html_name])
                 && $_FILES[$html_name]['error'] === UPLOAD_ERR_OK
             ) {
 
-                $allowed = array(
-                    'jpg|jpeg|jpe' => 'image/jpeg',
-                    'png'          => 'image/png',
-                    'gif'          => 'image/gif',
-                    'pdf'          => 'application/pdf',
-                );
+                // Definir tipos de archivo permitidos según el tipo de campo
+                if ($field['type'] === 'image') {
+                    $allowed = array(
+                        'jpg|jpeg|jpe' => 'image/jpeg',
+                        'png'          => 'image/png',
+                        'gif'          => 'image/gif',
+                        'webp'         => 'image/webp',
+                    );
+                } else { // file (documentos)
+                    $allowed = array(
+                        'pdf'  => 'application/pdf',
+                        'doc'  => 'application/msword',
+                        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'xls'  => 'application/vnd.ms-excel',
+                        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'txt'  => 'text/plain',
+                        'rtf'  => 'application/rtf',
+                    );
+                }
 
                 $up = wp_handle_upload($_FILES[$html_name], array(
                     'test_form' => false,
                     'mimes'     => $allowed,
-                ));
-
-                if ($up && ! isset($up['error'])) {
+                ));                if ($up && ! isset($up['error'])) {
                     $form_fields[$store_key] = esc_url_raw(
                         str_replace('http://', 'https://', $up['url'])
                     );
                 } else {
-                    wp_send_json_error('Error al subir "' . esc_html($orig_name) . '": ' . $up['error']);
+                    $file_type_name = ($field['type'] === 'image') ? 'imagen' : 'documento';
+                    $allowed_formats = ($field['type'] === 'image') ? 'JPG, PNG, GIF, WebP' : 'PDF, DOC, DOCX, XLS, XLSX, TXT, RTF';
+                    wp_send_json_error('Error al subir ' . $file_type_name . ' "' . esc_html($orig_name) . '": ' . $up['error'] . '. Formatos permitidos: ' . $allowed_formats);
                     wp_die();
                 }
             }            /* ---- AUDIO ---- */

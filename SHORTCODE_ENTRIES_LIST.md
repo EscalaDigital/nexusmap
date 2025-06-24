@@ -66,6 +66,7 @@ El shortcode genera automáticamente la paginación con enlaces "Anterior" y "Si
 ### 📷 Imagen
 - Se muestra como imagen destacada en la parte superior de la tarjeta
 - Fuente: Campos de tipo `image` del formulario
+- Formatos permitidos: JPG, JPEG, PNG, GIF, WebP
 - Soporta URLs e IDs de attachments de WordPress
 
 ### 🎵 Audio
@@ -73,10 +74,11 @@ El shortcode genera automáticamente la paginación con enlaces "Anterior" y "Si
 - Fuente: Campos de tipo `audio` del formulario
 - Soporta formatos: MP3, WAV, OGG, FLAC, M4A, AAC
 
-### 📄 Archivo
+### 📄 Archivo/Documento
 - Se muestra como botón de descarga
 - Fuente: Campos de tipo `file` del formulario
-- Permite descargar cualquier tipo de archivo
+- Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, TXT, RTF
+- Permite descargar documentos de oficina y texto
 
 ### 📅 Fecha
 - Se formatea automáticamente (DD/MM/AAAA)

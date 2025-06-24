@@ -1,7 +1,7 @@
 jQuery(document).ready(function ($) {
 
     const fieldTpl = {};    ['header', 'text', 'textarea', 'checkbox', 'radio',
-        'select', 'file', 'number', 'date', 'url', 'audio', 'geographic-selector'].forEach(function (type) {
+        'select', 'image', 'file', 'number', 'date', 'url', 'audio', 'geographic-selector'].forEach(function (type) {
             $.post(nmAdmin.ajax_url, {
                 action: 'nm_get_field_template',
                 field_type: type,

@@ -53,17 +53,26 @@
                                 name="<?php echo esc_attr($field_name); ?>"></textarea>
                         </div>
                     <?php
-                        break;
-
-                    case 'image':
-                    case 'file':
+                        break;                    case 'image':
                     ?>
-                        <div class="nm-form-field" data-type="<?php echo esc_attr($field['type']); ?>">
+                        <div class="nm-form-field" data-type="image">
                             <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
                             <input type="file"
                                 id="<?php echo esc_attr($field_id); ?>"
                                 name="<?php echo esc_attr($field_name); ?>"
-                                <?php echo $field['type'] === 'image' ? 'accept="image/*"' : ''; ?>>
+                                accept=".jpg,.jpeg,.png,.gif,.webp">
+                        </div>
+                    <?php
+                        break;
+
+                    case 'file':
+                    ?>
+                        <div class="nm-form-field" data-type="file">
+                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+                            <input type="file"
+                                id="<?php echo esc_attr($field_id); ?>"
+                                name="<?php echo esc_attr($field_name); ?>"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.rtf">
                         </div>
                     <?php
                         break;

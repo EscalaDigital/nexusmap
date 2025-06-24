@@ -16,14 +16,14 @@
         <!-- Panel de campos disponibles -->
         <div id="nm-form-elements">
             <h2>Available Fields</h2>
-            <ul>
-                <!-- Lista de tipos de campos arrastrables -->
+            <ul>                <!-- Lista de tipos de campos arrastrables -->
                 <li data-type="text">Text Field</li>
                 <li data-type="textarea">Textarea</li>
                 <li data-type="checkbox">Checkbox Group</li>
                 <li data-type="radio">Radio Group</li>
                 <li data-type="select">Dropdown Menu</li>
-                <li data-type="file">File Upload</li>
+                <li data-type="image">Image Upload</li>
+                <li data-type="file">Document Upload</li>
                 <li data-type="number">Number Field</li>
                 <li data-type="date">Date Picker</li>                <li data-type="url">URL Field</li>
                 <li data-type="range">Range Slider</li>

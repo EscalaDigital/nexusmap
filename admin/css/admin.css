@@ -439,3 +439,29 @@
     margin-right: 5px;
 }
 
+/* Información de tipos de archivo en el constructor de formularios */
+.file-type-info {
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 3px;
+}
+
+.file-type-info small {
+    color: #0073aa;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Iconos para los tipos de campo en el constructor */
+#nm-form-elements li[data-type="image"]::before {
+    content: "📷 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="file"]::before {
+    content: "📄 ";
+    margin-right: 5px;
+}
+

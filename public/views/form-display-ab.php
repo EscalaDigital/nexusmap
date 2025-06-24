@@ -74,12 +74,11 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                                 <input type="number" name="<?php echo esc_attr($field['name']); ?>">
                             </div>
                         <?php
-                            break;
-                        case 'image':
+                            break;                        case 'image':
                         ?>
                             <div class="nm-form-field" data-type="image">
                                 <label><?php echo esc_html($field['label']); ?></label>
-                                <input type="file" name="<?php echo esc_attr($field['name']); ?>" accept="image/*">
+                                <input type="file" name="<?php echo esc_attr($field['name']); ?>" accept=".jpg,.jpeg,.png,.gif,.webp">
                             </div>
                         <?php
                             break;
@@ -119,12 +118,11 @@ if ($form_type === null || !in_array($form_type, [1, 2])) {
                                 <?php } ?>
                             </div>
                         <?php
-                            break;
-                        case 'file':
+                            break;                        case 'file':
                         ?>
                             <div class="nm-form-field" data-type="file">
                                 <label><?php echo esc_html($field['label']); ?></label>
-                                <input type="file" name="<?php echo esc_attr($field['name']); ?>">
+                                <input type="file" name="<?php echo esc_attr($field['name']); ?>" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.rtf">
                             </div>
                         <?php
                             break;

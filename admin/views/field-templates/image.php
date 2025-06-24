@@ -1,7 +1,9 @@
 <div class="nm-form-field" data-type="image">
-    <label>Image</label>
-    <input type="file" name="image_field[]" accept="image/*">
-    <input type="text" class="field-label" placeholder="Field Label">
-    <input type="text" class="field-name" placeholder="Field Name">
-    <span class="nm-remove-field">Remove</span>
+    <label>Image Upload</label>
+    <input type="text" class="field-label" placeholder="Field Label" value="<?php echo esc_attr( $field_label ); ?>">
+    <input type="text" class="field-name" placeholder="Field Name" value="<?php echo esc_attr( $field_name ); ?>">
+    <div class="file-type-info">
+        <small>Allowed formats: JPG, JPEG, PNG, GIF, WebP</small>
+    </div>
+    <span class="nm-remove-field">Remove Field</span>
 </div>
