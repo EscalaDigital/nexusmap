@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function createModalHTML() {
     const modalHTML = `
-        <div id="nm-entry-modal" class="nm-entry-modal">
+        <div id="nm-entries-modal" class="nm-entry-modal">
             <div class="nm-modal-content">
                 <div class="nm-modal-header">
                     <button class="nm-modal-close" onclick="closeEntryModal()">&times;</button>
@@ -34,7 +34,7 @@ function createModalHTML() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     
     // Cerrar modal al hacer clic fuera
-    document.getElementById('nm-entry-modal').addEventListener('click', function(e) {
+    document.getElementById('nm-entries-modal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeEntryModal();
         }
@@ -43,7 +43,10 @@ function createModalHTML() {
     // Cerrar modal con la tecla Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            closeEntryModal();
+            const modal = document.getElementById('nm-entries-modal');
+            if (modal && modal.style.display === 'block') {
+                closeEntryModal();
+            }
         }
     });
 }
@@ -75,7 +78,7 @@ function attachCardListeners() {
  * Abrir el modal con los detalles de una entrada
  */
 function openEntryModal(entryIndex) {
-    const modal = document.getElementById('nm-entry-modal');
+    const modal = document.getElementById('nm-entries-modal');
     const modalTitle = document.getElementById('nm-modal-title');
     const modalBody = document.getElementById('nm-modal-body');
     
@@ -249,7 +252,7 @@ function showModalError(message) {
  * Cerrar el modal
  */
 function closeEntryModal() {
-    const modal = document.getElementById('nm-entry-modal');
+    const modal = document.getElementById('nm-entries-modal');
     modal.style.display = 'none';
     document.body.style.overflow = ''; // Restaurar scroll del body
 }
