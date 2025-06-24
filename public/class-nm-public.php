@@ -224,13 +224,14 @@ class NM_Public
         }
     }    /**
      * Display entries list shortcode
-     */
-    public function display_entries_list($atts)
+     */    public function display_entries_list($atts)
     {
         // Verificar si el modelo existe
         if (!$this->model) {
             return '<div style="border: 1px solid red; padding: 10px;">Error: Modelo no encontrado</div>';
-        }        // Obtener configuración de la galería
+        }        
+        
+        // Obtener configuración de la galería
         $gallery_settings = get_option('nm_gallery_settings', array());
         $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
 
@@ -259,10 +260,15 @@ class NM_Public
             ?>
             <div class="nm-entries-list-container">
                 <?php if (!empty($entries)): ?>
-                    <div class="nm-entries-grid">
-                        <?php foreach ($entries as $entry): ?>
+                    <div class="nm-entries-grid">                        <?php foreach ($entries as $entry): ?>
                             <?php 
-                            $entry_data = json_decode($entry->entry_data, true);
+                            // Intentar deserializar primero (formato correcto)
+                            $entry_data = maybe_unserialize($entry->entry_data);
+                            
+                            // Si no es array, intentar JSON decode como fallback
+                            if (!is_array($entry_data)) {
+                                $entry_data = json_decode($entry->entry_data, true);
+                            }
                             ?>
                             <div class="nm-entry-card">
                                 <?php
@@ -972,17 +978,34 @@ class NM_Public
             error_log('Error saving audio recording: ' . $e->getMessage());
             return array('success' => false, 'error' => 'Error interno al guardar grabación');
         }
-    }
-
-    /**
+    }    /**
      * Helper function to get field value from entry data
-     */
-    private function get_entry_field_value($entry_data, $field_name, $default = '') {
+     */    private function get_entry_field_value($entry_data, $field_name, $default = '') {
+        // Primero buscar directamente en entry_data
         if (isset($entry_data[$field_name])) {
             return $entry_data[$field_name];
         }
         
-        // Look for field by name in nested structure
+        // Si no está directamente, buscar en map_data (formato GeoJSON)
+        if (isset($entry_data['map_data'])) {
+            $raw_json = wp_unslash($entry_data['map_data']);
+            
+            try {
+                $map_data = json_decode($raw_json, true, 512, JSON_THROW_ON_ERROR);
+                
+                if (is_array($map_data)) {
+                    foreach ($map_data as $feature) {
+                        if (isset($feature['properties']) && isset($feature['properties'][$field_name])) {
+                            return $feature['properties'][$field_name];
+                        }
+                    }
+                }
+            } catch (\JsonException $e) {
+                error_log('Error decoding map_data in get_entry_field_value: ' . $e->getMessage());
+            }
+        }
+        
+        // Look for field by name in nested structure (compatibilidad)
         if (isset($entry_data['fields'])) {
             foreach ($entry_data['fields'] as $field) {
                 if (isset($field['name']) && $field['name'] === $field_name && isset($field['value'])) {
@@ -1021,8 +1044,7 @@ class NM_Public
         // Return null if no image found (will be handled in the template)
         return null;
     }    /**
-     * Render gallery card content based on selected fields
-     */    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
+     * Render gallery card content based on selected fields     */    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
         // Verificar si hay algún campo seleccionado
         $has_any_field = false;
         foreach ($selected_fields as $field_value) {

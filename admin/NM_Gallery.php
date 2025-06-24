@@ -42,9 +42,7 @@ class NM_Gallery
         $saved_settings = get_option('nm_gallery_settings', $this->get_default_settings());
         
         include_once 'views/gallery.php';
-    }
-
-    private function get_available_fields($fields)
+    }    private function get_available_fields($fields)
     {
         $available_fields = array();
         
@@ -57,11 +55,15 @@ class NM_Gallery
             $category = $this->categorize_field_type($field_type);
             
             if ($category) {
+                // Añadir prefijo nm_ al nombre del campo para que coincida con los datos guardados
+                $prefixed_name = 'nm_' . $field_name;
+                
                 $available_fields[$category][] = array(
-                    'name' => $field_name,
+                    'name' => $prefixed_name,
                     'label' => $field_label,
                     'type' => $field_type,
-                    'original_type' => $field_type
+                    'original_type' => $field_type,
+                    'original_name' => $field_name // Guardar nombre original por si acaso
                 );
             }
         }
