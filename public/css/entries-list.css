@@ -12,6 +12,7 @@
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
+    align-items: start; /* Permite que las tarjetas tengan diferentes alturas */
 }
 
 .nm-entry-card {
@@ -21,6 +22,9 @@
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid #e1e5e9;
+    height: fit-content; /* Permite que la altura se adapte al contenido */
+    display: flex;
+    flex-direction: column;
 }
 
 .nm-entry-card:hover {
@@ -61,6 +65,9 @@
 
 .nm-entry-content {
     padding: 16px;
+    flex-grow: 1; /* Permite que el contenido se expanda */
+    display: flex;
+    flex-direction: column;
 }
 
 .nm-entry-title {
@@ -69,11 +76,12 @@
     color: #333;
     margin: 0 0 8px 0;
     line-height: 1.3;
-    min-height: 40px;    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    /* Removido min-height para permitir altura variable */
+    display: -webkit-box;
+    -webkit-line-clamp: unset; /* Permite múltiples líneas */
+    line-clamp: unset;
     -webkit-box-orient: vertical;
-    overflow: hidden;
+    overflow: visible; /* Permite mostrar todo el texto */
 }
 
 .nm-entry-category {
@@ -124,7 +132,9 @@
 .nm-entry-date {
     font-size: 12px;
     color: #666;
-    margin-top: 8px;
+    margin-top: auto; /* Empuja la fecha hacia el final de la tarjeta */
+    padding-top: 8px;
+    flex-shrink: 0; /* Evita que se comprima */
 }
 
 /* Paginación */
@@ -214,10 +224,12 @@
     color: #666;
     line-height: 1.4;
     margin: 8px 0;
+    flex-grow: 1; /* Permite que la descripción ocupe el espacio disponible */
 }
 
 .nm-entry-audio {
     margin: 12px 0;
+    flex-shrink: 0; /* Evita que se comprima */
 }
 
 .nm-entry-audio audio {
@@ -228,6 +240,7 @@
 
 .nm-entry-file {
     margin: 12px 0;
+    flex-shrink: 0; /* Evita que se comprima */
 }
 
 .nm-download-btn {
@@ -247,11 +260,7 @@
     text-decoration: none;
 }
 
-.nm-entry-date {
-    font-size: 13px;
-    color: #666;
-    margin-top: 8px;
-}
+
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -264,9 +273,23 @@
         margin-bottom: 15px;
     }
     
+    .nm-entry-content {
+        padding: 12px;
+    }
+    
+    .nm-entry-title {
+        font-size: 15px;
+    }
+    
     .nm-entries-pagination {
         gap: 4px;
     }
+    
+    .nm-page-link {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
     
     .nm-page-link {
         padding: 6px 10px;
@@ -306,13 +329,11 @@
     }
 }
 
-.nm-entry-card {
-    animation: fadeIn 0.5s ease-out;
-}
-
 /* Efectos hover mejorados */
 .nm-entry-card {
+    animation: fadeIn 0.5s ease-out;
     cursor: pointer;
+    position: relative;
 }
 
 .nm-entry-card::before {
@@ -324,6 +345,7 @@
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
     transition: left 0.5s;
+    pointer-events: none;
 }
 
 .nm-entry-card:hover::before {
