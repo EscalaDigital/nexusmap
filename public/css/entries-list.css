@@ -186,7 +186,29 @@
     margin: 0;
 }
 
-/* Estilos adicionales para elementos de galería */
+/* Mensaje cuando no hay configuración de galería */
+.nm-no-config-message {
+    text-align: center;
+    padding: 20px;
+    background: #f0f8ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    color: #0073aa;
+}
+
+.nm-no-config-message p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.nm-no-config-message p:last-child {
+    margin-bottom: 0;
+}
+
+.nm-no-config-message strong {
+    color: #005a87;
+}
+
 .nm-entry-description {
     font-size: 14px;
     color: #666;

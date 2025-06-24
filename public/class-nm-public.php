@@ -1013,8 +1013,27 @@ class NM_Public
 
     /**
      * Render gallery card content based on selected fields
-     */
-    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
+     */    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
+        // Verificar si hay algún campo seleccionado
+        $has_any_field = false;
+        foreach ($selected_fields as $field_value) {
+            if (!empty($field_value)) {
+                $has_any_field = true;
+                break;
+            }
+        }
+        
+        // Si no hay campos configurados, mostrar mensaje
+        if (!$has_any_field) {
+            echo '<div class="nm-entry-content">';
+            echo '<div class="nm-no-config-message">';
+            echo '<p><strong>⚙️ Configuración necesaria</strong></p>';
+            echo '<p>Para ver el contenido de las entradas, configura los campos en <strong>NexusMap > Galería</strong></p>';
+            echo '</div>';
+            echo '</div>';
+            return;
+        }
+        
         // Renderizar imagen si está seleccionada
         if (!empty($selected_fields['image'])) {
             $this->render_gallery_image_field($entry_data, $selected_fields['image']);
@@ -1042,13 +1061,9 @@ class NM_Public
         if (!empty($selected_fields['file'])) {
             $this->render_gallery_file_field($entry_data, $selected_fields['file']);
         }
-        
-        // Renderizar fecha si está seleccionada
+          // Renderizar fecha si está seleccionada
         if (!empty($selected_fields['date'])) {
             $this->render_gallery_date_field($entry_data, $selected_fields['date']);
-        } else {
-            // Si no hay campo de fecha seleccionado, mostrar fecha de envío como fallback
-            echo '<div class="nm-entry-date"><small>Enviado: ' . date('d/m/Y', strtotime($entry->date_submitted)) . '</small></div>';
         }
         
         echo '</div>';

@@ -107,8 +107,9 @@ El shortcode utiliza las clases CSS definidas en `public/css/entries-list.css`. 
 ## Notas técnicas
 - **Solo se muestran entradas aprobadas** - No se pueden ver entradas pendientes o rechazadas
 - Las entradas se ordenan por fecha de envío descendente (más recientes primero)
-- Los campos mostrados dependen completamente de la configuración en el menú "Galería"
-- Si no hay configuración de galería, las tarjetas pueden aparecer vacías
+- **Los campos mostrados dependen exclusivamente de la configuración en el menú "Galería"**
+- Si no hay configuración de galería, las tarjetas mostrarán un mensaje pidiendo configuración
+- No se muestra información adicional (como fecha de envío) a menos que esté específicamente configurada
 - Los reproductores de audio tienen controles nativos del navegador
 - Los archivos se abren en nueva pestaña al descargar
 
