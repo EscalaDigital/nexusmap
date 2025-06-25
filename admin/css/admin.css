@@ -538,8 +538,3 @@
     margin-left: 5px;
 }
 
-/* Optional: Show generated field name on hover for debugging */
-.nm-form-field:hover .field-label::after {
-    content: " (ID: " attr(data-generated-name) ")";
-}
-
