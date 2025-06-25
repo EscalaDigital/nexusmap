@@ -8,10 +8,9 @@ $field_names = $field_config['field_names'] ?? [];
 $geonames_user = nm_get_geonames_user();
 ?>
 
-<div class="nm-form-field nm-geographic-field" data-type="geographic-selector" data-field-id="<?php echo esc_attr($field_id); ?>">
-    <div class="nm-field-header">
+<div class="nm-form-field nm-geographic-field" data-type="geographic-selector" data-field-id="<?php echo esc_attr($field_id); ?>">    <div class="nm-field-header">
         <input type="text" class="field-label" placeholder="Título del campo" value="<?php echo esc_attr($field_label ?: 'Selector Geográfico'); ?>">
-        <input type="text" class="field-name" placeholder="Nombre del campo" value="<?php echo esc_attr($field_name ?: ''); ?>">
+        <input type="hidden" class="field-name" value="<?php echo esc_attr($field_name ?: ''); ?>">
         <div class="nm-field-controls">
             <button type="button" class="nm-configure-geo-btn" title="Configurar">⚙️</button>
             <button type="button" class="nm-remove-field-btn" title="Eliminar">✕</button>

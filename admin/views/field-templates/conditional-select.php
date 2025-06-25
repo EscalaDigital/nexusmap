@@ -2,7 +2,7 @@
     <label>Conditional Select</label>
     <input type="text" class="field-label" placeholder="Field Label"
         value="<?php echo esc_attr($field['label'] ?? ''); ?>">
-    <input type="text" class="field-name" placeholder="Field Nae"
+    <input type="hidden" class="field-name"
         value="<?php echo esc_attr($field['name'] ?? ''); ?>">
 
     <div class="select-options">

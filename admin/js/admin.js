@@ -71,9 +71,7 @@ jQuery(document).ready(function ($) {
     jQuery('#nm-form-elements li').draggable({
         helper: 'clone',
         revert: 'invalid'
-    });
-
-    jQuery('.nm-form-droppable').droppable({
+    });    jQuery('.nm-form-droppable').droppable({
         accept: '#nm-form-elements li',
         drop: function (event, ui) {
             var fieldType = ui.draggable.data('type');
@@ -83,9 +81,52 @@ jQuery(document).ready(function ($) {
                 action: 'nm_get_field_template',
                 field_type: fieldType,
                 nonce: nmAdmin.nonce
-            }, function (response) {
-                if (response.success) {
-                    $thisForm.append(response.data);
+            }, function (response) {                if (response.success) {
+                    var $newField = jQuery(response.data);
+                    $thisForm.append($newField);
+                    
+                    // Auto-generar field-name para el nuevo campo
+                    var $fieldLabel = $newField.find('.field-label');
+                    var $fieldName = $newField.find('.field-name');
+                    
+                    if ($fieldLabel.length && $fieldName.length) {
+                        var label = $fieldLabel.val().trim();
+                        var normalizedName;
+                        
+                        if (label) {
+                            // Si ya hay un label, usarlo
+                            normalizedName = normalizeFieldName(label, $thisForm);
+                        } else {
+                            // Si no hay label, generar un nombre por defecto basado en el tipo de campo
+                            normalizedName = generateDefaultFieldName(fieldType, $thisForm);
+                            
+                            // También poner un label por defecto
+                            var defaultLabels = {
+                                'text': 'Campo de Texto',
+                                'textarea': 'Área de Texto',
+                                'select': 'Lista Desplegable',
+                                'checkbox': 'Casillas de Verificación',
+                                'radio': 'Botones de Radio',
+                                'number': 'Campo Numérico',
+                                'date': 'Selector de Fecha',
+                                'url': 'Campo URL',
+                                'image': 'Subir Imagen',
+                                'file': 'Subir Archivo',
+                                'audio': 'Campo de Audio',
+                                'header': 'Encabezado',
+                                'title': 'Título',
+                                'range': 'Control Deslizante',
+                                'conditional-select': 'Select Condicional',
+                                'geographic-selector': 'Selector Geográfico'
+                            };
+                            
+                            if (defaultLabels[fieldType]) {
+                                $fieldLabel.val(defaultLabels[fieldType]);
+                            }
+                        }
+                        
+                        $fieldName.val(normalizedName);
+                    }
                 } else {
                     alert('Error loading field template.');
                 }
@@ -135,9 +176,7 @@ jQuery(document).ready(function ($) {
                 '</div>';
             $optionsContainer.append(newOption);
         }
-    });
-
-    // Función para inicializar droppable en contenedores condicionales
+    });    // Función para inicializar droppable en contenedores condicionales
     function initializeConditionalDroppable($scope) {
         $scope.find('.conditional-fields').sortable({
             placeholder: 'field-placeholder',
@@ -146,7 +185,51 @@ jQuery(document).ready(function ($) {
                 ui.item.css({             // 👈  limpiamos lo que sortable añadió
                     width: '',
                     height: ''
-                });
+                });                // Auto-generar field-name para el campo añadido si es necesario
+                if (ui.item.hasClass('nm-form-field')) {
+                    var $fieldLabel = ui.item.find('.field-label');
+                    var $fieldName = ui.item.find('.field-name');
+                    var $currentForm = ui.item.closest('.nm-form-droppable');
+                    
+                    if ($fieldLabel.length && $fieldName.length && !$fieldName.val()) {
+                        var label = $fieldLabel.val().trim();
+                        var normalizedName;
+                        
+                        if (label) {
+                            normalizedName = normalizeFieldName(label, $currentForm);
+                        } else {
+                            // Generar nombre por defecto
+                            var fieldType = ui.item.data('type') || 'field';
+                            normalizedName = generateDefaultFieldName(fieldType, $currentForm);
+                        }                        
+                        $fieldName.val(normalizedName);
+                    }
+                }
+            },
+            
+            receive: function (event, ui) {
+                // Auto-generar field-name cuando se recibe un nuevo campo
+                var $newField = ui.item;
+                if ($newField.hasClass('nm-form-field')) {
+                    var $fieldLabel = $newField.find('.field-label');
+                    var $fieldName = $newField.find('.field-name');
+                    var $currentForm = $newField.closest('.nm-form-droppable');
+                    
+                    if ($fieldLabel.length && $fieldName.length) {
+                        var label = $fieldLabel.val().trim();
+                        var normalizedName;
+                        
+                        if (label) {
+                            normalizedName = normalizeFieldName(label, $currentForm);
+                        } else {
+                            // Generar nombre por defecto
+                            var fieldType = $newField.data('type') || 'field';
+                            normalizedName = generateDefaultFieldName(fieldType, $currentForm);
+                        }
+                        
+                        $fieldName.val(normalizedName);
+                    }
+                }
             }
         });
     }
@@ -254,18 +337,117 @@ jQuery(document).ready(function ($) {
         }
     });
 
-
-
-    // Función de normalización de nombres de campos
-    function normalizeFieldName(rawName) {
-        return rawName
+    // Función de normalización de nombres de campos mejorada
+    function normalizeFieldName(rawName, $currentForm) {
+        // Limpiar y normalizar el texto
+        var cleanName = rawName
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-            .replace(/[^a-z0-9]+/g, '_')     // Caracteres especiales a guiones bajos
-            .replace(/_+/g, '_')             // Eliminar guiones bajos múltiples
-            .replace(/^_|_$/g, '');          // Quitar guiones al inicio/final
+            .replace(/[^a-z0-9\s]+/g, ' ')   // Solo letras, números y espacios
+            .trim();
+        
+        // Tomar solo las primeras 2-3 palabras significativas
+        var words = cleanName.split(/\s+/).filter(function(word) {
+            return word.length > 2; // Filtrar palabras muy cortas (el, la, de, etc.)
+        });
+        
+        // Tomar máximo 2 palabras para mantener el nombre corto
+        var baseWords = words.slice(0, 2);
+        var baseName = baseWords.join('_');
+        
+        // Si no hay palabras válidas, usar 'field'
+        if (!baseName) {
+            baseName = 'field';
+        }
+        
+        // Limitar la longitud base a 10 caracteres
+        if (baseName.length > 10) {
+            baseName = baseName.substring(0, 10);
+        }
+        
+        // Generar ID único: timestamp + número aleatorio
+        var timestamp = Date.now().toString().slice(-6); // Últimos 6 dígitos del timestamp
+        var random = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // Número aleatorio 00-99
+        var uniqueId = timestamp + random;
+        
+        // Crear el nombre final
+        var finalName = baseName + '_' + uniqueId;
+        
+        // Verificar unicidad en el formulario actual (si se proporciona)
+        if ($currentForm && $currentForm.length) {
+            var attempts = 0;
+            var originalName = finalName;
+            
+            while (isFieldNameUsed(finalName, $currentForm) && attempts < 10) {
+                attempts++;
+                var newRandom = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                finalName = baseName + '_' + timestamp + newRandom;
+            }
+        }
+        
+        return finalName;
     }
+    
+    // Función auxiliar para verificar si un nombre ya está en uso
+    function isFieldNameUsed(fieldName, $form) {
+        var isUsed = false;
+        $form.find('.field-name').each(function() {
+            if ($(this).val() === fieldName) {
+                isUsed = true;
+                return false; // break
+            }
+        });
+        return isUsed;
+    }
+    
+    // Función para generar nombres por defecto según el tipo
+    function generateDefaultFieldName(fieldType, $currentForm) {
+        var typeMap = {
+            'text': 'texto',
+            'textarea': 'texto_largo',
+            'select': 'select',
+            'checkbox': 'checkbox',
+            'radio': 'radio',
+            'number': 'numero',
+            'date': 'fecha',
+            'url': 'url',
+            'image': 'imagen',
+            'file': 'archivo',
+            'audio': 'audio',
+            'header': 'titulo',
+            'title': 'encabezado',
+            'range': 'rango',
+            'conditional-select': 'cond_select',
+            'geographic-selector': 'geo_select'
+        };
+        
+        var baseName = typeMap[fieldType] || 'campo';
+        return normalizeFieldName(baseName, $currentForm);
+    }    // Auto-generar field-name cuando cambie field-label
+    jQuery(document).on('input', '.field-label', function() {
+        var $field = jQuery(this).closest('.nm-form-field');
+        var $fieldName = $field.find('.field-name');
+        var $currentForm = $field.closest('.nm-form-droppable');
+        var label = jQuery(this).val().trim();
+        
+        if ($fieldName.length) {
+            if (label) {
+                // Si hay label, usarlo para generar el name
+                var normalizedName = normalizeFieldName(label, $currentForm);
+                $fieldName.val(normalizedName);
+                // Almacenar el nombre generado para mostrar en hover (opcional)
+                $field.attr('data-generated-name', normalizedName);
+            } else {
+                // Si no hay label, generar un nombre por defecto
+                var fieldType = $field.data('type') || 'field';
+                var normalizedName = generateDefaultFieldName(fieldType, $currentForm);
+                $fieldName.val(normalizedName);
+                $field.attr('data-generated-name', normalizedName);
+            }
+        }
+    });
+
     // Modificar la función de guardar formulario para incluir checkboxes
     // Modificar la función saveForm existente
     /**

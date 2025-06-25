@@ -520,3 +520,26 @@
     margin-right: 5px;
 }
 
+/* Auto-generated field names should be hidden */
+.nm-form-field .field-name[type="hidden"] {
+    display: none !important;
+}
+
+/* For better UX, add a subtle indicator that field names are auto-generated */
+.nm-form-field .field-label {
+    position: relative;
+}
+
+.nm-form-field .field-label::after {
+    content: " (ID auto)";
+    font-size: 10px;
+    color: #999;
+    font-style: italic;
+    margin-left: 5px;
+}
+
+/* Optional: Show generated field name on hover for debugging */
+.nm-form-field:hover .field-label::after {
+    content: " (ID: " attr(data-generated-name) ")";
+}
+
