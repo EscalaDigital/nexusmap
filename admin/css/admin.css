@@ -433,12 +433,6 @@
     box-shadow: 0 0 0 1px #007cba;
 }
 
-/* Icono visual para el campo de audio en la lista */
-#nm-form-elements li[data-type="audio"]::before {
-    content: "🎵 ";
-    margin-right: 5px;
-}
-
 /* Información de tipos de archivo en el constructor de formularios */
 .file-type-info {
     margin-top: 8px;
@@ -455,6 +449,37 @@
 }
 
 /* Iconos para los tipos de campo en el constructor */
+#nm-form-elements li[data-type="header"]::before {
+    content: "🏷️ ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="text"]::before {
+    content: "✏️ ";
+    margin-right: 5px;
+}
+
+/* Fix para el icono de textarea */
+#nm-form-elements li[data-type="textarea"]::before {
+    content: "■ " !important;
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="checkbox"]::before {
+    content: "☑️ ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="radio"]::before {
+    content: "🔘 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="select"]::before {
+    content: "📋 ";
+    margin-right: 5px;
+}
+
 #nm-form-elements li[data-type="image"]::before {
     content: "📷 ";
     margin-right: 5px;
@@ -462,6 +487,36 @@
 
 #nm-form-elements li[data-type="file"]::before {
     content: "📄 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="number"]::before {
+    content: "🔢 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="date"]::before {
+    content: "📅 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="url"]::before {
+    content: "🔗 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="audio"]::before {
+    content: "🎵 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="conditional-select"]::before {
+    content: "🔄 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="geographic-selector"]::before {
+    content: "🌍 ";
     margin-right: 5px;
 }
 

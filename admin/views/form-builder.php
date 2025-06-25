@@ -7,12 +7,15 @@
             <ul>
                 <li data-type="header">Header</li>
                 <li data-type="text">Text Field</li>
-                <li data-type="textarea">Textarea</li>                <li data-type="checkbox">Checkbox</li>
+                <li data-type="textarea">Textarea</li>                
+                <li data-type="checkbox">Checkbox</li>
                 <li data-type="radio">Radio Group</li>
                 <li data-type="select">Dropdown Menu</li>
                 <li data-type="image">Image Upload</li>
                 <li data-type="file">Document Upload</li>
-                <li data-type="number">Number Field</li><li data-type="date">Date Picker</li>                <li data-type="url">URL Field</li>
+                <li data-type="number">Number Field</li>
+                <li data-type="date">Date Picker</li>                
+                <li data-type="url">URL Field</li>
                 <li data-type="audio">Audio Field</li>
                 <li data-type="conditional-select">Conditional Select</li>
                 <li data-type="geographic-selector">Selector Geográfico</li>
