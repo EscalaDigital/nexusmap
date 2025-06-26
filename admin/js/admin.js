@@ -292,13 +292,22 @@ jQuery(document).ready(function ($) {
             const $field = jQuery(this);
             const $fieldName = $field.find('.field-name');
             const $fieldLabel = $field.find('.field-label');
+            const fieldType = $field.data('type');
             
             // Solo generar nombre si no existe uno
             if ($fieldName.length && (!$fieldName.val() || $fieldName.val().trim() === '')) {
-                const label = $fieldLabel.val() ? $fieldLabel.val().trim() : 'campo';
-                const uniqueName = generateUniqueFieldName(label);
+                let uniqueName;
+                
+                // Para el campo map, usar un nombre fijo
+                if (fieldType === 'map') {
+                    uniqueName = 'nm_map_location';
+                } else {
+                    const label = $fieldLabel.val() ? $fieldLabel.val().trim() : 'campo';
+                    uniqueName = generateUniqueFieldName(label);
+                }
+                
                 $fieldName.val(uniqueName);
-                console.log('Generated field name:', uniqueName, 'for label:', label);
+                console.log('Generated field name:', uniqueName, 'for field type:', fieldType);
             }
         });
         
@@ -307,13 +316,22 @@ jQuery(document).ready(function ($) {
             const $field = jQuery(this);
             const $fieldName = $field.find('.field-name');
             const $fieldLabel = $field.find('.field-label');
+            const fieldType = $field.data('type');
             
             // Solo generar nombre si no existe uno
             if ($fieldName.length && (!$fieldName.val() || $fieldName.val().trim() === '')) {
-                const label = $fieldLabel.val() ? $fieldLabel.val().trim() : 'campo_condicional';
-                const uniqueName = generateUniqueFieldName(label);
+                let uniqueName;
+                
+                // Para el campo map en contextos condicionales, usar un nombre fijo también
+                if (fieldType === 'map') {
+                    uniqueName = 'nm_map_location_conditional';
+                } else {
+                    const label = $fieldLabel.val() ? $fieldLabel.val().trim() : 'campo_condicional';
+                    uniqueName = generateUniqueFieldName(label);
+                }
+                
                 $fieldName.val(uniqueName);
-                console.log('Generated conditional field name:', uniqueName, 'for label:', label);
+                console.log('Generated conditional field name:', uniqueName, 'for field type:', fieldType);
             }
         });
     }
@@ -352,7 +370,12 @@ function saveForm(formSelector, formType) {
         
         // Si no hay nombre de campo, generar uno
         if (!rawName || rawName.trim() === '') {
-            rawName = generateUniqueFieldName(fieldLabel || 'campo');
+            // Para el campo map, usar un nombre fijo
+            if (fieldType === 'map') {
+                rawName = 'nm_map_location';
+            } else {
+                rawName = generateUniqueFieldName(fieldLabel || 'campo');
+            }
             $field.find('.field-name').val(rawName);
             console.log('Generated field name on save:', rawName, 'for field type:', fieldType);
         }
@@ -413,7 +436,12 @@ function saveForm(formSelector, formType) {
                       
                       // Si aún no tiene nombre, generar uno
                       if (!condFieldName || condFieldName.trim() === '') {
-                          condFieldName = generateUniqueFieldName(condFieldLabel || 'campo_condicional');
+                          // Para campos map en contextos condicionales, usar nombre fijo
+                          if (condFieldType === 'map') {
+                              condFieldName = 'nm_map_location_conditional';
+                          } else {
+                              condFieldName = generateUniqueFieldName(condFieldLabel || 'campo_condicional');
+                          }
                           $condField.find('.field-name').val(condFieldName);
                       }
 
