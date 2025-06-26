@@ -93,9 +93,21 @@
 
 <div id="dataModal" class="modal" style="display:none;">
     <div class="modal-content">
-        <span class="close">&times;</span>
-        <div id="map" style="height: 400px;"></div>
-        <pre id="jsonData"></pre>
+        <div class="modal-header">
+            <h2>Información de la Entrada</h2>
+            <button class="close" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="map-section">
+                <div id="map" style="height: 100%; width: 100%;"></div>
+            </div>
+            <div class="data-section">
+                <h3 class="data-section-title">Datos del Formulario</h3>
+                <div class="property-grid">
+                    <div id="jsonData"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

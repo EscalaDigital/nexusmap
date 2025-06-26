@@ -125,33 +125,87 @@ jQuery(document).ready(function ($) {
 
         $.each(properties, function (key, value) {
             var cleanKey = key.replace('nm_', '');  // Elimina "nm_" del inicio del key
+            var displayKey = cleanKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Formatea el key
             var content = value;
          
-            if (isUrl(content)) {
+            // Verificar si el contenido está vacío o es nulo
+            if (!content || content === '' || content === null || content === undefined) {
+                content = '<em style="color: #999; font-style: italic;">Sin información</em>';
+            } else if (isUrl(content)) {
                 var fileType = getFileType(content);
                 if (fileType === 'image') {
-                    content = '<img src="' + content + '" alt="' + cleanKey + '">';
+                    content = '<img src="' + content + '" alt="' + displayKey + '" loading="lazy">';
                 } else if (fileType === 'pdf') {
-                    content = '<a href="' + content + '" target="_blank">Ver PDF</a>';
+                    content = '<a href="' + content + '" target="_blank" rel="noopener">📄 Ver PDF</a>';
                 } else {
-                    content = '<a href="' + content + '" target="_blank">' + content + '</a>';
+                    content = '<a href="' + content + '" target="_blank" rel="noopener">🔗 ' + content + '</a>';
                 }
+            } else if (typeof content === 'string' && content.length > 200) {
+                // Para textos largos, agregar funcionalidad de expandir/contraer
+                var shortContent = content.substring(0, 200) + '...';
+                content = '<span class="short-content">' + shortContent + '</span>' +
+                         '<span class="full-content" style="display: none;">' + content + '</span>' +
+                         '<br><button class="toggle-content button" style="margin-top: 8px; font-size: 12px;">Ver más</button>';
             }
 
-            // Construye la fila con el título en negrita y el contenido a la derecha
+            // Construye la fila con el título y el contenido
             propertyHtml += '<div class="property-item">';
-            propertyHtml += '<strong>' + cleanKey + ':</strong>';
+            propertyHtml += '<strong>' + displayKey + '</strong>';
             propertyHtml += '<span>' + content + '</span>';
             propertyHtml += '</div>';
         });
 
         // Inserta el contenido en el modal
         jQuery('#jsonData').html(propertyHtml);
+        
+        // Agregar funcionalidad para expandir/contraer textos largos
+        jQuery('.toggle-content').on('click', function() {
+            var $button = jQuery(this);
+            var $propertyItem = $button.closest('.property-item');
+            var $shortContent = $propertyItem.find('.short-content');
+            var $fullContent = $propertyItem.find('.full-content');
+            
+            if ($fullContent.is(':visible')) {
+                $fullContent.hide();
+                $shortContent.show();
+                $button.text('Ver más');
+            } else {
+                $shortContent.hide();
+                $fullContent.show();
+                $button.text('Ver menos');
+            }
+        });
     });
 
-    // Cerrar el modal cuando se hace clic en el botón de cerrar
-    jQuery('.close').on('click', function () {
+    // Cerrar el modal cuando se hace clic en el botón de cerrar o fuera del modal
+    jQuery(document).on('click', '.close', function () {
         jQuery('#dataModal').hide();
+        if (map) {
+            map.remove();
+            map = null;
+        }
+    });
+    
+    // Cerrar modal al hacer clic fuera del contenido
+    jQuery('#dataModal').on('click', function(e) {
+        if (e.target === this) {
+            jQuery(this).hide();
+            if (map) {
+                map.remove();
+                map = null;
+            }
+        }
+    });
+    
+    // Cerrar modal con la tecla Escape
+    jQuery(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && jQuery('#dataModal').is(':visible')) {
+            jQuery('#dataModal').hide();
+            if (map) {
+                map.remove();
+                map = null;
+            }
+        }
     });
 });
 
