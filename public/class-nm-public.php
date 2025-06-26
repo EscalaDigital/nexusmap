@@ -604,8 +604,8 @@ class NM_Public
                     // Obtener todos los campos adicionales disponibles en los datos
                     if (is_array($entry_data)) {
                         foreach ($entry_data as $key => $value) {
-                            // Saltar campos que ya hemos procesado
-                            if (in_array($key, ['map_data', 'geometry']) || empty($value)) {
+                            // Saltar campos vacíos pero INCLUIR map_data y geometry
+                            if (empty($value)) {
                                 continue;
                             }
                             
@@ -614,6 +614,16 @@ class NM_Public
                                 $response_data['custom_fields'][$key] = $value;
                             }
                         }
+                    }
+                    
+                    // IMPORTANTE: Incluir datos del mapa si existen
+                    if (isset($entry_data['map_data']) && !empty($entry_data['map_data'])) {
+                        $response_data['map_data'] = $entry_data['map_data'];
+                    }
+                    
+                    // También incluir geometry directo si existe
+                    if (isset($entry_data['geometry']) && !empty($entry_data['geometry'])) {
+                        $response_data['geometry'] = $entry_data['geometry'];
                     }
                     
                     // También extraer campos del map_data si existen
