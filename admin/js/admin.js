@@ -85,55 +85,7 @@ jQuery(document).ready(function ($) {
                     var $newField = jQuery(response.data);
                     $thisForm.append($newField);
                     
-                    // Auto-generar field-name para el nuevo campo SOLO si no tiene uno
-                    var $fieldLabel = $newField.find('.field-label');
-                    var $fieldName = $newField.find('.field-name');
-                    
-                    if ($fieldLabel.length && $fieldName.length) {
-                        var currentFieldName = $fieldName.val().trim();
-                        
-                        // Solo generar si no hay field-name o es temporal
-                        if (!currentFieldName || isTemporaryFieldName(currentFieldName)) {
-                            var label = $fieldLabel.val().trim();
-                            var normalizedName;
-                            
-                            if (label) {
-                                // Si ya hay un label, usarlo
-                                normalizedName = normalizeFieldName(label, $thisForm);
-                            } else {
-                                // Si no hay label, generar un nombre por defecto basado en el tipo de campo
-                                normalizedName = generateDefaultFieldName(fieldType, $thisForm);
-                                
-                                // También poner un label por defecto
-                                var defaultLabels = {
-                                    'text': 'Campo de Texto',
-                                    'textarea': 'Área de Texto',
-                                    'select': 'Lista Desplegable',
-                                    'checkbox': 'Casillas de Verificación',
-                                    'radio': 'Botones de Radio',
-                                    'number': 'Campo Numérico',
-                                    'date': 'Selector de Fecha',
-                                    'url': 'Campo URL',
-                                    'image': 'Subir Imagen',
-                                    'file': 'Subir Archivo',
-                                    'audio': 'Campo de Audio',
-                                    'header': 'Encabezado',
-                                    'title': 'Título',
-                                    'range': 'Control Deslizante',
-                                    'conditional-select': 'Select Condicional',
-                                    'geographic-selector': 'Selector Geográfico'
-                                };
-                                
-                                if (defaultLabels[fieldType]) {
-                                    $fieldLabel.val(defaultLabels[fieldType]);
-                                }
-                            }
-                              $fieldName.val(normalizedName);
-                        } else {
-                            // Si ya tiene un field-name válido, mantenerlo
-                            // No hacer nada, conservar el valor existente
-                        }
-                    }
+                    // Solo agregar el campo al formulario, sin generar name automáticamente
                 } else {
                     alert('Error loading field template.');
                 }
@@ -192,59 +144,10 @@ jQuery(document).ready(function ($) {
                     height: ''
                 });
                 
-                // Auto-generar field-name para el campo añadido si es necesario
-                if (ui.item.hasClass('nm-form-field')) {
-                    var $fieldLabel = ui.item.find('.field-label');
-                    var $fieldName = ui.item.find('.field-name');
-                    var $currentForm = ui.item.closest('.nm-form-droppable');
-                    
-                    if ($fieldLabel.length && $fieldName.length) {
-                        var currentFieldName = $fieldName.val().trim();
-                        
-                        // Solo generar si no hay field-name válido
-                        if (!currentFieldName || isTemporaryFieldName(currentFieldName)) {
-                            var label = $fieldLabel.val().trim();
-                            var normalizedName;
-                            
-                            if (label) {
-                                normalizedName = normalizeFieldName(label, $currentForm);
-                            } else {
-                                // Generar nombre por defecto
-                                var fieldType = ui.item.data('type') || 'field';
-                                normalizedName = generateDefaultFieldName(fieldType, $currentForm);                            }
-                            
-                            $fieldName.val(normalizedName);
-                        }
-                    }
-                }
+                // No hacemos nada más - los nombres se generarán al guardar
             },
-              receive: function (event, ui) {
-                // Auto-generar field-name cuando se recibe un nuevo campo
-                var $newField = ui.item;
-                if ($newField.hasClass('nm-form-field')) {
-                    var $fieldLabel = $newField.find('.field-label');
-                    var $fieldName = $newField.find('.field-name');
-                    var $currentForm = $newField.closest('.nm-form-droppable');
-                    
-                    if ($fieldLabel.length && $fieldName.length) {
-                        var currentFieldName = $fieldName.val().trim();
-                        
-                        // Solo generar si no hay field-name válido
-                        if (!currentFieldName || isTemporaryFieldName(currentFieldName)) {
-                            var label = $fieldLabel.val().trim();
-                            var normalizedName;
-                            
-                            if (label) {
-                                normalizedName = normalizeFieldName(label, $currentForm);
-                            } else {
-                                // Generar nombre por defecto
-                                var fieldType = $newField.data('type') || 'field';
-                                normalizedName = generateDefaultFieldName(fieldType, $currentForm);                            }
-                            
-                            $fieldName.val(normalizedName);
-                        }
-                    }
-                }
+            receive: function (event, ui) {
+                // No hacemos nada aquí - los nombres se generarán al guardar
             }
         });
     }
@@ -352,136 +255,69 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    // Función de normalización de nombres de campos mejorada
-    function normalizeFieldName(rawName, $currentForm) {
-        // Limpiar y normalizar el texto
-        var cleanName = rawName
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-            .replace(/[^a-z0-9\s]+/g, ' ')   // Solo letras, números y espacios
-            .trim();
-        
-        // Tomar solo las primeras 2-3 palabras significativas
-        var words = cleanName.split(/\s+/).filter(function(word) {
-            return word.length > 2; // Filtrar palabras muy cortas (el, la, de, etc.)
-        });
-        
-        // Tomar máximo 2 palabras para mantener el nombre corto
-        var baseWords = words.slice(0, 2);
-        var baseName = baseWords.join('_');
-        
-        // Si no hay palabras válidas, usar 'field'
-        if (!baseName) {
-            baseName = 'field';
-        }
-        
-        // Limitar la longitud base a 10 caracteres
-        if (baseName.length > 10) {
-            baseName = baseName.substring(0, 10);
-        }
-        
-        // Generar ID único: timestamp + número aleatorio
-        var timestamp = Date.now().toString().slice(-6); // Últimos 6 dígitos del timestamp
-        var random = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // Número aleatorio 00-99
-        var uniqueId = timestamp + random;
-        
-        // Crear el nombre final
-        var finalName = baseName + '_' + uniqueId;
-        
-        // Verificar unicidad en el formulario actual (si se proporciona)
-        if ($currentForm && $currentForm.length) {
-            var attempts = 0;
-            var originalName = finalName;
-            
-            while (isFieldNameUsed(finalName, $currentForm) && attempts < 10) {
-                attempts++;
-                var newRandom = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-                finalName = baseName + '_' + timestamp + newRandom;
-            }
-        }
-        
-        return finalName;
-    }
-    
-    // Función auxiliar para verificar si un nombre ya está en uso
-    function isFieldNameUsed(fieldName, $form) {
-        var isUsed = false;
-        $form.find('.field-name').each(function() {
-            if ($(this).val() === fieldName) {
-                isUsed = true;
-                return false; // break
-            }
-        });
-        return isUsed;
-    }
-    
-    // Función para generar nombres por defecto según el tipo
-    function generateDefaultFieldName(fieldType, $currentForm) {
-        var typeMap = {
-            'text': 'texto',
-            'textarea': 'texto_largo',
-            'select': 'select',
-            'checkbox': 'checkbox',
-            'radio': 'radio',
-            'number': 'numero',
-            'date': 'fecha',
-            'url': 'url',
-            'image': 'imagen',
-            'file': 'archivo',
-            'audio': 'audio',
-            'header': 'titulo',
-            'title': 'encabezado',
-            'range': 'rango',
-            'conditional-select': 'cond_select',
-            'geographic-selector': 'geo_select'
-        };
-        
-        var baseName = typeMap[fieldType] || 'campo';
-        return normalizeFieldName(baseName, $currentForm);
-    }    // Auto-generar field-name cuando cambie field-label (solo si no existe uno)
-    jQuery(document).on('input', '.field-label', function() {
-        var $field = jQuery(this).closest('.nm-form-field');
-        var $fieldName = $field.find('.field-name');
-        var $currentForm = $field.closest('.nm-form-droppable');
-        var label = jQuery(this).val().trim();
-        
-        if ($fieldName.length) {
-            var currentFieldName = $fieldName.val().trim();
-            
-            // Solo generar nuevo ID si no hay field-name asignado o es temporal
-            var shouldGenerateNew = !currentFieldName || isTemporaryFieldName(currentFieldName);
-            
-            if (shouldGenerateNew) {
-                if (label) {
-                    // Si hay label, usarlo para generar el name
-                    var normalizedName = normalizeFieldName(label, $currentForm);
-                    $fieldName.val(normalizedName);
-                } else {
-                    // Si no hay label, generar un nombre por defecto
-                    var fieldType = $field.data('type') || 'field';
-                    var normalizedName = generateDefaultFieldName(fieldType, $currentForm);
-                    $fieldName.val(normalizedName);
-                }
-            }
-        }
-    });
-    
-    // Función para detectar si un field-name es temporal
+    // Función auxiliar para detectar nombres temporales (ya no se usa)
     function isTemporaryFieldName(fieldName) {
-        // Detectar patrones de nombres temporales como: texto_123456, field_123456, etc.
-        var temporaryPatterns = [
-            /^(texto|campo|field|select|checkbox|radio|numero|fecha|url|imagen|archivo|audio|titulo|encabezado|rango|cond_select|geo_select)_\d+$/,
-            /^field_\d+$/,
-            /^\w+_\d{6,}\d*$/  // Cualquier cosa seguida de timestamp largo
-        ];
+        return fieldName.startsWith('temp_') || fieldName.match(/^[a-z]+_\d+$/);
+    }
+    // Función para generar un nombre único para un campo basado en su label
+    function generateUniqueFieldName(label) {
+        // Normalizar el label para crear un nombre válido para base de datos
+        let name = label.toLowerCase()
+            .replace(/[áàäâ]/g, 'a')
+            .replace(/[éèëê]/g, 'e')
+            .replace(/[íìïî]/g, 'i')
+            .replace(/[óòöô]/g, 'o')
+            .replace(/[úùüû]/g, 'u')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[^a-z0-9]/g, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_+|_+$/g, '');
         
-        return temporaryPatterns.some(function(pattern) {
-            return pattern.test(fieldName);
+        // Si queda vacío, usar un nombre por defecto
+        if (!name) {
+            name = 'campo';
+        }
+        
+        // Agregar timestamp y número aleatorio para garantizar unicidad
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000);
+        
+        return name + '_' + timestamp + '_' + random;
+    }
+
+    // Función para procesar nombres de campos antes de guardar
+    function processFieldNamesBeforeSave(formSelector) {
+        // Procesar campos principales del formulario
+        jQuery(formSelector + ' .nm-form-field').each(function() {
+            const $field = jQuery(this);
+            const $fieldName = $field.find('.field-name');
+            const $fieldLabel = $field.find('.field-label');
+            
+            // Solo generar nombre si no existe uno
+            if ($fieldName.length && (!$fieldName.val() || $fieldName.val().trim() === '')) {
+                const label = $fieldLabel.val() ? $fieldLabel.val().trim() : 'campo';
+                const uniqueName = generateUniqueFieldName(label);
+                $fieldName.val(uniqueName);
+                console.log('Generated field name:', uniqueName, 'for label:', label);
+            }
+        });
+        
+        // También procesar campos condicionales
+        jQuery(formSelector + ' .conditional-fields .nm-form-field').each(function() {
+            const $field = jQuery(this);
+            const $fieldName = $field.find('.field-name');
+            const $fieldLabel = $field.find('.field-label');
+            
+            // Solo generar nombre si no existe uno
+            if ($fieldName.length && (!$fieldName.val() || $fieldName.val().trim() === '')) {
+                const label = $fieldLabel.val() ? $fieldLabel.val().trim() : 'campo_condicional';
+                const uniqueName = generateUniqueFieldName(label);
+                $fieldName.val(uniqueName);
+                console.log('Generated conditional field name:', uniqueName, 'for label:', label);
+            }
         });
     }
-      
-    // Modificar la función de guardar formulario para incluir checkboxes
+
     // Modificar la función saveForm existente
     /**
  * Guarda un formulario (A, B o único)
@@ -490,6 +326,10 @@ jQuery(document).ready(function ($) {
  * @param {number} formType      – 0 (único) | 1 (A) | 2 (B)
  */
 function saveForm(formSelector, formType) {
+    
+    // Procesar nombres de campos antes de guardar
+    console.log('Processing field names before save for:', formSelector);
+    processFieldNamesBeforeSave(formSelector);
 
     const formFields       = [];
     const conditionalFields = [];
@@ -508,8 +348,16 @@ function saveForm(formSelector, formType) {
 
         const fieldType  = $field.data('type');                // text, select, checkbox, …
         const fieldLabel = $field.find('.field-label').val() || '';
-        const rawName    = $field.find('.field-name').val() || fieldLabel;
-        const fieldName  = normalizeFieldName(rawName);
+        let rawName    = $field.find('.field-name').val();
+        
+        // Si no hay nombre de campo, generar uno
+        if (!rawName || rawName.trim() === '') {
+            rawName = generateUniqueFieldName(fieldLabel || 'campo');
+            $field.find('.field-name').val(rawName);
+            console.log('Generated field name on save:', rawName, 'for field type:', fieldType);
+        }
+        
+        const fieldName  = rawName; // Usar el nombre que ya existe o el recién generado
         const fieldOptions = [];
 
         /*────────────────────────────────────────────────────────
@@ -560,7 +408,14 @@ function saveForm(formSelector, formType) {
                                            || $condField.text()
                                            || '';
 
-                      const condFieldName  = normalizeFieldName(condFieldLabel);
+                      // Obtener el nombre del campo condicional (debe haber sido generado ya)
+                      let condFieldName = $condField.find('.field-name').val();
+                      
+                      // Si aún no tiene nombre, generar uno
+                      if (!condFieldName || condFieldName.trim() === '') {
+                          condFieldName = generateUniqueFieldName(condFieldLabel || 'campo_condicional');
+                          $condField.find('.field-name').val(condFieldName);
+                      }
 
                       const condFieldData  = {
                           type : condFieldType,
@@ -609,7 +464,7 @@ function saveForm(formSelector, formType) {
             }            const fieldData = { 
                 type: fieldType, 
                 label: fieldLabel || 'Campo sin título', 
-                name: fieldName || ('field_' + Math.random().toString(36).substr(2, 9))
+                name: fieldName || generateUniqueFieldName('campo_generico')
             };
             
             if (fieldOptions.length) fieldData.options = fieldOptions;            // Procesamiento especial para geographic-selector
@@ -652,7 +507,8 @@ function saveForm(formSelector, formType) {
             return;
         }
         if (!field.name) {
-            field.name = 'field_' + Math.random().toString(36).substr(2, 9);
+            field.name = generateUniqueFieldName('campo_sin_nombre');
+            console.log('Generated fallback field name:', field.name);
         }
         if (!field.label) {
             field.label = 'Campo sin título';
@@ -732,17 +588,19 @@ function saveForm(formSelector, formType) {
     // Function to validate if all fields are filled
     function validateForm(formId) {
         let isValid = true;
-        jQuery(`${formId} .nm-form-field input, ${formId} .nm-form-field select, ${formId} .nm-form-field textarea`).each(function () {
+        // Solo validar campos obligatorios (field-label principalmente)
+        jQuery(`${formId} .nm-form-field .field-label`).each(function () {
             if (jQuery(this).val() === "") {
                 isValid = false;
                 jQuery(this).css('border', '1px solid red'); // Highlight empty fields
+                console.log('Empty field label found:', jQuery(this).closest('.nm-form-field').data('type'));
             } else {
                 jQuery(this).css('border', ''); // Reset field style if filled
             }
         });
 
         if (!isValid) {
-            alert("Por favor, completa todos los campos antes de guardar.");
+            alert("Por favor, completa el título/label de todos los campos antes de guardar.");
         }
         return isValid;
     }
