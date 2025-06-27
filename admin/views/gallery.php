@@ -6,8 +6,30 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap">
-    <h1>Configuración de Galería</h1>
-    <p>Selecciona qué campos del formulario se mostrarán en las tarjetas de entradas.</p>
+<h1>Configuración de Galería</h1>
+<p>Selecciona qué campos del formulario se mostrarán en las tarjetas de entradas.</p>
+
+<div class="nm-shortcode-examples" style="margin-bottom: 24px; background: #f8fafd; border: 1px solid #e1e5e9; border-radius: 6px; padding: 16px;">
+    <h2 style="font-size: 1.1em; margin-top: 0;">Ejemplos de uso del listado de entradas:</h2>
+    <ul style="margin-left: 20px;">
+        <li>
+            <strong>Lista básica:</strong><br>
+            <code>[nm_entries_list]</code>
+        </li>
+        <li>
+            <strong>Mostrar 20 entradas por página:</strong><br>
+            <code>[nm_entries_list per_page="20"]</code>
+        </li>
+        <li>
+            <strong>Sin paginación:</strong><br>
+            <code>[nm_entries_list show_pagination="false"]</code>
+        </li>
+    </ul>
+    <p style="margin-top: 12px; color: #666;">
+        Puedes combinar estos atributos según tus necesidades.
+    </p>
+</div>
+
     
     <div class="nm-gallery-container">
         <div class="nm-gallery-left">
