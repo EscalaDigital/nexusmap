@@ -110,7 +110,26 @@ jQuery(document).ready(function ($) {
             });
             $addWmsButton.on('click', function (e) {
                 e.stopPropagation(); // Evita que el evento se propague al mapa
-                showAddWmsForm();
+                console.log('Add WMS button clicked'); // Debug log
+                if (typeof window.showAddWmsForm === 'function') {
+                    console.log('Calling showAddWmsForm function'); // Debug log
+                    window.showAddWmsForm();
+                    
+                    // Respaldo: si después de 500ms no hay modal visible, usar función simple
+                    setTimeout(function() {
+                        if (jQuery('#nm-wms-form:visible').length === 0 && jQuery('#nm-wms-form-simple:visible').length === 0) {
+                            console.log('No modal visible, trying simple form'); // Debug log
+                            if (typeof window.showSimpleWmsForm === 'function') {
+                                window.showSimpleWmsForm();
+                            } else {
+                                alert('Error: No se pudo abrir el formulario WMS. Por favor, recarga la página e inténtalo de nuevo.');
+                            }
+                        }
+                    }, 500);
+                } else {
+                    console.error('showAddWmsForm function not found'); // Debug log
+                    alert('Error: La función para mostrar el formulario WMS no está disponible.');
+                }
             });
             $topControls.append($addWmsButton);
         }

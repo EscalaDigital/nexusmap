@@ -397,17 +397,23 @@ function showModal(properties) {
  * Crea un formulario modal que permite al usuario introducir la URL
  * y el nombre de la capa WMS que desea agregar
  */
-function showAddWmsForm() {
+window.showAddWmsForm = function() {
+    console.log('showAddWmsForm called'); // Debug log
+    
     if (jQuery('#nm-wms-form').length === 0) {
-        var $wmsForm = jQuery('<div>', { id: 'nm-wms-form', class: 'nm-modal' });
+        console.log('Creating new WMS form'); // Debug log
+        var $wmsForm = jQuery('<div>', { id: 'nm-wms-form', class: 'nm-wms-modal' }); // Cambiar clase para evitar conflictos
         var $wmsFormContent = jQuery('<div>', { class: 'nm-modal-content' });
+        
+        // Agregar botón de cerrar
+        var $closeButton = jQuery('<span>', { class: 'nm-modal-close' }).html('&times;');
 
         var $formTitle = jQuery('<h3>').text('Añadir capa WMS');
         var $labelUrl = jQuery('<label>', { for: 'nm-wms-url' }).text('URL del servicio WMS:');
-        var $inputUrl = jQuery('<input>', { type: 'text', id: 'nm-wms-url', name: 'nm-wms-url' });
+        var $inputUrl = jQuery('<input>', { type: 'text', id: 'nm-wms-url', name: 'nm-wms-url', placeholder: 'https://ejemplo.com/wms' });
 
         var $labelLayerName = jQuery('<label>', { for: 'nm-wms-layer-name' }).text('Nombre de la capa WMS:');
-        var $inputLayerName = jQuery('<input>', { type: 'text', id: 'nm-wms-layer-name', name: 'nm-wms-layer-name' });
+        var $inputLayerName = jQuery('<input>', { type: 'text', id: 'nm-wms-layer-name', name: 'nm-wms-layer-name', placeholder: 'nombre_de_la_capa' });
 
         var $addButton = jQuery('<button>', { id: 'nm-wms-add-button' }).text('Agregar capa');
         var $cancelButton = jQuery('<button>', { id: 'nm-wms-cancel-button' }).text('Cancelar');
@@ -415,29 +421,79 @@ function showAddWmsForm() {
         // Icono de carga oculto inicialmente
         var $loadingIcon = jQuery('<div>', { id: 'nm-wms-loading', style: 'display:none;' }).html('<img src="' + nmMapData.plugin_url + '/includes/img/Loading_icon.gif" alt="Cargando...">');
 
-        $wmsFormContent.append($formTitle, $labelUrl, $inputUrl, $labelLayerName, $inputLayerName, $addButton, $cancelButton, $loadingIcon);
+        $wmsFormContent.append($closeButton, $formTitle, $labelUrl, $inputUrl, $labelLayerName, $inputLayerName, $addButton, $cancelButton, $loadingIcon);
         $wmsForm.append($wmsFormContent);
 
-        jQuery('#nm-main-map').append($wmsForm);
+        jQuery('body').append($wmsForm);
 
         $wmsForm.css({
-            position: 'absolute',
+            position: 'fixed',
             top: '0',
             left: '0',
             width: '100%',
             height: '100%',
             'background-color': 'rgba(0,0,0,0.5)',
-            'z-index': '1000',
+            'z-index': '10000',
             display: 'flex',
             'align-items': 'center',
-            'justify-content': 'center'
+            'justify-content': 'center',
+            'transform': 'none', // Asegurar que no se aplique transform
+            'right': 'auto', // Resetear right
+            'box-shadow': 'none', // Remover box-shadow
+            'transition': 'none', // Remover transición
+            'max-height': 'none', // Resetear max-height
+            'padding': '20px', // Añadir padding para que no se pegue a los bordes
+            'box-sizing': 'border-box' // Incluir padding en las dimensiones
         });
 
         $wmsFormContent.css({
             'background-color': '#fff',
             padding: '20px',
             'border-radius': '5px',
-            width: '300px'
+            width: '400px',
+            'max-width': '90%',
+            'max-height': '90vh',
+            position: 'relative',
+            'overflow-y': 'auto',
+            margin: 'auto'
+        });
+        
+        // Estilos para el botón de cerrar
+        $closeButton.css({
+            position: 'absolute',
+            top: '10px',
+            right: '15px',
+            'font-size': '24px',
+            'font-weight': 'bold',
+            cursor: 'pointer',
+            color: '#aaa'
+        });
+        
+        // Estilos para los campos del formulario
+        $labelUrl.css({ display: 'block', 'margin-top': '10px', 'font-weight': 'bold' });
+        $labelLayerName.css({ display: 'block', 'margin-top': '10px', 'font-weight': 'bold' });
+        $inputUrl.css({ width: '100%', padding: '8px', 'margin-top': '5px', 'box-sizing': 'border-box' });
+        $inputLayerName.css({ width: '100%', padding: '8px', 'margin-top': '5px', 'box-sizing': 'border-box' });
+        
+        // Estilos para los botones
+        $addButton.css({ 
+            'background-color': '#0073aa', 
+            color: 'white', 
+            padding: '10px 20px', 
+            border: 'none', 
+            'border-radius': '3px',
+            cursor: 'pointer',
+            'margin-top': '15px',
+            'margin-right': '10px'
+        });
+        $cancelButton.css({ 
+            'background-color': '#666', 
+            color: 'white', 
+            padding: '10px 20px', 
+            border: 'none', 
+            'border-radius': '3px',
+            cursor: 'pointer',
+            'margin-top': '15px'
         });
 
         $wmsForm.hide();
@@ -454,6 +510,17 @@ function showAddWmsForm() {
 
                 if (/[^a-zA-Z0-9_:,.-]/.test(wmsLayerName)) {
                     alert('El nombre de la capa contiene caracteres no permitidos.');
+                    return;
+                }
+                
+                // Verificar que las variables globales necesarias estén disponibles
+                if (typeof map === 'undefined' || typeof overlays === 'undefined' || typeof controlLayers === 'undefined') {
+                    alert('Error: El mapa no está inicializado correctamente.');
+                    console.error('Variables globales del mapa no disponibles:', {
+                        map: typeof map,
+                        overlays: typeof overlays,
+                        controlLayers: typeof controlLayers
+                    });
                     return;
                 }
 
@@ -478,7 +545,7 @@ function showAddWmsForm() {
                         alert('Capa WMS cargada con éxito');
                         $loadingIcon.hide();
                         $addButton.show();
-                        $wmsForm.hide();
+                        $wmsForm.css('display', 'none').hide();
                         $inputUrl.val('');
                         $inputLayerName.val('');
                     }
@@ -489,29 +556,297 @@ function showAddWmsForm() {
                     // Ocultar el icono de carga y mostrar el botón de agregar nuevamente
                     $loadingIcon.hide();
                     $addButton.show();
-                    map.removeLayer(userWmsLayer);
-                    controlLayers.removeLayer(userWmsLayer);
-
+                    if (map && typeof map.removeLayer === 'function') {
+                        map.removeLayer(userWmsLayer);
+                    }
+                    if (controlLayers && typeof controlLayers.removeLayer === 'function') {
+                        controlLayers.removeLayer(userWmsLayer);
+                    }
                 });
 
-                userWmsLayer.addTo(map);
+                if (map && typeof map.addLayer === 'function') {
+                    userWmsLayer.addTo(map);
+                }
 
-                overlays[wmsLayerName] = userWmsLayer;
-                controlLayers.addOverlay(userWmsLayer, wmsLayerName);
+                if (overlays && controlLayers) {
+                    overlays[wmsLayerName] = userWmsLayer;
+                    if (typeof controlLayers.addOverlay === 'function') {
+                        controlLayers.addOverlay(userWmsLayer, wmsLayerName);
+                    }
+                }
             } else {
                 alert('Por favor, complete todos los campos.');
             }
         });
 
         $cancelButton.on('click', function () {
-            $wmsForm.hide();
+            $wmsForm.css('display', 'none').hide();
             $inputUrl.val('');
             $inputLayerName.val('');
         });
+        
+        // Event handler para el botón de cerrar (X)
+        $closeButton.on('click', function () {
+            $wmsForm.css('display', 'none').hide();
+            $inputUrl.val('');
+            $inputLayerName.val('');
+        });
+        
+        // Cerrar modal al hacer clic en el fondo
+        $wmsForm.on('click', function (e) {
+            if (e.target === this) {
+                $wmsForm.css('display', 'none').hide();
+                $inputUrl.val('');
+                $inputLayerName.val('');
+            }
+        });
     }
 
-    jQuery('#nm-wms-form').show();
-}
+    console.log('Showing WMS form'); // Debug log
+    var $wmsForm = jQuery('#nm-wms-form');
+    
+    // Debug adicional
+    console.log('WMS form found:', $wmsForm.length > 0);
+    console.log('WMS form initial display:', $wmsForm.css('display'));
+    console.log('WMS form initial visibility:', $wmsForm.css('visibility'));
+    console.log('WMS form z-index:', $wmsForm.css('z-index'));
+    console.log('WMS form position:', $wmsForm.css('position'));
+    console.log('WMS form width:', $wmsForm.css('width'));
+    console.log('WMS form height:', $wmsForm.css('height'));
+    
+    // Verificar si hay conflictos de estilo
+    var computedStyle = window.getComputedStyle($wmsForm[0]);
+    console.log('Computed display:', computedStyle.display);
+    console.log('Computed visibility:', computedStyle.visibility);
+    console.log('Computed z-index:', computedStyle.zIndex);
+    console.log('Computed position:', computedStyle.position);
+    
+    // Forzar la visibilidad con estilos más agresivos
+    $wmsForm.css({
+        'display': 'flex !important',
+        'visibility': 'visible !important',
+        'opacity': '1 !important',
+        'position': 'fixed !important',
+        'top': '0 !important',
+        'left': '0 !important',
+        'width': '100% !important',
+        'height': '100% !important',
+        'z-index': '999999 !important',
+        'background-color': 'rgba(0,0,0,0.8) !important',
+        'transform': 'none !important', // Resetear transform que lo mueve fuera de pantalla
+        'right': 'auto !important', // Resetear right
+        'box-shadow': 'none !important', // Remover box-shadow
+        'transition': 'none !important', // Remover transición
+        'max-height': 'none !important', // Resetear max-height
+        'padding': '20px !important', // Padding para separar del borde
+        'box-sizing': 'border-box !important' // Incluir padding en dimensiones
+    });
+    
+    // Forzar que sea visible
+    $wmsForm.show();
+    $wmsForm.attr('style', $wmsForm.attr('style') + '; display: flex !important;');
+    
+    // Verificar después del cambio
+    console.log('WMS form after show - display:', $wmsForm.css('display'));
+    console.log('WMS form after show - visibility:', $wmsForm.css('visibility'));
+    console.log('WMS form is visible:', $wmsForm.is(':visible'));
+    console.log('WMS form offset width:', $wmsForm[0].offsetWidth);
+    console.log('WMS form offset height:', $wmsForm[0].offsetHeight);
+    
+    // También verificar si hay elementos padre que puedan estar ocultando el modal
+    console.log('Body overflow:', jQuery('body').css('overflow'));
+    console.log('Html overflow:', jQuery('html').css('overflow'));
+    
+    // Verificar si el elemento está realmente en el DOM
+    console.log('Element is in DOM:', jQuery.contains(document, $wmsForm[0]));
+    console.log('Element parent:', $wmsForm.parent().length);
+    
+    // Intentar traer el elemento al frente de forma agresiva
+    $wmsForm.appendTo('body');
+    $wmsForm.focus();
+    
+    // Si después de todo esto el modal sigue sin tener dimensiones, usar el respaldo
+    setTimeout(function() {
+        if ($wmsForm[0].offsetWidth === 0 || $wmsForm[0].offsetHeight === 0) {
+            console.log('Modal principal no visible, usando función de respaldo');
+            $wmsForm.remove(); // Limpiar el modal problemático
+            showSimpleWmsForm(); // Llamar función de respaldo
+        }
+    }, 100);
+};
+
+/**
+ * Función de respaldo para crear un modal WMS simple y visible
+ * Se usa si la función principal no funciona correctamente
+ */
+window.showSimpleWmsForm = function() {
+    // Eliminar cualquier modal existente
+    jQuery('#nm-wms-form-simple').remove();
+    
+    // Crear modal simple con HTML directo
+    var modalHtml = `
+        <div id="nm-wms-form-simple" style="
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(0,0,0,0.8) !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-family: Arial, sans-serif !important;
+        ">
+            <div style="
+                background-color: white !important;
+                padding: 30px !important;
+                border-radius: 8px !important;
+                width: 400px !important;
+                max-width: 90% !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+                position: relative !important;
+            ">
+                <span id="nm-close-simple" style="
+                    position: absolute !important;
+                    top: 10px !important;
+                    right: 15px !important;
+                    font-size: 28px !important;
+                    font-weight: bold !important;
+                    cursor: pointer !important;
+                    color: #aaa !important;
+                ">&times;</span>
+                
+                <h3 style="margin-top: 0 !important; color: #333 !important;">Añadir capa WMS</h3>
+                
+                <label style="display: block !important; margin-top: 15px !important; font-weight: bold !important; color: #333 !important;">
+                    URL del servicio WMS:
+                </label>
+                <input type="text" id="nm-simple-wms-url" placeholder="https://ejemplo.com/wms" style="
+                    width: 100% !important;
+                    padding: 10px !important;
+                    margin-top: 5px !important;
+                    border: 1px solid #ccc !important;
+                    border-radius: 4px !important;
+                    box-sizing: border-box !important;
+                    font-size: 14px !important;
+                ">
+                
+                <label style="display: block !important; margin-top: 15px !important; font-weight: bold !important; color: #333 !important;">
+                    Nombre de la capa WMS:
+                </label>
+                <input type="text" id="nm-simple-wms-layer" placeholder="nombre_de_la_capa" style="
+                    width: 100% !important;
+                    padding: 10px !important;
+                    margin-top: 5px !important;
+                    border: 1px solid #ccc !important;
+                    border-radius: 4px !important;
+                    box-sizing: border-box !important;
+                    font-size: 14px !important;
+                ">
+                
+                <div style="margin-top: 20px !important;">
+                    <button id="nm-simple-add-btn" style="
+                        background-color: #0073aa !important;
+                        color: white !important;
+                        padding: 12px 24px !important;
+                        border: none !important;
+                        border-radius: 4px !important;
+                        cursor: pointer !important;
+                        margin-right: 10px !important;
+                        font-size: 14px !important;
+                    ">Agregar capa</button>
+                    
+                    <button id="nm-simple-cancel-btn" style="
+                        background-color: #666 !important;
+                        color: white !important;
+                        padding: 12px 24px !important;
+                        border: none !important;
+                        border-radius: 4px !important;
+                        cursor: pointer !important;
+                        font-size: 14px !important;
+                    ">Cancelar</button>
+                </div>
+                
+                <div id="nm-simple-loading" style="display: none !important; text-align: center !important; margin-top: 15px !important;">
+                    <div style="color: #666 !important;">Cargando...</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar al body
+    jQuery('body').append(modalHtml);
+    
+    // Event handlers
+    jQuery('#nm-close-simple, #nm-simple-cancel-btn').on('click', function() {
+        jQuery('#nm-wms-form-simple').remove();
+    });
+    
+    jQuery('#nm-simple-add-btn').on('click', function() {
+        var url = jQuery('#nm-simple-wms-url').val();
+        var layerName = jQuery('#nm-simple-wms-layer').val();
+        
+        if (!url || !layerName) {
+            alert('Por favor, complete todos los campos.');
+            return;
+        }
+        
+        if (!/^https?:\/\//i.test(url)) {
+            alert('Por favor, ingrese una URL válida que comience con http:// o https://');
+            return;
+        }
+        
+        // Verificar variables globales
+        if (typeof map === 'undefined' || typeof overlays === 'undefined' || typeof controlLayers === 'undefined') {
+            alert('Error: El mapa no está inicializado correctamente.');
+            return;
+        }
+        
+        // Mostrar loading
+        jQuery('#nm-simple-loading').show();
+        jQuery('#nm-simple-add-btn').prop('disabled', true);
+        
+        // Crear capa WMS
+        var userWmsLayer = L.tileLayer.wms(url, {
+            layers: layerName,
+            format: 'image/png',
+            transparent: true,
+            attribution: ''
+        });
+        
+        var alertShown = false;
+        
+        userWmsLayer.on('tileload', function () {
+            if (!alertShown) {
+                alertShown = true;
+                alert('Capa WMS cargada con éxito');
+                jQuery('#nm-wms-form-simple').remove();
+            }
+        });
+        
+        userWmsLayer.on('tileerror', function () {
+            alert('Error al cargar la capa WMS. Verifique la URL y el nombre de la capa.');
+            jQuery('#nm-simple-loading').hide();
+            jQuery('#nm-simple-add-btn').prop('disabled', false);
+        });
+        
+        userWmsLayer.addTo(map);
+        overlays[layerName] = userWmsLayer;
+        if (controlLayers && typeof controlLayers.addOverlay === 'function') {
+            controlLayers.addOverlay(userWmsLayer, layerName);
+        }
+    });
+    
+    // Cerrar al hacer clic en el fondo
+    jQuery('#nm-wms-form-simple').on('click', function(e) {
+        if (e.target === this) {
+            jQuery(this).remove();
+        }
+    });
+    
+    console.log('Simple WMS form created and should be visible');
+};
 
 /**
  * Comprueba si una cadena es una URL válida
