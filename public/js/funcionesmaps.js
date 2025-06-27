@@ -329,8 +329,12 @@ function showModal(properties) {
         for (const [key, value] of Object.entries(properties)) {
             if (!key.startsWith('nm_')) continue;
             if (['layers', 'has_layer', 'text_layers', 'entry_id'].includes(key)) continue;
+            
+            // Filtrar nm_conditional_groups si está vacío, es {} o []
+            if (key === 'nm_conditional_groups' && (value === '' || value === '{}' || value === '[]')) continue;
+            
             const label = getFieldLabel(key);
-            sectionContent[''].push(renderField(label, value));
+            sectionContent[''].push(renderField(label, value || 'Sin especificar'));
         }
     }
 

@@ -538,85 +538,14 @@ class NM_Public
                         $entry_data = json_decode($entry->entry_data, true);
                     }
                     
-                    // Obtener configuración de la galería para conocer los campos disponibles
-                    $gallery_settings = get_option('nm_gallery_settings', array());
-                    $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
-                    
-                    // Preparar respuesta con todos los datos disponibles
+                    // Preparar respuesta base
                     $response_data = array(
                         'id' => $entry->id,
                         'date_created' => $entry->date_created,
                         'custom_fields' => array()
                     );
                     
-                    // Extraer campos principales
-                    $response_data['title'] = $this->get_entry_field_value($entry_data, $selected_fields['text'] ?? 'titulo', 'Sin título');
-                    $response_data['description'] = $this->get_entry_field_value($entry_data, $selected_fields['textarea'] ?? 'descripcion', '');
-                    
-                    // Obtener imagen
-                    $image_field = $selected_fields['image'] ?? '';
-                    if (!empty($image_field)) {
-                        $image_value = $this->get_entry_field_value($entry_data, $image_field);
-                        if (!empty($image_value)) {
-                            if (filter_var($image_value, FILTER_VALIDATE_URL)) {
-                                $response_data['image'] = $image_value;
-                            } elseif (is_numeric($image_value)) {
-                                $url = wp_get_attachment_url(intval($image_value));
-                                if ($url) {
-                                    $response_data['image'] = $url;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Obtener audio
-                    $audio_field = $selected_fields['audio'] ?? '';
-                    if (!empty($audio_field)) {
-                        $audio_value = $this->get_entry_field_value($entry_data, $audio_field);
-                        if (!empty($audio_value) && filter_var($audio_value, FILTER_VALIDATE_URL)) {
-                            $response_data['audio'] = $audio_value;
-                        }
-                    }
-                    
-                    // Obtener archivo/documento
-                    $file_field = $selected_fields['file'] ?? '';
-                    if (!empty($file_field)) {
-                        $file_value = $this->get_entry_field_value($entry_data, $file_field);
-                        if (!empty($file_value) && filter_var($file_value, FILTER_VALIDATE_URL)) {
-                            $response_data['file'] = $file_value;
-                        }
-                    }
-                    
-                    // Obtener fecha
-                    $date_field = $selected_fields['date'] ?? '';
-                    if (!empty($date_field)) {
-                        $date_value = $this->get_entry_field_value($entry_data, $date_field);
-                        if (!empty($date_value)) {
-                            // Formatear fecha si es posible
-                            if (strtotime($date_value)) {
-                                $response_data['date'] = date('d/m/Y', strtotime($date_value));
-                            } else {
-                                $response_data['date'] = $date_value;
-                            }
-                        }
-                    }
-                    
-                    // Obtener todos los campos adicionales disponibles en los datos
-                    if (is_array($entry_data)) {
-                        foreach ($entry_data as $key => $value) {
-                            // Saltar campos vacíos pero INCLUIR map_data y geometry
-                            if (empty($value)) {
-                                continue;
-                            }
-                            
-                            // Añadir a campos personalizados si no está ya en los campos principales
-                            if (!in_array($key, array_values($selected_fields))) {
-                                $response_data['custom_fields'][$key] = $value;
-                            }
-                        }
-                    }
-                    
-                    // IMPORTANTE: Incluir datos del mapa si existen
+                    // IMPORTANTE: Incluir datos del mapa primero si existen
                     if (isset($entry_data['map_data']) && !empty($entry_data['map_data'])) {
                         $response_data['map_data'] = $entry_data['map_data'];
                     }
@@ -626,7 +555,57 @@ class NM_Public
                         $response_data['geometry'] = $entry_data['geometry'];
                     }
                     
-                    // También extraer campos del map_data si existen
+                    // Campos a evitar (misma lógica que el modal principal)
+                    $skip_keys = array(
+                        'layers',
+                        'has_layer', 
+                        'text_layers',
+                        'entry_id',
+                        'id',
+                        'entry_status',
+                        'form_type',
+                        'date_created',
+                        'user_id',
+                        'status',
+                        'submitted_at',
+                        'csrf_token',
+                        'nonce',
+                        'action',
+                        'map_data',
+                        'geometry',
+                        'nm_conditional_groups'  // Agregar este campo específicamente
+                    );
+                    
+                    // Procesar todos los campos con prefijo nm_ (misma lógica que el modal principal)
+                    if (is_array($entry_data)) {
+                        foreach ($entry_data as $key => $value) {
+                            // Saltar campos específicos que también evita el modal principal
+                            if (in_array($key, $skip_keys)) {
+                                continue;
+                            }
+                            
+                            // Solo procesar campos con prefijo nm_ (igual que el modal principal)
+                            if (strpos($key, 'nm_') === 0) {
+                                // Obtener el nombre del campo sin el prefijo
+                                $field_name = substr($key, 3);
+                                
+                                // Excluir específicamente "conditional_groups" si está vacío o es {}
+                                if ($field_name === 'conditional_groups') {
+                                    if (empty($value) || $value === '{}' || $value === '[]') {
+                                        continue;
+                                    }
+                                }
+                                
+                                // Procesar el campo (ahora incluyendo campos vacíos)
+                                $processed_value = $this->process_field_value_for_display($value, $field_name, true);
+                                
+                                // Incluir el campo incluso si está vacío (excepto si process_field_value_for_display retorna null explícitamente)
+                                $response_data['custom_fields'][$field_name] = $processed_value;
+                            }
+                        }
+                    }
+                    
+                    // También extraer campos del map_data si existen (igual que el modal principal)
                     if (isset($entry_data['map_data'])) {
                         try {
                             $raw_json = wp_unslash($entry_data['map_data']);
@@ -636,12 +615,22 @@ class NM_Public
                                 foreach ($map_data as $feature) {
                                     if (isset($feature['properties']) && is_array($feature['properties'])) {
                                         foreach ($feature['properties'] as $prop_key => $prop_value) {
-                                            if (!empty($prop_value) && !isset($response_data['custom_fields'][$prop_key])) {
-                                                // No añadir si ya está en los campos principales
-                                                $is_main_field = in_array($prop_key, array_values($selected_fields));
-                                                if (!$is_main_field) {
-                                                    $response_data['custom_fields'][$prop_key] = $prop_value;
+                                            // Saltar campos que ya se evitan
+                                            if (in_array($prop_key, $skip_keys)) {
+                                                continue;
+                                            }
+                                            
+                                            // Excluir específicamente "conditional_groups" si está vacío o es {}
+                                            if ($prop_key === 'nm_conditional_groups' || $prop_key === 'conditional_groups') {
+                                                if (empty($prop_value) || $prop_value === '{}' || $prop_value === '[]') {
+                                                    continue;
                                                 }
+                                            }
+                                            
+                                            // Solo agregar si no existe ya en custom_fields
+                                            if (!isset($response_data['custom_fields'][$prop_key])) {
+                                                $processed_value = $this->process_field_value_for_display($prop_value, $prop_key, true);
+                                                $response_data['custom_fields'][$prop_key] = $processed_value;
                                             }
                                         }
                                         break; // Solo procesar el primer feature
@@ -664,6 +653,45 @@ class NM_Public
         } else {
             wp_send_json_error('Índice de entrada no válido.');
         }
+    }
+    
+    /**
+     * Procesa un valor de campo para su visualización en el modal (similar a la lógica del modal principal)
+     */
+    private function process_field_value_for_display($value, $field_name, $include_empty = false) {
+        // Si no se deben incluir campos vacíos y el valor está vacío, retornar null
+        if (!$include_empty && empty($value) && $value !== '0') {
+            return null;
+        }
+        
+        // Si el valor está completamente vacío, mostrar un valor por defecto
+        if (empty($value) && $value !== '0') {
+            return 'Sin especificar';
+        }
+        
+        // Si es una URL (imagen, archivo, audio), verificar que sea válida
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            // Convertir HTTP a HTTPS para mayor seguridad
+            return str_replace('http://', 'https://', $value);
+        }
+        
+        // Si es un ID numérico de adjunto de WordPress, obtener la URL
+        if (is_numeric($value)) {
+            $attachment_url = wp_get_attachment_url(intval($value));
+            if ($attachment_url) {
+                return str_replace('http://', 'https://', $attachment_url);
+            }
+        }
+        
+        // Para fechas, intentar formatearlas
+        if (strpos($field_name, 'fecha') !== false || strpos($field_name, 'date') !== false) {
+            if (strtotime($value)) {
+                return date('d/m/Y', strtotime($value));
+            }
+        }
+        
+        // Sanitizar el valor de texto
+        return sanitize_text_field($value);
     }
 
     public function submit_form()
