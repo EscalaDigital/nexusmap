@@ -10,7 +10,6 @@ require_once 'NM_Form_Filters.php';
 require_once 'NM_Chart_Manager.php';
 require_once 'NM_Style_Manager.php';
 require_once 'NM_Gallery.php';
-// Temporalmente comentado: require_once 'NM_Entries_Display_Settings.php';
 
 class NM_Admin
 {
@@ -29,7 +28,6 @@ class NM_Admin
         new NM_Form_To_Map($this->loader); 
         new NM_Form_Filters($this->loader);        new NM_Chart_Manager($this->loader);        new NM_Style_Manager($this->loader);
         new NM_Gallery($this->loader);
-        // Temporalmente comentado: new NM_Entries_Display_Settings($this->loader);
 
         // Cargar estilos y scripts en las páginas específicas del plugin
         $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_admin_assets');
