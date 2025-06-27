@@ -448,7 +448,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const addChartBtn = document.getElementById('add-chart');
-    const addChartEmptyBtn = document.getElementById('add-chart-empty');
     const chartContainer = document.getElementById('chart-container');
     const chartTemplate = document.getElementById('chart-template');
     
@@ -582,10 +581,6 @@ document.addEventListener('DOMContentLoaded', function() {
         addChartBtn.addEventListener('click', addNewChart);
     }
     
-    if (addChartEmptyBtn) {
-        addChartEmptyBtn.addEventListener('click', addNewChart);
-    }
-    
     // Event listeners para botones de eliminar existentes
     document.querySelectorAll('.remove-chart').forEach(button => {
         button.addEventListener('click', function() {
@@ -599,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // También manejar el caso cuando se carga la página con estado vacío
+    // Manejar el caso cuando se carga la página con estado vacío
     const currentEmptyBtn = document.getElementById('add-chart-empty');
     if (currentEmptyBtn) {
         currentEmptyBtn.addEventListener('click', addNewChart);
