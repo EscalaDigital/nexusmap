@@ -182,17 +182,33 @@
                     case 'geographic-selector':
                         $field_config = $field['config'] ?? [];
                         if (!empty($field_config)):
+                            // Generar el JSON de configuración de forma segura
+                            ob_start();
+                            echo json_encode($field_config, JSON_HEX_QUOT | JSON_HEX_APOS);
+                            $config_json = ob_get_clean();
+                            
+                            // También crear un ID único para almacenar la config por separado
+                            $config_id = 'nm_geo_config_' . md5($field_id . time());
                     ?>
                         <div class="nm-form-field nm-geographic-selector" 
                              data-type="geographic-selector" 
-                             data-config='<?php echo esc_attr(json_encode($field_config)); ?>'
+                             data-config='<?php echo esc_attr($config_json); ?>'
+                             data-config-id="<?php echo esc_attr($config_id); ?>"
                              id="<?php echo esc_attr($field_id); ?>">
                             <label><?php echo esc_html($field['label']); ?></label>
                             <!-- Los selectores se generarán dinámicamente via JavaScript -->
                             <div class="nm-geo-selectors-container">
                                 <!-- Aquí se insertarán los campos select en cascada -->
                             </div>
-                        </div>                    <?php 
+                        </div>
+                        
+                        <!-- Script para configuración alternativa en caso de problemas con data-config -->
+                        <script type="text/javascript">
+                            if (typeof window.nmGeoConfigs === 'undefined') {
+                                window.nmGeoConfigs = {};
+                            }
+                            window.nmGeoConfigs['<?php echo esc_js($config_id); ?>'] = <?php echo $config_json; ?>;
+                        </script>                    <?php 
                         endif;
                         break;                    case 'audio':
                     ?>

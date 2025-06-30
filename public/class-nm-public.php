@@ -209,7 +209,10 @@ class NM_Public
             return 'You must be logged in to view this form.';
         }
 
-
+        // Limpiar cualquier output buffer previo
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
 
         // Check if the A/B option is enabled
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
@@ -222,15 +225,18 @@ class NM_Public
             // Include the view that allows the user to choose between two options
             ob_start();
             include NM_PLUGIN_DIR . 'public/views/form-display-ab.php';
-            return ob_get_clean();
+            $output = ob_get_clean();
         } else {
             // If A/B option is not enabled, retrieve the single form
             $form_data = $this->model->get_form(0); // form_type = 0
 
-            // Include the single form view            ob_start();
+            // Include the single form view
+            ob_start();
             include NM_PLUGIN_DIR . 'public/views/form-display.php';
-            return ob_get_clean();
+            $output = ob_get_clean();
         }
+        
+        return $output;
     }    /**
      * Display entries list shortcode
      */    public function display_entries_list($atts)

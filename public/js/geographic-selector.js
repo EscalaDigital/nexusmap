@@ -39,24 +39,117 @@
     function initializeGeographicSelectors() {
         const $selectors = $('.nm-geographic-selector');
         
+        if ($selectors.length === 0) {
+            console.log('No geographic selectors found on page');
+            return;
+        }
+        
+        console.log(`Found ${$selectors.length} geographic selector(s)`);
+        
         $selectors.each(function() {
             const $container = $(this);
+            console.log('Processing selector with ID:', $container.attr('id'));
+            
             const config = getFieldConfig($container);
             
             if (config) {
+                console.log('Valid config found:', config);
                 setupCascadingSelects($container, config);
             } else {
-                console.error('No valid config found for geographic selector');
+                console.error('No valid config found for geographic selector', $container.attr('id'));
+                // Mostrar mensaje de error al usuario
+                $container.html('<div style="color: red; padding: 10px; border: 1px solid red;">Error: Configuración del selector geográfico no válida</div>');
             }
         });
     }    function getFieldConfig($container) {
         try {
-            const configData = $container.data('config');
+            let configData = $container.data('config');
             
-            const result = configData ? (typeof configData === 'string' ? JSON.parse(configData) : configData) : null;
-            return result;
+            // Si no hay config data o hay problemas, intentar usar la configuración alternativa
+            if (!configData) {
+                const configId = $container.data('config-id');
+                if (configId && window.nmGeoConfigs && window.nmGeoConfigs[configId]) {
+                    console.log('Using fallback config for', configId);
+                    return window.nmGeoConfigs[configId];
+                }
+                
+                console.error('No config data found in container');
+                return null;
+            }
+            
+            // Si es un string, intentar parsearlo
+            if (typeof configData === 'string') {
+                // Limpiar cualquier contenido HTML que pueda haber sido insertado
+                configData = configData.trim();
+                
+                // Buscar el final del JSON válido
+                let jsonEnd = -1;
+                let bracketCount = 0;
+                let inString = false;
+                let escapeNext = false;
+                
+                for (let i = 0; i < configData.length; i++) {
+                    const char = configData[i];
+                    
+                    if (escapeNext) {
+                        escapeNext = false;
+                        continue;
+                    }
+                    
+                    if (char === '\\') {
+                        escapeNext = true;
+                        continue;
+                    }
+                    
+                    if (char === '"' && !escapeNext) {
+                        inString = !inString;
+                        continue;
+                    }
+                    
+                    if (!inString) {
+                        if (char === '{') {
+                            bracketCount++;
+                        } else if (char === '}') {
+                            bracketCount--;
+                            if (bracketCount === 0) {
+                                jsonEnd = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (jsonEnd > -1) {
+                    configData = configData.substring(0, jsonEnd + 1);
+                } else {
+                    console.error('Could not find valid JSON end, trying fallback config');
+                    
+                    // Intentar usar la configuración alternativa
+                    const configId = $container.data('config-id');
+                    if (configId && window.nmGeoConfigs && window.nmGeoConfigs[configId]) {
+                        console.log('Using fallback config for', configId);
+                        return window.nmGeoConfigs[configId];
+                    }
+                    
+                    return null;
+                }
+                
+                return JSON.parse(configData);
+            }
+            
+            // Si ya es un objeto, devolverlo directamente
+            return configData;
         } catch (e) {
             console.error('Error parsing geographic selector config:', e);
+            console.error('Config data was:', $container.data('config'));
+            
+            // Intentar usar la configuración alternativa como último recurso
+            const configId = $container.data('config-id');
+            if (configId && window.nmGeoConfigs && window.nmGeoConfigs[configId]) {
+                console.log('Using fallback config after error for', configId);
+                return window.nmGeoConfigs[configId];
+            }
+            
             return null;
         }
     }    function setupCascadingSelects($container, config) {
