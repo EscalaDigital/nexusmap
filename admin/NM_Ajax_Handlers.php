@@ -301,6 +301,7 @@ class NM_Ajax_Handlers
         $username = isset($_GET['username']) ? sanitize_text_field($_GET['username']) : '';
         $geonameId = isset($_GET['geonameId']) ? sanitize_text_field($_GET['geonameId']) : '';
         $featureClass = isset($_GET['featureClass']) ? sanitize_text_field($_GET['featureClass']) : '';
+        $lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'es';
         
         // Validar parámetros requeridos
         if (empty($endpoint) || empty($username)) {
@@ -322,7 +323,8 @@ class NM_Ajax_Handlers
         // Construir URL de GeoNames
         $base_url = "http://api.geonames.org/{$endpoint}";
         $params = [
-            'username' => $username
+            'username' => $username,
+            'lang' => $lang
         ];
         
         // Añadir parámetros adicionales según el endpoint
@@ -436,6 +438,7 @@ class NM_Ajax_Handlers
         $country = isset($_POST['country']) ? sanitize_text_field($_POST['country']) : '';
         $parent_code = isset($_POST['parent_code']) ? sanitize_text_field($_POST['parent_code']) : '';
         $level = isset($_POST['level']) ? sanitize_text_field($_POST['level']) : '';
+        $language = isset($_POST['language']) ? sanitize_text_field($_POST['language']) : 'es';
 
         if (empty($country) || empty($level)) {
             wp_send_json_error(array('message' => __('Missing required parameters', 'nexusmap')));
@@ -447,15 +450,17 @@ class NM_Ajax_Handlers
             // Primer nivel - obtener admin1 del país
             $endpoint = 'childrenJSON';
             $params = array(
-                'geonameId' => $this->get_country_geoname_id($country, $geonames_user),
-                'username' => $geonames_user
+                'geonameId' => $this->get_country_geoname_id($country, $geonames_user, $language),
+                'username' => $geonames_user,
+                'lang' => $language
             );
         } else {
             // Niveles subsecuentes - obtener children del parent
             $endpoint = 'childrenJSON';
             $params = array(
                 'geonameId' => $parent_code,
-                'username' => $geonames_user
+                'username' => $geonames_user,
+                'lang' => $language
             );
         }
 
@@ -510,7 +515,7 @@ class NM_Ajax_Handlers
     /**
      * Get country GeoName ID from country code
      */
-    private function get_country_geoname_id($country_code, $username)
+    private function get_country_geoname_id($country_code, $username, $language = 'es')
     {
         // Cache de IDs de países más comunes
         $country_ids = array(
@@ -537,7 +542,8 @@ class NM_Ajax_Handlers
         // Si no está en cache, buscar via API
         $url = 'http://api.geonames.org/countryInfoJSON?' . http_build_query(array(
             'country' => $country_code,
-            'username' => $username
+            'username' => $username,
+            'lang' => $language
         ));
 
         $response = wp_remote_get($url, array('timeout' => 10));

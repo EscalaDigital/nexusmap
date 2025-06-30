@@ -2,7 +2,10 @@
 // Template for Geographic Selector Field
 $field_id = $field['id'] ?? uniqid('geo_');
 $field_config = $field['config'] ?? [];
+$field_label = $field['label'] ?? '';
+$field_name = $field['name'] ?? '';
 $country = $field_config['country'] ?? 'ES';
+$language = $field_config['language'] ?? 'es';
 $levels = $field_config['levels'] ?? [];
 $field_names = $field_config['field_names'] ?? [];
 $geonames_user = nm_get_geonames_user();
@@ -29,6 +32,26 @@ $geonames_user = nm_get_geonames_user();
                 </div>
                 <small>Regístrate gratis en <a href="https://www.geonames.org/login" target="_blank">GeoNames.org</a> y activa los webservices en: <a href="https://www.geonames.org/manageaccount"> Activar servicios</a> El uso de geonames puede tener costes. Infórmese en la plataforma </small>
                 <div class="nm-user-validation-message" style="display: none;"></div>
+            </div>
+            
+            <div class="nm-config-row nm-language-row">
+                <label>Idioma de los datos:</label>
+                <select class="nm-language-selector">
+                    <option value="es"<?php echo $language === 'es' ? ' selected' : ''; ?>>Español</option>
+                    <option value="en"<?php echo $language === 'en' ? ' selected' : ''; ?>>Inglés</option>
+                    <option value="fr"<?php echo $language === 'fr' ? ' selected' : ''; ?>>Francés</option>
+                    <option value="de"<?php echo $language === 'de' ? ' selected' : ''; ?>>Alemán</option>
+                    <option value="it"<?php echo $language === 'it' ? ' selected' : ''; ?>>Italiano</option>
+                    <option value="pt"<?php echo $language === 'pt' ? ' selected' : ''; ?>>Portugués</option>
+                    <option value="ca"<?php echo $language === 'ca' ? ' selected' : ''; ?>>Catalán</option>
+                    <option value="eu"<?php echo $language === 'eu' ? ' selected' : ''; ?>>Euskera</option>
+                    <option value="gl"<?php echo $language === 'gl' ? ' selected' : ''; ?>>Gallego</option>
+                    <option value="ru"<?php echo $language === 'ru' ? ' selected' : ''; ?>>Ruso</option>
+                    <option value="zh"<?php echo $language === 'zh' ? ' selected' : ''; ?>>Chino</option>
+                    <option value="ja"<?php echo $language === 'ja' ? ' selected' : ''; ?>>Japonés</option>
+                    <option value="ar"<?php echo $language === 'ar' ? ' selected' : ''; ?>>Árabe</option>
+                </select>
+                <small>Selecciona el idioma en el que deseas obtener los nombres geográficos desde GeoNames</small>
             </div>
             
             <div class="nm-config-row nm-country-row" style="display: none;">
@@ -160,6 +183,11 @@ $geonames_user = nm_get_geonames_user();
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 3px;
+}
+
+.nm-language-selector {
+    background-color: #f9f9f9;
+    border: 1px solid #0073aa;
 }
 
 .nm-config-row small {

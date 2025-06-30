@@ -321,6 +321,10 @@
         const $loading = $levelContainer.find('.nm-geo-loading');
         const $error = $levelContainer.find('.nm-geo-error');
 
+        // Get language from container config
+        const config = getFieldConfig($container);
+        const language = config && config.config && config.config.language ? config.config.language : 'es';
+
         // Show loading state
         $loading.show();
         $error.hide();
@@ -334,7 +338,8 @@
                 nonce: nmGeoSelector.nonce,
                 country: country,
                 parent_code: parentCode,
-                level: level
+                level: level,
+                language: language
             },
             timeout: 15000,
             success: function(response) {

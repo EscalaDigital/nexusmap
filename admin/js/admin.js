@@ -499,17 +499,28 @@ function saveForm(formSelector, formType) {
             if (fieldType === 'geographic-selector') {
                 // Extraer la configuración del campo oculto
                 const configField = $field.find('.nm-field-config');
+                console.log('Geographic field found:', fieldType);
+                console.log('Config field element:', configField.length);
+                
                 if (configField.length) {
                     try {
-                        const configData = JSON.parse(configField.val());
+                        const configValue = configField.val();
+                        console.log('Raw config value:', configValue);
+                        
+                        const configData = JSON.parse(configValue);
+                        console.log('Parsed config data:', configData);
+                        
                         if (configData && configData.config) {
                             fieldData.config = configData.config;
+                            console.log('Final field config:', fieldData.config);
                             // Asegurar que el JSON se serialice en una sola línea
                             fieldData.config = JSON.parse(JSON.stringify(configData.config));
                         }
                     } catch (e) {
                         console.error('Error parsing geographic-selector config:', e);
                     }
+                } else {
+                    console.warn('No config field found for geographic-selector');
                 }
             }            // No hay procesamiento especial necesario para audio
             // Solo mantenemos la funcionalidad básica de subida
@@ -520,6 +531,15 @@ function saveForm(formSelector, formType) {
      * 3. PETICIONES AJAX
      * =======================================================*/
     
+    // Validate before form save
+    console.log('Final form fields to save:');
+    formFields.forEach((field, index) => {
+        console.log(`Field ${index + 1}:`, field);
+        if (field.type === 'geographic-selector') {
+            console.log('  Geographic field config:', field.config);
+        }
+    });
+
     // Validar datos antes de enviar
     if (formFields.length === 0) {
         alert('No hay campos para guardar en el formulario.');

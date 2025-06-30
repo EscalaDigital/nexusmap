@@ -37,22 +37,38 @@
             e.preventDefault();
             const $button = $(this);
             const $input = $button.siblings('.nm-geonames-user');
+            const $panel = $button.closest('.nm-geo-config-panel');
             const username = $input.val().trim();
+            const language = $panel.find('.nm-language-selector').val() || 'es';
             
             if (!username) {
                 showUserValidationMessage($button.closest('.nm-config-row'), 'Por favor, ingrese un nombre de usuario', 'error');
                 return;
             }
             
-            validateGeonamesUser(username, $button.closest('.nm-config-row'));
-        });        // Country selector change
+            validateGeonamesUser(username, language, $button.closest('.nm-config-row'));
+        });        // Language selector change - reload countries if user is validated
+        $(document).on('change', '.nm-language-selector', function() {
+            const $panel = $(this).closest('.nm-geo-config-panel');
+            const username = $panel.find('.nm-geonames-user').val().trim();
+            const language = $(this).val();
+            const $countryRow = $panel.find('.nm-country-row');
+            
+            // If user is already validated and countries are loaded, reload them in new language
+            if (username && $countryRow.is(':visible')) {
+                loadCountriesFromGeonames(username, language, $panel.find('.nm-config-row').first());
+            }
+        });
+
+        // Country selector change
         $(document).on('change', '.nm-country-selector', function() {
             const country = $(this).val();
             const panel = $(this).closest('.nm-geo-config-panel');
             const username = panel.find('.nm-geonames-user').val().trim();
+            const language = panel.find('.nm-language-selector').val() || 'es';
             
             if (country && username) {
-                discoverCountryStructure(country, username, panel);
+                discoverCountryStructure(country, username, language, panel);
             } else {
                 panel.find('.nm-levels-config').hide();
                 showStructureMessage(panel, 'Selecciona un país y valida el usuario GeoNames para explorar su estructura administrativa.', 'info');
@@ -86,20 +102,20 @@
             });
         }    }
 
-    function validateGeonamesUser(username, $configRow) {
+    function validateGeonamesUser(username, language, $configRow) {
         const $button = $configRow.find('.nm-validate-user-btn');
         const originalText = $button.text();
         
         // Update button state
         $button.prop('disabled', true).text('Validando...');
         hideUserValidationMessage($configRow);        // Test with a simple API call through proxy
-        callGeonamesProxy('countryInfoJSON', { username: username })
+        callGeonamesProxy('countryInfoJSON', { username: username, lang: language })
             .done(function(response) {
                 $button.prop('disabled', false).text(originalText);
                 
                 if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
                     showUserValidationMessage($configRow, '✓ Usuario válido. Cargando países...', 'success');
-                    loadCountriesFromGeonames(username, $configRow);
+                    loadCountriesFromGeonames(username, language, $configRow);
                 } else {
                     showUserValidationMessage($configRow, 'Usuario válido pero sin datos de países', 'error');
                 }
@@ -126,7 +142,7 @@
             });
     }
 
-    function loadCountriesFromGeonames(username, $configRow) {
+    function loadCountriesFromGeonames(username, language, $configRow) {
         const $panel = $configRow.closest('.nm-geo-config-panel');
         const $countryRow = $panel.find('.nm-country-row');
         const $countrySelect = $countryRow.find('.nm-country-selector');
@@ -135,7 +151,7 @@
         // Show country section and loading
         $countryRow.show();
         $loading.show();
-        $countrySelect.prop('disabled', true);        callGeonamesProxy('countryInfoJSON', { username: username }, 15000)
+        $countrySelect.prop('disabled', true);        callGeonamesProxy('countryInfoJSON', { username: username, lang: language }, 15000)
             .done(function(response) {
                 $loading.hide();
                 
@@ -181,8 +197,8 @@
     /**
      * Discover country administrative structure dynamically from GeoNames
      */
-    function discoverCountryStructure(countryCode, username, panel) {
-        console.log(`🔍 Discovering structure for country: ${countryCode}`);
+    function discoverCountryStructure(countryCode, username, language, panel) {
+        console.log(`🔍 Discovering structure for country: ${countryCode} in language: ${language}`);
         
         const $levelsConfig = panel.find('.nm-levels-config');
         const $levelsList = panel.find('.nm-levels-list');
@@ -192,7 +208,7 @@
         $levelsList.html('<div class="nm-loading-structure">🌍 Explorando estructura administrativa del país...</div>');
         
         // Check cache first
-        const cacheKey = `${countryCode}_${username}`;
+        const cacheKey = `${countryCode}_${username}_${language}`;
         if (countryStructureCache[cacheKey]) {
             console.log('📋 Using cached structure for', countryCode);
             displayDiscoveredStructure(countryStructureCache[cacheKey], $levelsList);
@@ -206,28 +222,29 @@
             return;
         }
         
-        exploreAdministrativeStructure(countryGeoId, countryCode, username, $levelsList, panel);
+        exploreAdministrativeStructure(countryGeoId, countryCode, username, language, $levelsList, panel);
     }
 
     /**
      * Recursively explore administrative structure
      */
-    function exploreAdministrativeStructure(geonameId, countryCode, username, $levelsList, panel) {
+    function exploreAdministrativeStructure(geonameId, countryCode, username, language, $levelsList, panel) {
         console.log(`🔍 Exploring administrative structure for GeoName ID: ${geonameId}`);
         
         const structure = {
             country: countryCode,
+            language: language,
             levels: []
         };
         
         // Start with admin1 level
-        exploreLevel(geonameId, 'admin1', 1, username, structure, $levelsList, panel);
+        exploreLevel(geonameId, 'admin1', 1, username, language, structure, $levelsList, panel);
     }
 
     /**
      * Explore a specific administrative level
      */
-    function exploreLevel(parentGeoId, levelCode, levelNumber, username, structure, $levelsList, panel) {
+    function exploreLevel(parentGeoId, levelCode, levelNumber, username, language, structure, $levelsList, panel) {
         console.log(`🔍 Exploring level ${levelNumber} (${levelCode}) under parent ${parentGeoId}`);
         
         // Update loading message
@@ -236,7 +253,8 @@
         callGeonamesProxy('childrenJSON', { 
             username: username, 
             geonameId: parentGeoId,
-            featureClass: 'A'
+            featureClass: 'A',
+            lang: language
         })
         .done(function(response) {
             if (response.success && response.data && response.data.geonames && response.data.geonames.length > 0) {
@@ -272,7 +290,7 @@
                     // Try to explore next level using first item
                     const nextLevelCode = getNextLevelCode(levelCode);
                     if (nextLevelCode && levelNumber < 4) {
-                        exploreLevel(levelData[0].geonameId, nextLevelCode, levelNumber + 1, username, structure, $levelsList, panel);
+                        exploreLevel(levelData[0].geonameId, nextLevelCode, levelNumber + 1, username, language, structure, $levelsList, panel);
                     } else {
                         // Finished exploring, display structure
                         finishStructureDiscovery(structure, $levelsList, panel);
@@ -320,8 +338,9 @@
         
         // Cache the structure
         const countryCode = structure.country;
+        const language = structure.language;
         const username = panel.find('.nm-geonames-user').val().trim();
-        const cacheKey = `${countryCode}_${username}`;
+        const cacheKey = `${countryCode}_${username}_${language}`;
         countryStructureCache[cacheKey] = structure;
         
         // Display the discovered structure
@@ -571,8 +590,17 @@
         $('.nm-geo-config-panel').hide();
         currentField = null;    }    function loadConfigIntoPanel(panel, config) {
         const $geonamesInput = panel.find('.nm-geonames-user');
+        const $languageSelect = panel.find('.nm-language-selector');
         const $countryRow = panel.find('.nm-country-row');
         const $countrySelect = panel.find('.nm-country-selector');
+        
+        console.log('Loading config into panel:', config);
+        
+        // Load language setting
+        if (config.language) {
+            $languageSelect.val(config.language);
+            console.log('Set language to:', config.language);
+        }
         
         // Load GeoNames user from wp_option (global setting)
         const globalGeonamesUser = nmAdmin.geonames_user || '';
@@ -583,8 +611,9 @@
             $countryRow.show();
             $countrySelect.prop('disabled', false);
             
-            // Load countries and set selected country
-            loadCountriesFromGeonames(globalGeonamesUser, panel.find('.nm-config-row').first());
+            // Load countries and set selected country with correct language
+            const language = config.language || 'es';
+            loadCountriesFromGeonames(globalGeonamesUser, language, panel.find('.nm-config-row').first());
             
             setTimeout(() => {
                 $countrySelect.val(config.country || '').trigger('change');
@@ -620,6 +649,7 @@
         const panel = currentField.find('.nm-geo-config-panel');
         const geonamesUser = panel.find('.nm-geonames-user').val().trim();
         const country = panel.find('.nm-country-selector').val();
+        const language = panel.find('.nm-language-selector').val() || 'es';
 
         // Validation
         if (!geonamesUser) {
@@ -660,13 +690,24 @@
             label: fieldLabel,
             config: {
                 country: country,
+                language: language,
                 levels: levels,
                 field_names: fieldNames
             }
         };
 
         // Update hidden field
-        currentField.find('.nm-field-config').val(JSON.stringify(config));
+        const hiddenField = currentField.find('.nm-field-config');
+        const configJson = JSON.stringify(config);
+        
+        console.log('Saving geographic config:', config);
+        console.log('Config JSON:', configJson);
+        console.log('Hidden field element:', hiddenField.length);
+        
+        hiddenField.val(configJson);
+        
+        // Verify the value was set
+        console.log('Hidden field value after setting:', hiddenField.val());
 
         // Update preview
         updatePreview(currentField, config.config);
@@ -703,9 +744,16 @@
     }
 
     function getFieldConfig($field) {
-        const configJson = $field.find('.nm-field-config').val();
+        const configElement = $field.find('.nm-field-config');
+        const configJson = configElement.val();
+        
+        console.log('Getting field config from element:', configElement.length);
+        console.log('Raw config JSON:', configJson);
+        
         try {
-            return configJson ? JSON.parse(configJson) : null;
+            const parsed = configJson ? JSON.parse(configJson) : null;
+            console.log('Parsed config:', parsed);
+            return parsed;
         } catch (e) {
             console.error('Error parsing field config:', e);
             return null;
@@ -743,6 +791,40 @@
             dataType: 'json'
         });
     }
+
+    // Add validation function for debugging
+    function validateGeographicFieldSave() {
+        console.log('=== Validating Geographic Field Save ===');
+        
+        $('.nm-geographic-field').each(function(index) {
+            const $field = $(this);
+            const fieldId = $field.data('field-id');
+            const configElement = $field.find('.nm-field-config');
+            const configValue = configElement.val();
+            
+            console.log(`Field ${index + 1}:`);
+            console.log('- Field ID:', fieldId);
+            console.log('- Config element found:', configElement.length > 0);
+            console.log('- Config value:', configValue);
+            
+            if (configValue) {
+                try {
+                    const parsed = JSON.parse(configValue);
+                    console.log('- Parsed config:', parsed);
+                    console.log('- Has language:', !!(parsed.config && parsed.config.language));
+                    console.log('- Language value:', parsed.config ? parsed.config.language : 'N/A');
+                } catch (e) {
+                    console.error('- Parse error:', e);
+                }
+            }
+            console.log('---');
+        });
+        
+        console.log('=== End Validation ===');
+    }
+
+    // Export validation function for manual testing
+    window.validateGeographicFieldSave = validateGeographicFieldSave;
 
     // Export functions for external use
     window.nmGeographicSelector = {
