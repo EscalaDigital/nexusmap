@@ -1,5 +1,50 @@
 <?php
-// Asegúrate de no tener espacios en blanco antes de la etiqueta de apertura <?php
+// FUNCIÓN TEMPORAL DE LIMPIEZA - Eliminar después de verificar
+function nm_clean_base_layers_predefined_field() {
+    $base_layers = get_option('nm_base_layers', array());
+    $updated = false;
+    $cleaned_count = 0;
+    
+    foreach ($base_layers as $index => &$layer) {
+        // Si tiene el campo predefined pero no tiene predefined_key válido, eliminar predefined
+        // O si predefined_key no empieza con los prefijos válidos
+        if (isset($layer['predefined'])) {
+            $has_valid_key = isset($layer['predefined_key']) && 
+                           (strpos($layer['predefined_key'], 'custom_') === 0 || 
+                            in_array($layer['predefined_key'], [
+                                'openstreetmap', 'cartodbpositron', 'cartodbdarkmatter', 
+                                'cartodvoyager', 'opentopomap', 'esriworldimagery', 
+                                'esriworldterrain', 'esriworldstreetmap', 'stamentoner', 
+                                'stamenterrain', 'stamenwatercolor'
+                            ]));
+            
+            if (!$has_valid_key) {
+                unset($layer['predefined']);
+                if (isset($layer['predefined_key'])) {
+                    unset($layer['predefined_key']);
+                }
+                $updated = true;
+                $cleaned_count++;
+            }
+        }
+    }
+    
+    if ($updated) {
+        update_option('nm_base_layers', $base_layers);
+        echo '<div style="background: #d4edda; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid #c3e6cb;">';
+        echo 'LIMPIEZA REALIZADA: Se eliminó el campo "predefined" de ' . $cleaned_count . ' capa(s) incorrecta(s).';
+        echo '</div>';
+    } else {
+        echo '<div style="background: #d1ecf1; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid #bee5eb;">';
+        echo 'No se encontraron capas con campos "predefined" incorrectos.';
+        echo '</div>';
+    }
+}
+
+// Ejecutar la limpieza solo una vez cuando se cargue la página de administración
+if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET['clean_predefined'])) {
+    nm_clean_base_layers_predefined_field();
+}
 ?>
 
 <style>
@@ -650,6 +695,13 @@
                 <tr>
                     <th scope="row"><label for="layer_attribution"><?php esc_html_e('Atribución', 'nexusmap'); ?></label></th>
                     <td><textarea name="layer_attribution" id="layer_attribution" class="regular-text" rows="3"></textarea></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="layer_predefined"><?php esc_html_e('Marcar como Predefinida', 'nexusmap'); ?></label></th>
+                    <td>
+                        <input type="checkbox" name="layer_predefined" id="layer_predefined" value="1">
+                        <p class="description"><?php esc_html_e('Marca esta opción si quieres que esta capa aparezca como predefinida en la lista.', 'nexusmap'); ?></p>
+                    </td>
                 </tr>
                 <!-- Puedes agregar más campos para opciones adicionales -->
             </table>

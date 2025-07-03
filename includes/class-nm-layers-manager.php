@@ -41,15 +41,23 @@ class NM_Layers_Manager {
         $layer_name = sanitize_text_field($_POST['layer_name']);
         $layer_url = nm_sanitize_tile_url($_POST['layer_url']);
         $layer_attribution = sanitize_textarea_field($_POST['layer_attribution']);
+        $is_predefined = isset($_POST['layer_predefined']) && $_POST['layer_predefined'] == '1';
 
         $base_layers = get_option('nm_base_layers', array());
 
-        $base_layers[] = array(
+        $new_layer = array(
             'name' => $layer_name,
             'url'  => $layer_url,
             'attribution' => $layer_attribution,
-            // Puedes agregar más opciones aquí
         );
+
+        // Solo añadir el campo predefined si está marcado como true
+        if ($is_predefined) {
+            $new_layer['predefined'] = true;
+            $new_layer['predefined_key'] = 'custom_' . time(); // Clave única para capas personalizadas marcadas como predefinidas
+        }
+
+        $base_layers[] = $new_layer;
 
         update_option('nm_base_layers', $base_layers);
 

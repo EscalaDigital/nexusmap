@@ -74,6 +74,12 @@ Se ha implementado una nueva funcionalidad en NexusMap que permite seleccionar c
 - **Box-sizing**: Consistencia en el modelo de caja
 - **Animaciones CSS**: Transiciones fluidas sin JavaScript adicional
 
+### 🎛️ Control de Capas Personalizadas (Versión 1.2)
+- **Checkbox de predefinida**: Las capas personalizadas pueden marcarse opcionalmente como predefinidas
+- **Control granular**: Decide qué capas aparecen como predefinidas y cuáles como personalizadas
+- **Clave única**: Las capas personalizadas marcadas como predefinidas reciben una clave única `custom_timestamp`
+- **Limpieza automática**: Función de limpieza para corregir datos incorrectos
+
 ## Archivos Modificados
 
 ### `admin/views/manage-layers.php`
