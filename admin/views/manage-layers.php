@@ -166,17 +166,20 @@
 }
 
 .nm-predefined-layers {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 15px;
+    margin-top: 20px;
+    overflow: hidden;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
     margin-top: 20px;
 }
 
 .nm-predefined-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
     margin-top: 20px;
+    align-items: start;
 }
 
 .nm-predefined-layer-card {
@@ -186,8 +189,13 @@
     padding: 20px;
     transition: all 0.3s ease;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 15px;
+    min-height: 120px;
+    height: auto;
+    box-sizing: border-box;
+    position: relative;
+    animation: fadeInUp 0.3s ease-out;
 }
 
 .nm-predefined-layer-card:hover {
@@ -196,31 +204,58 @@
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
 }
 
+@media (max-width: 1200px) {
+    .nm-predefined-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .nm-predefined-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .nm-predefined-layer-card {
+        min-height: 100px;
+        padding: 15px;
+    }
+}
+
 .nm-layer-preview {
     flex-shrink: 0;
     width: 60px;
     height: 60px;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid #e5e7eb;
+    align-self: flex-start;
 }
 
 .nm-layer-icon {
     font-size: 24px;
+    line-height: 1;
 }
 
 .nm-layer-info {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .nm-layer-info h4 {
-    margin: 0 0 8px 0;
+    margin: 0;
     color: #374151;
     font-size: 16px;
     font-weight: 600;
+    line-height: 1.3;
+    word-wrap: break-word;
 }
 
 .nm-layer-attribution {
@@ -228,17 +263,28 @@
     color: #6b7280;
     font-size: 12px;
     line-height: 1.4;
+    word-wrap: break-word;
 }
 
 .nm-layer-actions {
     flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 5px;
+}
+
+.nm-layer-status {
+    margin: 0;
+    color: #10b981;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
 .nm-btn-add-predefined {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 10px 16px;
+    font-size: 13px;
     border: none;
     border-radius: 6px;
     font-weight: 600;
@@ -246,12 +292,40 @@
     transition: all 0.3s ease;
     text-decoration: none;
     white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
 }
 
 .nm-btn-add-predefined:hover {
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.nm-btn-added {
+    background: #10b981;
+    color: white;
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+    cursor: default;
+}
+
+.nm-layer-added {
+    opacity: 0.8;
+    border-color: #10b981 !important;
+    background: #f0fdf4;
+}
+
+.nm-layer-added:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 .nm-layer-added {
@@ -280,15 +354,16 @@
 }
 
 .nm-category-section {
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+    clear: both;
 }
 
 .nm-category-title {
     color: #374151;
     font-size: 18px;
     font-weight: 600;
-    margin: 0 0 15px 0;
-    padding-bottom: 10px;
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
     border-bottom: 2px solid #e5e7eb;
     display: flex;
     align-items: center;
@@ -309,6 +384,77 @@
         padding: 20px;
     }
 }
+
+/* Mejoras adicionales para la presentación */
+.nm-section-box .nm-predefined-layers {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.nm-category-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Animaciones suaves */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nm-predefined-layer-card {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Estilos para formularios dentro de las tarjetas */
+.nm-predefined-layer-card form {
+    margin: 0;
+    width: 100%;
+}
+
+/* Mejorar los botones */
+.nm-btn-add-predefined,
+.nm-btn-added {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.nm-btn-add-predefined:focus,
+.nm-btn-add-predefined:active {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+/* Espaciado consistente entre elementos */
+.nm-layer-info > * + * {
+    margin-top: 8px;
+}
+
+/* Separación entre categorías */
+.nm-category-section + .nm-category-section {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 30px;
+}
+
+/* Estilo para el mensaje de éxito de capas predefinidas */
+.nm-predefined-success p {
+    color: #000000 !important;
+    font-weight: 600;
+}
+
+.nm-predefined-success {
+    border-left-color: #10b981;
+    background-color: #f0fdf4;
+}
 </style>
 
 <div class="wrap nm-admin-wrapper">
@@ -322,7 +468,7 @@
     if (isset($_GET['message'])) {
         switch ($_GET['message']) {
             case 'predefined_added':
-                echo '<div class="notice notice-success is-dismissible"><p>¡Capa base predefinida añadida con éxito!</p></div>';
+                echo '<div class="notice notice-success is-dismissible nm-predefined-success"><p>¡Capa base predefinida añadida con éxito!</p></div>';
                 break;
         }
     }

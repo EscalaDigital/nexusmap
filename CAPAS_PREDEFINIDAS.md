@@ -52,6 +52,28 @@ Se ha implementado una nueva funcionalidad en NexusMap que permite seleccionar c
 - **Etiquetado inteligente**: Las capas predefinidas se marcan como tales
 - **Gestión de metadatos**: Almacena información adicional sobre el origen de la capa
 
+## Últimas Mejoras de Diseño
+
+### 🎨 Mejoras Visuales (Versión 1.1)
+- **Grid responsivo mejorado**: Las tarjetas ahora se adaptan mejor a diferentes tamaños de pantalla
+- **Prevención de solapamiento**: Eliminado el problema de solapamiento entre tarjetas
+- **Animaciones suaves**: Añadidas transiciones y animaciones para mejor experiencia
+- **Diseño responsive**: Optimizado para dispositivos móviles y tablets
+- **Espaciado consistente**: Mejor distribución del espacio entre elementos
+- **Separación de categorías**: Divisores visuales claros entre categorías
+- **Mensajes de éxito mejorados**: Texto en negro para mejor legibilidad
+
+### 📱 Compatibilidad Responsive
+- **Escritorio (>1200px)**: Grid de 3-4 columnas
+- **Tablet (768px-1200px)**: Grid de 2-3 columnas  
+- **Móvil (<768px)**: Grid de 1 columna
+
+### 🔧 Mejoras Técnicas
+- **CSS Grid optimizado**: Uso de `auto-fit` y `minmax()` para mejor control
+- **Flexbox interno**: Mejor alineación de elementos dentro de las tarjetas
+- **Box-sizing**: Consistencia en el modelo de caja
+- **Animaciones CSS**: Transiciones fluidas sin JavaScript adicional
+
 ## Archivos Modificados
 
 ### `admin/views/manage-layers.php`
