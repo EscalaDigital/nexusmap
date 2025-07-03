@@ -8,19 +8,20 @@ class NM_Layers_Manager {
         $this->loader = $loader;
 
         $this->define_layers_hooks();
-    }
-
-    private function define_layers_hooks() {
+    }    private function define_layers_hooks() {
+        // NOTA: Estos hooks están desactivados porque NM_Manage_Layers ya los maneja
+        // para evitar conflictos de doble registro
+        
         // Acciones para capas base
-        $this->loader->add_action('admin_post_nm_add_base_layer_action', $this, 'handle_add_base_layer');
-        $this->loader->add_action('admin_post_nm_delete_base_layer_action', $this, 'handle_delete_base_layer');
+        // $this->loader->add_action('admin_post_nm_add_base_layer_action', $this, 'handle_add_base_layer');
+        // $this->loader->add_action('admin_post_nm_delete_base_layer_action', $this, 'handle_delete_base_layer');
 
         // Acciones para capas overlay
-        $this->loader->add_action('admin_post_nm_add_overlay_layer_action', $this, 'handle_add_overlay_layer');
-        $this->loader->add_action('admin_post_nm_delete_overlay_layer_action', $this, 'handle_delete_overlay_layer');
-
+        // $this->loader->add_action('admin_post_nm_add_overlay_layer_action', $this, 'handle_add_overlay_layer');
+        // $this->loader->add_action('admin_post_nm_delete_overlay_layer_action', $this, 'handle_delete_overlay_layer');
+        
         // Acciones para capas base predefinidas
-        $this->loader->add_action('admin_post_nm_add_predefined_base_layer_action', $this, 'handle_add_predefined_base_layer');
+        // $this->loader->add_action('admin_post_nm_add_predefined_base_layer_action', $this, 'handle_add_predefined_base_layer');
     }
 
     public function display_manage_layers_page() {

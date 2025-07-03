@@ -661,6 +661,15 @@
 
 <?php
 $base_layers = get_option('nm_base_layers', array());
+
+// Debug temporal - comenta estas líneas después de verificar
+/*
+echo '<div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;">';
+echo '<h4>DEBUG - Estructura de capas base:</h4>';
+echo '<pre>' . print_r($base_layers, true) . '</pre>';
+echo '</div>';
+*/
+
 if (! empty($base_layers)) : ?>
     <div class="nm-section-box">
         <h2><?php esc_html_e('Capas Base Existentes', 'nexusmap'); ?></h2>
@@ -679,7 +688,15 @@ if (! empty($base_layers)) : ?>
                     <tr>
                         <td><?php echo esc_html($layer['name']); ?></td>
                         <td>
-                            <?php if (isset($layer['predefined']) && $layer['predefined']): ?>
+                            <?php 
+                            // Debug temporal - eliminar después
+                            // echo '<pre>' . print_r($layer, true) . '</pre>';
+                            ?>
+                            <?php 
+                            // Verificación más estricta para capas predefinidas
+                            $is_predefined = (isset($layer['predefined']) && $layer['predefined'] === true);
+                            if ($is_predefined): 
+                            ?>
                                 <span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
                                     🌟 PREDEFINIDA
                                 </span>
