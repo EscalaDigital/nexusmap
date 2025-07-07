@@ -2,8 +2,9 @@
 /**
  * Plugin Name: NexusMap
  * Description: Plugin para mapeo colaborativo usando Leaflet.
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Escaladigital.es
+ * License:     GPLv2 or later
  * Author URI: https://escaladigital.es
  * Text Domain: nexusmap
  *
