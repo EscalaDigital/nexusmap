@@ -306,8 +306,6 @@ jQuery(document).ready(function ($) {
 
 
         function updateVisiblePoints(activeFilters) {
-            let visibleCount = 0;
-
             // Limpiar el contenido de todos los LayerGroup definidos en la variable global 'overlays'
             for (const overlayName in overlays) {
                 if (overlays.hasOwnProperty(overlayName)) {                    const layerGroup = overlays[overlayName];
@@ -333,12 +331,15 @@ jQuery(document).ready(function ($) {
 
                 if (isVisibleByFilter && marker.originalLayerGroup) {
                     marker.originalLayerGroup.addLayer(marker);
-
-                    if (map.hasLayer(marker.originalLayerGroup)) {
-                        visibleCount++;
-                    }
                 }
-            }); const pointsCountElement = document.getElementById('nm-points-count');
+            });
+
+            // Calcular el conteo basado en features únicos visibles
+            const visibleMarkers = getVisibleMarkers();
+            const uniqueVisibleFeatures = getUniqueFeatures(visibleMarkers);
+            const visibleCount = uniqueVisibleFeatures.length;
+
+            const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
                 pointsCountElement.textContent = visibleCount;
             }
@@ -346,7 +347,6 @@ jQuery(document).ready(function ($) {
             // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
             const chartsModal = jQuery('#nm-charts-modal');
             if (chartsModal.length && chartsModal.hasClass('active')) {
-                const visibleMarkers = getVisibleMarkers();
                 const features = getUniqueFeatures(visibleMarkers);
                 if (features.length > 0) {
                     processCharts(features);
@@ -528,10 +528,12 @@ jQuery(document).ready(function ($) {
                     });
                 }
 
-                // Inicializar el contador de puntos
+                // Inicializar el contador de puntos con features únicos
                 const pointsCountElement = document.getElementById('nm-points-count');
                 if (pointsCountElement) {
-                    pointsCountElement.textContent = response.features.length;
+                    // Contar features únicos en lugar de total de features
+                    const uniqueFeatures = getUniqueFeatures(allMarkers);
+                    pointsCountElement.textContent = uniqueFeatures.length;
                 }
 
                 // Función para actualizar el contenido de la leyenda
@@ -662,13 +664,15 @@ jQuery(document).ready(function ($) {
                 existingIndicator.remove();
             }
 
-            const totalMarkers = allMarkers.length;
-            const visibleMarkers = getVisibleMarkers().length;
+            // Calcular el total de features únicos en lugar de marcadores
+            const totalFeatures = getUniqueFeatures(allMarkers).length;
+            const visibleMarkers = getVisibleMarkers();
+            const visibleFeatures = getUniqueFeatures(visibleMarkers).length;
 
             const filterIndicator = document.createElement('div');
             filterIndicator.className = 'nm-filter-indicator';
             filterIndicator.style.cssText = 'background: #e3f2fd; border: 1px solid #1976d2; border-radius: 4px; padding: 10px; margin-bottom: 20px; text-align: center; color: #1976d2; font-weight: bold; width: 100%; box-sizing: border-box;';
-            filterIndicator.innerHTML = `📊 Mostrando gráficos filtrados: ${visibleMarkers} de ${totalMarkers} puntos`;
+            filterIndicator.innerHTML = `📊 Mostrando gráficos filtrados: ${visibleFeatures} de ${totalFeatures} puntos`;
 
             // Insertar ANTES del contenedor de gráficos
             chartsContainer.parentNode.insertBefore(filterIndicator, chartsContainer);
