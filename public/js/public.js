@@ -650,17 +650,20 @@ jQuery(document).ready(function ($) {
         const chartsContainer = document.getElementById('nm-charts-container');
         chartsContainer.innerHTML = '';
 
-        // Agregar indicador de filtros activos ANTES del contenedor de gráficos
-        const totalMarkers = allMarkers.length;
-        const visibleMarkers = getVisibleMarkers().length;
-        const isFiltered = visibleMarkers < totalMarkers;
-
-        if (isFiltered) {
+        // Verificar si hay filtros activos revisando los botones de filtro
+        const activeFilterButtons = document.querySelectorAll('.nm-filter-button.active');
+        const hasActiveFilters = activeFilterButtons.length > 0;
+        
+        // Solo mostrar el indicador si hay filtros activos
+        if (hasActiveFilters) {
             // Buscar si ya existe un indicador y eliminarlo
             const existingIndicator = document.querySelector('.nm-filter-indicator');
             if (existingIndicator) {
                 existingIndicator.remove();
             }
+
+            const totalMarkers = allMarkers.length;
+            const visibleMarkers = getVisibleMarkers().length;
 
             const filterIndicator = document.createElement('div');
             filterIndicator.className = 'nm-filter-indicator';
@@ -670,7 +673,7 @@ jQuery(document).ready(function ($) {
             // Insertar ANTES del contenedor de gráficos
             chartsContainer.parentNode.insertBefore(filterIndicator, chartsContainer);
         } else {
-            // Si no hay filtros, eliminar el indicador si existe
+            // Si no hay filtros activos, eliminar el indicador si existe
             const existingIndicator = document.querySelector('.nm-filter-indicator');
             if (existingIndicator) {
                 existingIndicator.remove();
@@ -1086,10 +1089,12 @@ jQuery(document).ready(function ($) {
 
         allMarkers.forEach(marker => {
             // Verificar si el marcador está en su grupo original y ese grupo está en el mapa
-            if (marker.originalLayerGroup &&
-                marker.originalLayerGroup.hasLayer(marker) &&
-                map.hasLayer(marker.originalLayerGroup)) {
-                visibleMarkers.push(marker);
+            if (marker.originalLayerGroup && marker.originalLayerGroup.hasLayer(marker)) {
+                // Verificar si el LayerGroup está en el mapa o si está dentro de markersLayer que está en el mapa
+                if (map.hasLayer(marker.originalLayerGroup) || 
+                    (markersLayer && markersLayer.hasLayer(marker.originalLayerGroup) && map.hasLayer(markersLayer))) {
+                    visibleMarkers.push(marker);
+                }
             }
         });
 
