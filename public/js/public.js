@@ -772,45 +772,164 @@ jQuery(document).ready(function ($) {
         data.labels = finalOrderedKeys;
 
         if (isCountMode) {
-            data.datasets.push({
-                label: chartConfig.title || 'Número de casos',
-                data: finalOrderedKeys.map(key => groupedData[key] ? groupedData[key].count : 0),
-                backgroundColor: chartConfig.chart_color1 || 'rgba(54, 162, 235, 0.5)',
-                borderColor: (chartConfig.chart_color1 ? chartConfig.chart_color1.replace('0.5', '1') : 'rgba(54, 162, 235, 1)'),
-                borderWidth: 1
-            });
-        } else {
-            data.datasets.push({
-                label: chartConfig.numeric_field1_label || chartConfig.numeric_field1,
-                data: finalOrderedKeys.map(key => {
-                    const item = groupedData[key];
-                    if (!item) return 0;
-                    const values = item.numeric1;
-                    return values.length ? values.reduce((sum, val) => sum + val, 0) : 0;
-                }),
-                backgroundColor: chartConfig.chart_color1 || 'rgba(54, 162, 235, 0.5)',
-                borderColor: (chartConfig.chart_color1 ? chartConfig.chart_color1.replace('0.5', '1') : 'rgba(54, 162, 235, 1)'),
-                borderWidth: 1
-            });
-
-            if (chartConfig.numeric_field2) {
+            // Generar colores pastel diferentes para cada categoría (aplica a todos los tipos de gráfico)
+            const pastelColors = generatePastelColors(finalOrderedKeys.length, chartConfig.title + chartConfig.category_field);
+            
+            if (chartConfig.chart_type === 'pie') {
+                // Para gráficos de pie, usar array de colores
                 data.datasets.push({
-                    label: chartConfig.numeric_field2_label || chartConfig.numeric_field2,
+                    label: chartConfig.title || 'Número de casos',
+                    data: finalOrderedKeys.map(key => groupedData[key] ? groupedData[key].count : 0),
+                    backgroundColor: pastelColors.map(color => color.background),
+                    borderColor: pastelColors.map(color => color.border),
+                    borderWidth: 1
+                });
+            } else {
+                // Para barras, líneas y otros, usar array de colores también
+                data.datasets.push({
+                    label: chartConfig.title || 'Número de casos',
+                    data: finalOrderedKeys.map(key => groupedData[key] ? groupedData[key].count : 0),
+                    backgroundColor: pastelColors.map(color => color.background),
+                    borderColor: pastelColors.map(color => color.border),
+                    borderWidth: 1
+                });
+            }
+        } else {
+            // Para gráficos con datos numéricos, también generar colores dinámicos
+            const pastelColors = generatePastelColors(finalOrderedKeys.length, chartConfig.title + chartConfig.category_field + chartConfig.numeric_field1);
+            
+            if (chartConfig.chart_type === 'pie') {
+                // Para pie, usar array de colores
+                data.datasets.push({
+                    label: chartConfig.numeric_field1_label || chartConfig.numeric_field1,
                     data: finalOrderedKeys.map(key => {
                         const item = groupedData[key];
                         if (!item) return 0;
-                        const values = item.numeric2;
+                        const values = item.numeric1;
                         return values.length ? values.reduce((sum, val) => sum + val, 0) : 0;
                     }),
-                    backgroundColor: chartConfig.chart_color2 || 'rgba(255, 99, 132, 0.5)',
-                    borderColor: (chartConfig.chart_color2 ? chartConfig.chart_color2.replace('0.5', '1') : 'rgba(255, 99, 132, 1)'),
+                    backgroundColor: pastelColors.map(color => color.background),
+                    borderColor: pastelColors.map(color => color.border),
                     borderWidth: 1
                 });
+            } else {
+                // Para barras, líneas y otros, usar array de colores también
+                data.datasets.push({
+                    label: chartConfig.numeric_field1_label || chartConfig.numeric_field1,
+                    data: finalOrderedKeys.map(key => {
+                        const item = groupedData[key];
+                        if (!item) return 0;
+                        const values = item.numeric1;
+                        return values.length ? values.reduce((sum, val) => sum + val, 0) : 0;
+                    }),
+                    backgroundColor: pastelColors.map(color => color.background),
+                    borderColor: pastelColors.map(color => color.border),
+                    borderWidth: 1
+                });
+            }
+
+            if (chartConfig.numeric_field2) {
+                // Para gráficos de pie, el segundo campo numérico no aplica (solo se usa el primero)
+                // Para otros tipos de gráfico, agregar el segundo dataset con colores dinámicos
+                if (chartConfig.chart_type !== 'pie') {
+                    // Generar colores diferentes para el segundo dataset usando una semilla diferente
+                    const pastelColors2 = generatePastelColors(finalOrderedKeys.length, chartConfig.title + chartConfig.category_field + chartConfig.numeric_field2 + '_second');
+                    
+                    data.datasets.push({
+                        label: chartConfig.numeric_field2_label || chartConfig.numeric_field2,
+                        data: finalOrderedKeys.map(key => {
+                            const item = groupedData[key];
+                            if (!item) return 0;
+                            const values = item.numeric2;
+                            return values.length ? values.reduce((sum, val) => sum + val, 0) : 0;
+                        }),
+                        backgroundColor: pastelColors2.map(color => color.background),
+                        borderColor: pastelColors2.map(color => color.border),
+                        borderWidth: 1
+                    });
+                }
             }
         }
 
         return data;
     }
+    /**
+     * Genera colores pastel aleatorios pero consistentes basados en una semilla
+     * @param {number} count - Número de colores a generar
+     * @param {string} seed - Semilla para generar colores consistentes
+     * @returns {Array} Array de colores en formato rgba
+     */
+    function generatePastelColors(count, seed = '') {
+        const colors = [];
+        
+        // Función hash simple para generar números pseudo-aleatorios consistentes
+        function hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convertir a entero de 32 bits
+            }
+            return Math.abs(hash);
+        }
+        
+        // Distribución más uniforme de matices para mayor variedad
+        const baseHueStep = 360 / Math.max(count, 1);
+        
+        // Generar colores pastel con mejor distribución
+        for (let i = 0; i < count; i++) {
+            // Usar la semilla + índice para generar valores consistentes
+            const seedValue = hashCode(seed + i.toString());
+            
+            // Distribuir matices uniformemente con pequeñas variaciones aleatorias
+            const baseHue = (i * baseHueStep) % 360;
+            const hueVariation = (seedValue % 30) - 15; // Variación de ±15 grados
+            const hue = (baseHue + hueVariation + 360) % 360;
+            
+            // Saturación y luminosidad con variaciones para mayor riqueza visual
+            const saturation = 50 + (seedValue % 25); // 50-75%
+            const lightness = 70 + (seedValue % 20); // 70-90%
+            
+            // Convertir HSL a RGB
+            const h = hue / 360;
+            const s = saturation / 100;
+            const l = lightness / 100;
+            
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l; // Escala de grises
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            // Convertir a valores 0-255
+            const red = Math.round(r * 255);
+            const green = Math.round(g * 255);
+            const blue = Math.round(b * 255);
+            
+            colors.push({
+                background: `rgba(${red}, ${green}, ${blue}, 0.7)`,
+                border: `rgba(${red}, ${green}, ${blue}, 1)`
+            });
+        }
+        
+        return colors;
+    }
+
     function createChart(canvas, chartConfig, data) {
         const ctx = canvas.getContext('2d');
 
@@ -925,6 +1044,32 @@ jQuery(document).ready(function ($) {
         }
 
 
+
+        // Ajustar colores según el tipo de gráfico
+        if (chartConfig.chart_type === 'line') {
+            // Para gráficos de líneas, usar un color sólido por dataset
+            data.datasets.forEach((dataset, index) => {
+                if (Array.isArray(dataset.backgroundColor)) {
+                    // Usar el primer color del array para toda la línea
+                    dataset.backgroundColor = dataset.backgroundColor[0];
+                    dataset.borderColor = dataset.borderColor[0];
+                    dataset.pointBackgroundColor = dataset.backgroundColor;
+                    dataset.pointBorderColor = dataset.borderColor;
+                }
+            });
+        } else if (chartConfig.chart_type === 'mixed') {
+            // Para gráficos mixtos, ajustar colores por tipo
+            data.datasets.forEach((dataset, index) => {
+                if (dataset.type === 'line' && Array.isArray(dataset.backgroundColor)) {
+                    // Para la línea, usar color sólido
+                    dataset.backgroundColor = dataset.backgroundColor[0];
+                    dataset.borderColor = dataset.borderColor[0];
+                    dataset.pointBackgroundColor = dataset.backgroundColor;
+                    dataset.pointBorderColor = dataset.borderColor;
+                }
+                // Las barras mantienen sus arrays de colores
+            });
+        }
 
         // Crear el gráfico
         new Chart(ctx, {
