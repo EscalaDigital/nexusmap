@@ -716,3 +716,72 @@
         padding: 15px !important;
     }
 }
+
+/* ========================================= */
+/* ESTILOS BASE PARA FILTROS MEJORADOS */
+/* ========================================= */
+
+/* Animaciones base para los filtros */
+@keyframes filterSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes filterFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Animación para badges de filtros activos */
+@keyframes badgePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Responsive para filtros en móviles */
+@media (max-width: 768px) {
+    .nm-filters-panel {
+        width: 280px !important;
+        left: 10px !important;
+        font-size: 14px;
+    }
+    
+    .nm-filter-button {
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+    }
+    
+    .nm-filters-stats {
+        padding: 8px !important;
+    }
+    
+    .nm-stats-item {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nm-filters-panel {
+        width: 250px !important;
+        padding: 10px !important;
+    }
+    
+    .nm-filters-header {
+        padding: 10px !important;
+    }
+    
+    .nm-filter-options {
+        gap: 4px !important;
+    }
+}

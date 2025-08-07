@@ -178,9 +178,9 @@
   padding: 15px;
   border-radius: 4px;
   box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-  width: 280px;
-  max-height: 60vh; /* Altura máxima del 80% del viewport */
-  overflow-y: auto; /* Habilita el scroll vertical */
+  width: 320px;
+  max-height: 70vh; /* Aumentado para acomodar nuevo contenido */
+  overflow-y: auto;
   z-index: 9999;
 }
 
@@ -207,19 +207,45 @@
   display: none;
 }
 
+/* Header mejorado */
 .nm-filters-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #eee;
+  background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 12px;
+  margin: -15px -15px 15px -15px;
+  border-radius: 4px 4px 0 0;
 }
 
 .nm-filters-title {
   margin: 0;
   font-size: 16px;
   font-weight: bold;
+  color: #333;
+}
+
+.nm-filters-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.nm-clear-filters {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.nm-clear-filters:hover {
+  background: #c82333;
 }
 
 .nm-close-filters {
@@ -228,34 +254,313 @@
   font-size: 20px;
   cursor: pointer;
   padding: 0 5px;
+  color: #666;
+  transition: color 0.3s;
 }
 
+.nm-close-filters:hover {
+  color: #333;
+}
+
+/* Estadísticas y contadores */
+.nm-filters-stats {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+.nm-stats-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.nm-stats-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+.nm-stats-value {
+  background: #007bff;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+}
+
+.nm-stats-total {
+  color: #6c757d;
+}
+
+.nm-active-filters {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #dee2e6;
+}
+
+.nm-active-label {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.nm-active-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.nm-active-tag {
+  background: #17a2b8;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nm-remove-tag {
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.nm-remove-tag:hover {
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+}
+
+/* Grupos de filtros mejorados */
 .nm-filter-group {
   margin-bottom: 15px;
-  padding: 8px;
-  background: #f9f9f9;
+  border: 1px solid #e9ecef;
   border-radius: 4px;
+  background: white;
+  overflow: hidden;
+}
+
+.nm-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.nm-filter-header:hover {
+  background: #e9ecef;
+}
+
+.nm-filter-label {
+  font-weight: bold;
+  color: #495057;
+  flex-grow: 1;
+}
+
+.nm-filter-toggle {
+  color: #6c757d;
+  font-size: 14px;
+  margin-left: 8px;
+  transition: transform 0.3s;
+}
+
+.nm-filter-group.collapsed .nm-filter-toggle {
+  transform: rotate(-90deg);
+}
+
+.nm-filter-badge {
+  background: #6c757d;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 18px;
+  text-align: center;
+}
+
+.nm-filter-badge.active {
+  background: #28a745;
+}
+
+.nm-filter-options {
+  padding: 12px;
+  background: white;
+  display: block;
+}
+
+.nm-filter-group.collapsed .nm-filter-options {
+  display: none;
 }
 
 .nm-filter-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
 }
 
+/* Botones de filtro mejorados */
 .nm-filter-button {
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  padding: 6px 10px;
+  border: 2px solid #dee2e6;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
   background: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.nm-filter-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.5s;
+}
+
+.nm-filter-button:hover::before {
+  left: 100%;
+}
+
+.nm-filter-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .nm-filter-button.active {
   background: #007bff;
   color: white;
-  border-color: #b90903;
+  border-color: #0056b3;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.nm-filter-button.active::after {
+  content: '✓';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #28a745;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.nm-button-text {
+  flex-grow: 1;
+}
+
+.nm-button-count {
+  background: rgba(0,0,0,0.1);
+  padding: 1px 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  color: inherit;
+  font-weight: bold;
+}
+
+.nm-filter-button.active .nm-button-count {
+  background: rgba(255,255,255,0.3);
+}
+
+/* Controles de expansión */
+.nm-filter-count {
+  padding: 10px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.nm-expand-all,
+.nm-collapse-all {
+  padding: 6px 12px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.nm-expand-all:hover {
+  background: #5a6268;
+}
+
+.nm-collapse-all:hover {
+  background: #5a6268;
+}
+
+/* Animaciones específicas del tema 1 */
+.nm-filter-group {
+  animation: filterSlideIn 0.3s ease-out;
+}
+
+.nm-filter-button:active {
+  transform: scale(0.95);
+}
+
+.nm-filters-panel {
+  animation: filterFadeIn 0.4s ease-out;
+}
+
+/* Estados de hover mejorados para tema 1 */
+.nm-filter-group:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+}
+
+/* Indicadores de carga */
+.nm-filter-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.nm-filter-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 2px solid #007bff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 

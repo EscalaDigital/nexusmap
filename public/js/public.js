@@ -232,7 +232,25 @@ jQuery(document).ready(function ($) {
             var header = `
                 <div class="nm-filters-header">
                     <h3 class="nm-filters-title">Filtros disponibles</h3>
-                    <button class="nm-close-filters">×</button>
+                    <div class="nm-filters-controls">
+                        <button class="nm-clear-filters" title="Limpiar todos los filtros">🗑️</button>
+                        <button class="nm-close-filters">×</button>
+                    </div>
+                </div>
+            `;
+
+            // Crear estadísticas generales
+            var statsContent = `
+                <div class="nm-filters-stats">
+                    <div class="nm-stats-item">
+                        <span class="nm-stats-label">Mostrando:</span>
+                        <span class="nm-stats-value" id="nm-points-count">0</span>
+                        <span class="nm-stats-total">de <span id="nm-total-points">0</span></span>
+                    </div>
+                    <div class="nm-active-filters" id="nm-active-filters" style="display: none;">
+                        <span class="nm-active-label">Filtros activos:</span>
+                        <div class="nm-active-list"></div>
+                    </div>
                 </div>
             `;
 
@@ -241,14 +259,21 @@ jQuery(document).ready(function ($) {
             nmMapData.filter_settings.forEach(filter => {
                 filterContent += `
                     <div class="nm-filter-group" data-field="${filter.field}">
-                        <span class="nm-filter-label">${filter.button_text}</span>
-                        <div class="nm-filter-options">
+                        <div class="nm-filter-header">
+                            <span class="nm-filter-label">${filter.button_text}</span>
+                            <span class="nm-filter-toggle" data-field="${filter.field}">▼</span>
+                            <span class="nm-filter-badge" data-field="${filter.field}">0</span>
+                        </div>
+                        <div class="nm-filter-options" data-field="${filter.field}">
                             ${filter.options.map(option => `
                                 <button class="nm-filter-button" 
                                         data-field="${filter.field}" 
                                         data-value="${option}"
                                         style="background-color: ${filter.style?.background || '#fff'}; 
-                                               color: ${filter.style?.color || '#000'}">${option}</button>
+                                               color: ${filter.style?.color || '#000'}">
+                                    <span class="nm-button-text">${option}</span>
+                                    <span class="nm-button-count" data-field="${filter.field}" data-value="${option}">0</span>
+                                </button>
                             `).join('')}
                         </div>
                     </div>
@@ -258,11 +283,12 @@ jQuery(document).ready(function ($) {
             // Agregar contador
             filterContent += `
                 <div class="nm-filter-count">
-                    Puntos mostrados: <span id="nm-points-count">0</span>
+                    <button class="nm-expand-all">Expandir todo</button>
+                    <button class="nm-collapse-all">Colapsar todo</button>
                 </div>
             `;
 
-            $filterPanel.html(header + filterContent);
+            $filterPanel.html(header + statsContent + filterContent);
 
             // Agregar el panel al mapa
             jQuery('#nm-main-map').append($filterPanel);
@@ -276,6 +302,45 @@ jQuery(document).ready(function ($) {
 
             $filterPanel.on('click', '.nm-close-filters', function (e) {
                 $filterPanel.addClass('collapsed');
+            });
+
+            // Funcionalidad de toggle para grupos de filtros
+            $filterPanel.on('click', '.nm-filter-toggle', function (e) {
+                e.stopPropagation();
+                const field = jQuery(this).data('field');
+                const $options = $filterPanel.find(`.nm-filter-options[data-field="${field}"]`);
+                const $toggle = jQuery(this);
+                
+                $options.slideToggle(200);
+                $toggle.text($toggle.text() === '▼' ? '▶' : '▼');
+                
+                // Marcar grupo como expandido/colapsado
+                $toggle.closest('.nm-filter-group').toggleClass('collapsed');
+            });
+
+            // Limpiar todos los filtros
+            $filterPanel.on('click', '.nm-clear-filters', function (e) {
+                e.stopPropagation();
+                $filterPanel.find('.nm-filter-button.active').removeClass('active');
+                Object.keys(activeFilters).forEach(key => delete activeFilters[key]);
+                updateVisiblePoints(activeFilters);
+                updateActiveFiltersDisplay(activeFilters);
+                updateFilterBadges();
+            });
+
+            // Expandir/colapsar todo
+            $filterPanel.on('click', '.nm-expand-all', function (e) {
+                e.stopPropagation();
+                $filterPanel.find('.nm-filter-options').slideDown(200);
+                $filterPanel.find('.nm-filter-toggle').text('▼');
+                $filterPanel.find('.nm-filter-group').removeClass('collapsed');
+            });
+
+            $filterPanel.on('click', '.nm-collapse-all', function (e) {
+                e.stopPropagation();
+                $filterPanel.find('.nm-filter-options').slideUp(200);
+                $filterPanel.find('.nm-filter-toggle').text('▶');
+                $filterPanel.find('.nm-filter-group').addClass('collapsed');
             });            // Manejar clicks en los filtros
             const activeFilters = {};
             $filterPanel.on('click', '.nm-filter-button', function (e) {
@@ -295,9 +360,74 @@ jQuery(document).ready(function ($) {
                     activeFilters[field].delete(value);
                     if (activeFilters[field].size === 0) {
                         delete activeFilters[field];
-                    }                }
+                    }
+                }
 
                 updateVisiblePoints(activeFilters);
+                updateActiveFiltersDisplay(activeFilters);
+                updateFilterBadges();
+            });
+
+            // Función para actualizar la visualización de filtros activos
+            function updateActiveFiltersDisplay(filters) {
+                const $activeFilters = jQuery('#nm-active-filters');
+                const $activeList = $activeFilters.find('.nm-active-list');
+                
+                if (Object.keys(filters).length === 0) {
+                    $activeFilters.hide();
+                    return;
+                }
+                
+                $activeList.empty();
+                Object.keys(filters).forEach(field => {
+                    filters[field].forEach(value => {
+                        const $tag = jQuery(`
+                            <span class="nm-active-tag" data-field="${field}" data-value="${value}">
+                                ${value} <span class="nm-remove-tag">×</span>
+                            </span>
+                        `);
+                        $activeList.append($tag);
+                    });
+                });
+                
+                $activeFilters.show();
+            }
+
+            // Función para actualizar badges de conteo
+            function updateFilterBadges() {
+                nmMapData.filter_settings.forEach(filter => {
+                    let activeCount = 0;
+                    if (activeFilters[filter.field]) {
+                        activeCount = activeFilters[filter.field].size;
+                    }
+                    
+                    const $badge = $filterPanel.find(`.nm-filter-badge[data-field="${filter.field}"]`);
+                    $badge.text(activeCount);
+                    $badge.toggleClass('active', activeCount > 0);
+                });
+            }
+
+            // Event listener para remover filtros desde los tags
+            $filterPanel.on('click', '.nm-remove-tag', function (e) {
+                e.stopPropagation();
+                const $tag = jQuery(this).parent();
+                const field = $tag.data('field');
+                const value = String($tag.data('value'));
+                
+                // Desactivar el botón correspondiente
+                $filterPanel.find(`.nm-filter-button[data-field="${field}"][data-value="${value}"]`).removeClass('active');
+                
+                // Actualizar filtros activos
+                if (activeFilters[field]) {
+                    activeFilters[field].delete(value);
+                    if (activeFilters[field].size === 0) {
+                        delete activeFilters[field];
+                    }
+                }
+                
+                updateVisiblePoints(activeFilters);
+                updateActiveFiltersDisplay(activeFilters);
+                updateFilterBadges();
             });
 
             // Agregar el contenedor de filtros al contenedor de controles
@@ -344,6 +474,13 @@ jQuery(document).ready(function ($) {
                 pointsCountElement.textContent = visibleCount;
             }
 
+            // Actualizar contador total
+            const totalPointsElement = document.getElementById('nm-total-points');
+            if (totalPointsElement) {
+                const totalMarkers = getUniqueFeatures(allMarkers);
+                totalPointsElement.textContent = totalMarkers.length;
+            }
+
             // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
             const chartsModal = jQuery('#nm-charts-modal');
             if (chartsModal.length && chartsModal.hasClass('active')) {
@@ -352,6 +489,34 @@ jQuery(document).ready(function ($) {
                     processCharts(features);
                 }
             }
+        }
+
+        // Función para contar elementos en cada opción de filtro
+        function updateFilterCounts() {
+            if (!nmMapData.filter_settings || !allMarkers) return;
+
+            nmMapData.filter_settings.forEach(filter => {
+                filter.options.forEach(option => {
+                    let count = 0;
+                    const fieldName = 'nm_' + filter.field;
+                    
+                    // Obtener marcadores únicos para evitar contar duplicados
+                    const uniqueMarkers = getUniqueFeatures(allMarkers);
+                    
+                    uniqueMarkers.forEach(feature => {
+                        const fieldValue = feature.properties[fieldName];
+                        if (fieldValue && String(fieldValue) === String(option)) {
+                            count++;
+                        }
+                    });
+                    
+                    // Actualizar el contador en el botón
+                    const $countElement = jQuery(`.nm-button-count[data-field="${filter.field}"][data-value="${option}"]`);
+                    if ($countElement.length) {
+                        $countElement.text(count > 0 ? `(${count})` : '(0)');
+                    }
+                });
+            });
         }
 
         // Llamar a la función después de inicializar el mapa
@@ -582,6 +747,19 @@ jQuery(document).ready(function ($) {
 
                     legendPanel.innerHTML = content;
                 };
+
+                // Actualizar contadores de filtros después de cargar todos los datos
+                setTimeout(() => {
+                    updateFilterCounts();
+                    updateFilterBadges();
+                    
+                    // Actualizar contador total inicial
+                    const totalPointsElement = document.getElementById('nm-total-points');
+                    if (totalPointsElement && allMarkers) {
+                        const totalMarkers = getUniqueFeatures(allMarkers);
+                        totalPointsElement.textContent = totalMarkers.length;
+                    }
+                }, 500);
             }
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error('AJAX Error:', textStatus, errorThrown);
