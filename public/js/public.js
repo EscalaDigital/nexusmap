@@ -35,8 +35,7 @@ jQuery(document).ready(function ($) {
         // Asegurarse de que el contenedor del mapa tenga posición relativa
         jQuery('#nm-main-map').css('position', 'relative');
 
-        // Agregar el botón al contenedor de controles y el panel al mapa
-        $topControls.append($legendButton);
+        // Agregar el panel al mapa (el botón se añadirá después de los filtros)
         document.querySelector('#nm-main-map').appendChild(legendPanel);
 
         // Manejar el clic en el botón de leyenda
@@ -520,7 +519,12 @@ jQuery(document).ready(function ($) {
         }
 
         // Llamar a la función después de inicializar el mapa
-        createFilterPanel();        // Load points via AJAX
+        createFilterPanel();
+        
+        // Agregar el botón de leyenda después de los filtros (o como único botón si no hay filtros)
+        $topControls.append($legendButton);
+        
+        // Load points via AJAX
         $.post(nmMapData.ajax_url, {
             action: 'nm_get_map_points',
             nonce: nmMapData.nonce
