@@ -17,6 +17,27 @@ jQuery(document).ready(function ($) {
             jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
         }
 
+        // ==============================
+        // Helper: añade título "Capas" al control de capas Leaflet
+        // ==============================
+        function addLayersTitle(ctrl){
+            try {
+                if(!ctrl) return;
+                var container = ctrl.getContainer();
+                if(!container) return;
+                var list = container.querySelector('.leaflet-control-layers-list');
+                if(!list) return;
+                // Evitar duplicados
+                if(list.querySelector('.nm-layers-title')) return;
+                var title = document.createElement('div');
+                title.className = 'nm-layers-title';
+                title.textContent = 'Capas';
+                list.insertBefore(title, list.firstChild);
+            } catch(e){
+                console.warn('No se pudo insertar el título de capas:', e);
+            }
+        }
+
         // Referencia al contenedor de controles
         var $topControls = jQuery('#nm-top-controls');
 
@@ -217,8 +238,9 @@ jQuery(document).ready(function ($) {
             });
         }
 
-        // Agregar controles de capas
-        controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
+    // Agregar controles de capas
+    controlLayers = L.control.layers(baseLayers, overlays).addTo(map);
+    addLayersTitle(controlLayers);
 
         // Funciones de Filtros
         function createFilterPanel() {
@@ -661,6 +683,7 @@ jQuery(document).ready(function ($) {
                         collapsed: true,
                         sortLayers: true
                     }).addTo(map);
+                    addLayersTitle(controlLayers);
 
                     // Manejar eventos de cambio de capas
                     map.on('overlayadd', function (e) {

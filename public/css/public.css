@@ -3,6 +3,18 @@
     position: relative !important;
 }
 
+/* Título del listado de capas Leaflet */
+.nm-layers-title{
+    font-weight:600;
+    font-size:13px;
+    padding:4px 6px 6px;
+    margin:0 0 4px;
+    border-bottom:1px solid #ddd;
+    font-family: system-ui, Arial, sans-serif;
+    background:#f7f7f7;
+    border-radius:4px 4px 0 0;
+}
+
 /* ========================================= */
 /* BOTÓN DE AYUDA / TOUR                     */
 /* ========================================= */
