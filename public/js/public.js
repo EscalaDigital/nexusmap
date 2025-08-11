@@ -8,6 +8,8 @@ var controlLayers;
 // contenedor de marcadores
 var markersLayer;
 var allMarkers = [];
+var clusterGroup = null;
+var clusteringActive = true; // estado interno si clustering habilitado
 
 jQuery(document).ready(function ($) {
     if (jQuery('#nm-main-map').length) {
@@ -564,7 +566,7 @@ jQuery(document).ready(function ($) {
         $topControls.append($legendButton);
         
         // Load points via AJAX
-        $.post(nmMapData.ajax_url, {
+    $.post(nmMapData.ajax_url, {
             action: 'nm_get_map_points',
             nonce: nmMapData.nonce
         }, function (response) {
@@ -576,8 +578,22 @@ jQuery(document).ready(function ($) {
                 var textLayerGroup = L.layerGroup();
                 var legendData = response.layer_settings; // Guardar los datos para la leyenda
 
-                // Crear markersLayer como contenedor principal
-                markersLayer = L.featureGroup().addTo(map);
+                // Crear markersLayer como contenedor principal o clusterGroup si clustering habilitado
+                if (nmMapData.enable_clustering) {
+                    clusterGroup = L.markerClusterGroup({
+                        // Radio de agrupación adaptativo simple
+                        maxClusterRadius: function(zoom){
+                            return zoom < 6 ? 80 : zoom < 10 ? 60 : 40;
+                        },
+                        spiderfyOnEveryZoom: false,
+                        showCoverageOnHover: false,
+                        removeOutsideVisibleBounds: true
+                    });
+                    markersLayer = clusterGroup;
+                    map.addLayer(clusterGroup);
+                } else {
+                    markersLayer = L.featureGroup().addTo(map);
+                }
 
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
@@ -643,6 +659,9 @@ jQuery(document).ready(function ($) {
                                         layerGroups[layerDef.layer_field].addLayer(marker);
                                         marker.originalLayerGroup = layerGroups[layerDef.layer_field];
                                     }
+                                    if (nmMapData.enable_clustering && clusterGroup) {
+                                        clusterGroup.addLayer(marker);
+                                    }
                                     allMarkers.push(marker);
                                 }
                             });
@@ -668,38 +687,44 @@ jQuery(document).ready(function ($) {
                             var labelHtml = '<div class="layer-color-indicator" style="background-color: ' +
                                 Object.values(layerConfig.colors)[0] + '"></div>' + getFieldLabel(layerConfig.field);
                             overlays[labelHtml] = layerGroups[layerConfig.field];
-                            if (isFirstLayer) {
-                                layerGroups[layerConfig.field].addTo(map);
-                                markersLayer.addLayer(layerGroups[layerConfig.field]);
-                                isFirstLayer = false;
-                            }
+                                if (!nmMapData.enable_clustering) {
+                                    if (isFirstLayer) {
+                                        layerGroups[layerConfig.field].addTo(map);
+                                        markersLayer.addLayer(layerGroups[layerConfig.field]);
+                                        isFirstLayer = false;
+                                    }
+                                }
                         }
                     });
 
                     // Actualizar el control de capas con los nuevos overlays y configurar los eventos
-                    if (controlLayers) {
-                        controlLayers.remove();
+                    if (!nmMapData.enable_clustering) {
+                        if (controlLayers) {
+                            controlLayers.remove();
+                        }
+                        controlLayers = L.control.layers(baseLayers, overlays, {
+                            collapsed: true,
+                            sortLayers: true
+                        }).addTo(map);
+                        addLayersTitle(controlLayers);
                     }
-                    controlLayers = L.control.layers(baseLayers, overlays, {
-                        collapsed: true,
-                        sortLayers: true
-                    }).addTo(map);
-                    addLayersTitle(controlLayers);
 
                     // Manejar eventos de cambio de capas
-                    map.on('overlayadd', function (e) {
+                    if (!nmMapData.enable_clustering) {
+                        map.on('overlayadd', function (e) {
                         var layer = e.layer;
                         if (layer === textLayerGroup || Object.values(layerGroups).includes(layer)) {
                             markersLayer.addLayer(layer);
                         }
-                    });
+                        });
 
-                    map.on('overlayremove', function (e) {
+                        map.on('overlayremove', function (e) {
                         var layer = e.layer;
                         if (layer === textLayerGroup || Object.values(layerGroups).includes(layer)) {
                             markersLayer.removeLayer(layer);
                         }
-                    });
+                        });
+                    }
 
                     // Aplicar estilos personalizados a los elementos del control después de añadirlo
                     var controlContainer = controlLayers.getContainer();
@@ -732,8 +757,11 @@ jQuery(document).ready(function ($) {
                         marker.on('click', function () {
                             showModal(feature.properties);
                         });
-
-                        markersLayer.addLayer(marker);
+                        if (nmMapData.enable_clustering && clusterGroup) {
+                            clusterGroup.addLayer(marker);
+                        } else {
+                            markersLayer.addLayer(marker);
+                        }
                         allMarkers.push(marker);
                     });
                 }
@@ -849,6 +877,54 @@ jQuery(document).ready(function ($) {
             if(!localStorage.getItem('nmMapTourSeen')){
                 setTimeout(()=>{ startNmMapTour(true); }, 1200);
             }
+        }
+
+        // Botón toggle clustering (desagrupar) sólo si clustering habilitado
+        if (nmMapData.enable_clustering) {
+            var $clusterToggle = jQuery('<button>', {
+                class: 'nm-control-button nm-cluster-toggle',
+                title: 'Desagrupar puntos',
+                html: '<i class="fa fa-object-ungroup"></i>'
+            });
+            $clusterToggle.on('click', function(e){
+                e.stopPropagation();
+                if (!clusterGroup) return;
+                if (clusteringActive) {
+                    // Desactivar clustering: mover todos los marcadores a un FeatureGroup simple
+                    var fg = L.featureGroup();
+                    clusterGroup.eachLayer(function(layer){
+                        clusterGroup.removeLayer(layer);
+                        if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                            fg.addLayer(layer);
+                        }
+                    });
+                    map.removeLayer(clusterGroup);
+                    fg.addTo(map);
+                    markersLayer = fg;
+                    clusteringActive = false;
+                    $clusterToggle.attr('title','Agrupar puntos').html('<i class="fa fa-object-group"></i>');
+                } else {
+                    // Reactivar clustering
+                    var newCluster = L.markerClusterGroup({
+                        maxClusterRadius: function(zoom){return zoom < 6 ? 80 : zoom < 10 ? 60 : 40;},
+                        spiderfyOnEveryZoom: false,
+                        showCoverageOnHover: false,
+                        removeOutsideVisibleBounds: true
+                    });
+                    markersLayer.eachLayer(function(layer){
+                        if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                            newCluster.addLayer(layer);
+                        }
+                    });
+                    map.removeLayer(markersLayer);
+                    newCluster.addTo(map);
+                    clusterGroup = newCluster;
+                    markersLayer = newCluster;
+                    clusteringActive = true;
+                    $clusterToggle.attr('title','Desagrupar puntos').html('<i class="fa fa-object-ungroup"></i>');
+                }
+            });
+            $topControls.append($clusterToggle);
         }
     }
 

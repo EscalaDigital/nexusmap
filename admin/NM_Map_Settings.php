@@ -50,6 +50,7 @@ class NM_Map_Settings
         register_setting('nm_map_settings_group', 'nm_enable_search'); // Opción para habilitar la búsqueda en el mapa
         register_setting('nm_map_settings_group', 'nm_enable_user_wms'); // Opción para permitir al usuario agregar capas WMS
     register_setting('nm_map_settings_group', 'nm_enable_map_tour'); // Opción para habilitar el tour de ayuda
+    register_setting('nm_map_settings_group', 'nm_enable_clustering'); // Opción para habilitar agrupación simple de puntos
 
         add_settings_section(
             'nm_map_settings_section',
@@ -86,6 +87,14 @@ class NM_Map_Settings
             'nm_enable_map_tour',
             __('Enable Map Help Tour', 'nexusmap'),
             array($this, 'render_map_tour_field'),
+            'nm_map_settings',
+            'nm_map_settings_section'
+        );
+
+        add_settings_field(
+            'nm_enable_clustering',
+            __('Enable Point Clustering', 'nexusmap'),
+            array($this, 'render_clustering_field'),
             'nm_map_settings',
             'nm_map_settings_section'
         );
@@ -128,6 +137,16 @@ class NM_Map_Settings
         ?>
         <input type="checkbox" name="nm_enable_map_tour" value="1" <?php checked(1, $option); ?> />
         <label for="nm_enable_map_tour"><?php esc_html_e('Show the contextual help tour (button ? and onboarding steps).', 'nexusmap'); ?></label>
+        <?php
+    }
+
+    // Campo para habilitar clustering simple
+    public function render_clustering_field()
+    {
+        $option = get_option('nm_enable_clustering', false);
+        ?>
+        <input type="checkbox" name="nm_enable_clustering" value="1" <?php checked(1, $option); ?> />
+        <label for="nm_enable_clustering"><?php esc_html_e('Group nearby points into neutral clusters (click or zoom to view individual points).', 'nexusmap'); ?></label>
         <?php
     }
 }

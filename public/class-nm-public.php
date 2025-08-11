@@ -123,6 +123,13 @@ class NM_Public
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'    => wp_create_nonce('nm_public_nonce')
             ));
+
+            // Clustering: cargar assets sólo si está habilitado
+            if (get_option('nm_enable_clustering', false)) {
+                wp_enqueue_style('leaflet-markercluster-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css', array('nm-leaflet-css'), '1.5.3');
+                wp_enqueue_style('leaflet-markercluster-default-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css', array('leaflet-markercluster-css'), '1.5.3');
+                wp_enqueue_script('leaflet-markercluster-js', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', array('nm-leaflet-js'), '1.5.3', true);
+            }
             
             // Para gráficos Chart.js
             wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
