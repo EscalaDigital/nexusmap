@@ -125,7 +125,10 @@ class NM_Public
             ));
             
             // Para gráficos Chart.js
-            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);        }        
+            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
+            // Librería jsPDF para exportar gráficos a PDF
+            wp_enqueue_script('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', array(), '2.5.1', true);
+        }
 
         // Check if the [nm_form] shortcode is used in the content
         if (has_shortcode($post_content, 'nm_form')) {

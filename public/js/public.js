@@ -918,14 +918,50 @@ jQuery(document).ready(function ($) {
         nmMapData.chart_settings.forEach((chartConfig, index) => {
             const canvasWrapper = document.createElement('div');
             canvasWrapper.style.height = '100%';
+            canvasWrapper.style.position = 'relative';
+            canvasWrapper.style.marginBottom = '25px';
 
-            // Añadir título del gráfico al wrapper
+            // Contenedor header del gráfico (título + acciones)
+            const headerDiv = document.createElement('div');
+            headerDiv.style.display = 'flex';
+            headerDiv.style.alignItems = 'center';
+            headerDiv.style.justifyContent = 'space-between';
+            headerDiv.style.marginBottom = '6px';
+
+            // Añadir título del gráfico
             const titleDiv = document.createElement('div');
-            titleDiv.style.textAlign = 'center';
-            titleDiv.style.marginBottom = '10px';
+            titleDiv.style.textAlign = 'left';
             titleDiv.style.fontWeight = 'bold';
+            titleDiv.style.fontSize = '14px';
             titleDiv.textContent = chartConfig.title;
-            canvasWrapper.appendChild(titleDiv);
+            headerDiv.appendChild(titleDiv);
+
+            // Botón descargar PDF
+            const downloadBtn = document.createElement('button');
+            downloadBtn.type = 'button';
+            downloadBtn.textContent = '📥 PDF';
+            downloadBtn.title = 'Descargar gráfico en PDF';
+            downloadBtn.style.cursor = 'pointer';
+            downloadBtn.style.background = '#1976d2';
+            downloadBtn.style.color = '#fff';
+            downloadBtn.style.border = 'none';
+            downloadBtn.style.borderRadius = '4px';
+            downloadBtn.style.padding = '4px 8px';
+            downloadBtn.style.fontSize = '12px';
+            downloadBtn.style.display = 'inline-flex';
+            downloadBtn.style.alignItems = 'center';
+            downloadBtn.style.gap = '4px';
+            downloadBtn.addEventListener('mouseenter', () => downloadBtn.style.background = '#145a9c');
+            downloadBtn.addEventListener('mouseleave', () => downloadBtn.style.background = '#1976d2');
+
+            downloadBtn.addEventListener('click', () => {
+                const canvas = canvasWrapper.querySelector('canvas');
+                if(canvas){
+                    exportChartToPDF(canvas, chartConfig.title || `grafico-${index+1}`);
+                }
+            });
+            headerDiv.appendChild(downloadBtn);
+            canvasWrapper.appendChild(headerDiv);
 
             const canvas = document.createElement('canvas');
             canvas.id = `chart-${index}`;
@@ -1309,13 +1345,53 @@ jQuery(document).ready(function ($) {
             });
         }
 
-        // Crear el gráfico
-        new Chart(ctx, {
+    // Crear el gráfico y guardar referencia en dataset para exportación futura
+        const chartInstance = new Chart(ctx, {
             type: chartConfig.chart_type,
             data: data,
             options: options
         });
+    canvas.chartInstance = chartInstance;
     }    /**
+     * Exporta un gráfico (canvas) a PDF utilizando jsPDF
+     * @param {HTMLCanvasElement} canvas
+     * @param {string} title
+     */
+    function exportChartToPDF(canvas, title){
+        try {
+            if(typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined'){
+                alert('Librería jsPDF no cargada aún. Intenta de nuevo en un momento.');
+                return;
+            }
+            // Compatibilidad UMD
+            const jsPDFLib = window.jspdf || window.jsPDF;
+            const doc = new jsPDFLib.jsPDF ? new jsPDFLib.jsPDF({orientation:'landscape'}) : new jsPDFLib({orientation:'landscape'});
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            // Calcular tamaño proporcional
+            const imgWidth = pageWidth - 20; // márgenes
+            const ratio = canvas.height / canvas.width;
+            const imgHeight = imgWidth * ratio;
+            let y = 20;
+
+            doc.setFontSize(14);
+            doc.text(title, 10, 12);
+            // Centrado vertical si sobra espacio
+            if(imgHeight < pageHeight - 30){
+                y = (pageHeight - imgHeight)/2;
+            }
+            doc.addImage(imgData, 'PNG', 10, y, imgWidth, imgHeight);
+            const safeTitle = (title||'grafico').toLowerCase().replace(/[^a-z0-9\-_]+/gi,'_').substring(0,60);
+            doc.save(`${safeTitle}.pdf`);
+        } catch(e){
+            console.error('Error exportando PDF', e);
+            alert('No se pudo generar el PDF. Revisa la consola.');
+        }
+    }
+    /**
      * Devuelve un array de marcadores que están actualmente visibles en el mapa
      * (es decir, que están añadidos a sus LayerGroups y esos LayerGroups están en el mapa)
      */
