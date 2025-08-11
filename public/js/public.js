@@ -27,6 +27,20 @@ jQuery(document).ready(function ($) {
             html: '<i class="fa fa-list"></i>'
         });
 
+        // =====================================
+        // BOTÓN DE AYUDA / TOUR ONBOARDING
+        // =====================================
+        var $helpButton = jQuery('<button>', {
+            id: 'nm-help-tour-btn',
+            class: 'nm-control-button nm-help-button',
+            title: 'Ayuda / Tour',
+            html: '<span class="nm-help-icon">?</span>'
+        });
+        $helpButton.on('click', function(e){
+            e.stopPropagation();
+            startNmMapTour();
+        });
+
         // Crear panel de leyenda
         var legendPanel = document.createElement('div');
         legendPanel.className = 'legend-panel';
@@ -800,6 +814,13 @@ jQuery(document).ready(function ($) {
 
             $topControls.append($chartsButton);
         }
+
+        // Añadir el botón de ayuda al comienzo de la barra de controles
+        $topControls.prepend($helpButton);
+        // Autostart una sola vez si no ha sido visto
+        if(!localStorage.getItem('nmMapTourSeen')){
+            setTimeout(()=>{ startNmMapTour(true); }, 1200);
+        }
     }
 
     function showChartsModal(features) {
@@ -1404,3 +1425,199 @@ jQuery(document).ready(function ($) {
 
 
 });
+
+// =====================================
+// SISTEMA DE TOUR / ONBOARDING DEL MAPA
+// =====================================
+(function(){
+    // Evitar redefinición
+    if(window.startNmMapTour) return;
+
+    function detectNmTheme(){
+        try {
+            const styles = Array.from(document.styleSheets).map(s => s.href||'');
+            if(styles.some(h=>/theme1\.css/i.test(h))) return 'theme1';
+            if(styles.some(h=>/theme2\.css/i.test(h))) return 'theme2';
+        }catch(e){}
+        return 'default';
+    }
+
+    function buildSteps(){
+        const steps = [
+            {
+                selector: '#nm-main-map',
+                title: 'Bienvenido',
+                content: 'Este mapa interactivo permite explorar capas, filtrar datos y visualizar estadísticas. Vamos a hacer un recorrido rápido.'
+            },
+            {
+                selector: '.nm-control-button[title="Filtros"]',
+                title: 'Filtros',
+                content: 'Abre el panel de filtros para activar criterios y limitar los puntos visibles. Cada filtro muestra cuántos elementos contiene.'
+            },
+            {
+                selector: '.nm-control-button[title="Leyenda"]',
+                title: 'Leyenda',
+                content: 'La leyenda explica los colores y capas disponibles. Puedes mostrar u ocultarla cuando quieras.'
+            },
+            {
+                selector: '.nm-search-container .nm-control-button',
+                title: 'Búsqueda',
+                content: 'Busca ubicaciones rápidamente. Escribe y pulsa Enter para centrar el mapa (si la función está activa).'
+            },
+            {
+                selector: '.nm-control-button[title="Añadir capa WMS"]',
+                title: 'Capas WMS',
+                content: 'Añade capas WMS personalizadas proporcionando una URL de servicio para enriquecer el mapa.'
+            },
+            {
+                selector: '.nm-control-button[title^="Ver gráficos"]',
+                title: 'Gráficos dinámicos',
+                content: 'Genera gráficos interactivos basados en los puntos visibles y filtros activos.'
+            },
+            {
+                selector: '.leaflet-control-layers',
+                title: 'Control de capas',
+                content: 'Activa o desactiva capas base y overlays. Úsalo para comparar información.'
+            },
+            {
+                selector: '#nm-points-count',
+                title: 'Conteo de puntos',
+                content: 'Muestra cuántos puntos están visibles respecto al total. Cambia automáticamente al aplicar filtros.'
+            },
+            {
+                selector: '#nm-main-map',
+                title: 'Marcas y detalles',
+                content: 'Haz clic en un punto para ver sus datos en el panel lateral. ¡Explora y descubre!'
+            },
+            {
+                selector: '#nm-help-tour-btn',
+                title: 'Fin',
+                content: 'Eso es todo. Puedes volver a ver este tour pulsando el botón con el símbolo “?”.'
+            }
+        ];
+        // Filtrar pasos donde el elemento no existe en el DOM
+        return steps.filter(s => document.querySelector(s.selector));
+    }
+
+    function createOverlay(){
+        const ov = document.createElement('div');
+        ov.className = 'nm-tour-overlay';
+        ov.setAttribute('data-theme', detectNmTheme());
+        document.body.appendChild(ov);
+        return ov;
+    }
+
+    function createTooltip(){
+        const box = document.createElement('div');
+        box.className = 'nm-tour-tooltip';
+        box.innerHTML = `
+            <div class="nm-tour-header">
+                <h3 class="nm-tour-title"></h3>
+                <button type="button" class="nm-tour-close" aria-label="Cerrar">×</button>
+            </div>
+            <div class="nm-tour-body"></div>
+            <div class="nm-tour-footer">
+                <button type="button" class="nm-tour-prev" disabled>Anterior</button>
+                <button type="button" class="nm-tour-next">Siguiente</button>
+                <button type="button" class="nm-tour-skip">Saltar</button>
+            </div>`;
+        document.body.appendChild(box);
+        return box;
+    }
+
+    function scrollIntoViewIfNeeded(el){
+        if(!el) return;
+        const rect = el.getBoundingClientRect();
+        if(rect.top < 0 || rect.bottom > window.innerHeight){
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+        }
+    }
+
+    function positionTooltip(box, target){
+        const padding = 10;
+        const rect = target.getBoundingClientRect();
+        const boxRect = box.getBoundingClientRect();
+        let top = rect.bottom + padding;
+        let left = rect.left + (rect.width/2) - (boxRect.width/2);
+        // Ajustes de límites
+        if(left < 10) left = 10;
+        if(left + boxRect.width > window.innerWidth - 10){
+            left = window.innerWidth - boxRect.width - 10;
+        }
+        if(top + boxRect.height > window.innerHeight - 10){
+            top = rect.top - boxRect.height - padding;
+        }
+        if(top < 10) top = 10;
+        box.style.top = top + 'px';
+        box.style.left = left + 'px';
+    }
+
+    function highlightElement(overlay, el){
+        const r = el.getBoundingClientRect();
+        overlay.style.setProperty('--nm-tour-top', r.top + 'px');
+        overlay.style.setProperty('--nm-tour-left', r.left + 'px');
+        overlay.style.setProperty('--nm-tour-width', r.width + 'px');
+        overlay.style.setProperty('--nm-tour-height', r.height + 'px');
+        overlay.classList.add('nm-active');
+    }
+
+    function clearTour(overlay, tooltip){
+        overlay && overlay.remove();
+        tooltip && tooltip.remove();
+    }
+
+    window.startNmMapTour = function(auto){
+        const steps = buildSteps();
+        if(!steps.length) return;
+        let index = 0;
+        const overlay = createOverlay();
+        const tooltip = createTooltip();
+
+        const titleEl = tooltip.querySelector('.nm-tour-title');
+        const bodyEl = tooltip.querySelector('.nm-tour-body');
+        const btnPrev = tooltip.querySelector('.nm-tour-prev');
+        const btnNext = tooltip.querySelector('.nm-tour-next');
+        const btnSkip = tooltip.querySelector('.nm-tour-skip');
+        const btnClose = tooltip.querySelector('.nm-tour-close');
+
+        function update(){
+            const step = steps[index];
+            const target = document.querySelector(step.selector);
+            if(!target){
+                // Si desaparece, saltar
+                if(index < steps.length -1){ index++; update(); return; }
+            }
+            titleEl.textContent = step.title;
+            bodyEl.textContent = step.content;
+            btnPrev.disabled = index === 0;
+            btnNext.textContent = index === steps.length -1 ? 'Finalizar' : 'Siguiente';
+            highlightElement(overlay, target || document.body);
+            positionTooltip(tooltip, target || document.body);
+            scrollIntoViewIfNeeded(target);
+            // Accesible
+            tooltip.setAttribute('role','dialog');
+            tooltip.setAttribute('aria-label', step.title);
+        }
+
+        function finish(){
+            clearTour(overlay, tooltip);
+            localStorage.setItem('nmMapTourSeen','1');
+        }
+
+        btnPrev.addEventListener('click', function(){
+            if(index>0){ index--; update(); }
+        });
+        btnNext.addEventListener('click', function(){
+            if(index < steps.length -1){ index++; update(); } else { finish(); }
+        });
+        btnSkip.addEventListener('click', finish);
+        btnClose.addEventListener('click', finish);
+        window.addEventListener('resize', function(){
+            const step = steps[index];
+            const target = document.querySelector(step.selector);
+            if(target){ positionTooltip(tooltip, target); highlightElement(overlay, target); }
+        });
+        update();
+    }
+})();
+
