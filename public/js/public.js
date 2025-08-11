@@ -1462,7 +1462,7 @@ jQuery(document).ready(function ($) {
             {
                 selector: '.nm-search-container .nm-control-button',
                 title: 'Búsqueda',
-                content: 'Busca ubicaciones rápidamente. Escribe y pulsa Enter para centrar el mapa (si la función está activa).'
+                content: 'Busca ubicaciones rápidamente: escribe una dirección o término y pulsa Enter para centrar el mapa.'
             },
             {
                 selector: '.nm-control-button[title="Añadir capa WMS"]',
