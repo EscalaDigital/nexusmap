@@ -2,6 +2,7 @@
 $enable_geojson_download = get_option( 'nm_enable_geojson_download', false );
 $enable_search = get_option( 'nm_enable_search', false );
 $enable_user_wms = get_option('nm_enable_user_wms', false);
+$enable_map_tour = get_option('nm_enable_map_tour', false);
 $base_layers = get_option( 'nm_base_layers', array() );
 $overlay_layers = get_option( 'nm_overlay_layers', array() );
 $active_layers = get_option( 'nm_active_layers', array() );
@@ -52,6 +53,7 @@ $filter_settings = $this->get_filter_settings();
         charts_enabled: <?php echo !empty($chart_settings) ? 'true' : 'false'; ?>,
         chart_settings: <?php echo json_encode($chart_settings); ?>,
         text_layer_name: <?php echo json_encode($text_layer_name); ?>
+    ,enable_map_tour: <?php echo $enable_map_tour ? 'true':'false'; ?>
     
     };
 </script>

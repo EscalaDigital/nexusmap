@@ -49,6 +49,7 @@ class NM_Map_Settings
         register_setting('nm_map_settings_group', 'nm_enable_geojson_download'); // Opción para habilitar la descarga de GeoJSON
         register_setting('nm_map_settings_group', 'nm_enable_search'); // Opción para habilitar la búsqueda en el mapa
         register_setting('nm_map_settings_group', 'nm_enable_user_wms'); // Opción para permitir al usuario agregar capas WMS
+    register_setting('nm_map_settings_group', 'nm_enable_map_tour'); // Opción para habilitar el tour de ayuda
 
         add_settings_section(
             'nm_map_settings_section',
@@ -77,6 +78,14 @@ class NM_Map_Settings
             'nm_enable_user_wms',
             __('Enable User WMS Layers', 'nexusmap'),
             array($this, 'render_user_wms_field'),
+            'nm_map_settings',
+            'nm_map_settings_section'
+        );
+
+        add_settings_field(
+            'nm_enable_map_tour',
+            __('Enable Map Help Tour', 'nexusmap'),
+            array($this, 'render_map_tour_field'),
             'nm_map_settings',
             'nm_map_settings_section'
         );
@@ -109,6 +118,16 @@ class NM_Map_Settings
         ?>
         <input type="checkbox" name="nm_enable_user_wms" value="1" <?php checked(1, $option); ?> />
         <label for="nm_enable_user_wms"><?php esc_html_e('Allow users to add WMS layers to the map.', 'nexusmap'); ?></label>
+        <?php
+    }
+
+    // Campo para habilitar el tour de ayuda
+    public function render_map_tour_field()
+    {
+        $option = get_option('nm_enable_map_tour', false);
+        ?>
+        <input type="checkbox" name="nm_enable_map_tour" value="1" <?php checked(1, $option); ?> />
+        <label for="nm_enable_map_tour"><?php esc_html_e('Show the contextual help tour (button ? and onboarding steps).', 'nexusmap'); ?></label>
         <?php
     }
 }

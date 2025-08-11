@@ -30,16 +30,19 @@ jQuery(document).ready(function ($) {
         // =====================================
         // BOTÓN DE AYUDA / TOUR ONBOARDING
         // =====================================
-        var $helpButton = jQuery('<button>', {
-            id: 'nm-help-tour-btn',
-            class: 'nm-control-button nm-help-button',
-            title: 'Ayuda / Tour',
-            html: '<span class="nm-help-icon">?</span>'
-        });
-        $helpButton.on('click', function(e){
-            e.stopPropagation();
-            startNmMapTour();
-        });
+        var $helpButton = null;
+        if(nmMapData.enable_map_tour){
+            $helpButton = jQuery('<button>', {
+                id: 'nm-help-tour-btn',
+                class: 'nm-control-button nm-help-button',
+                title: 'Ayuda / Tour',
+                html: '<span class="nm-help-icon">?</span>'
+            });
+            $helpButton.on('click', function(e){
+                e.stopPropagation();
+                startNmMapTour();
+            });
+        }
 
         // Crear panel de leyenda
         var legendPanel = document.createElement('div');
@@ -816,10 +819,12 @@ jQuery(document).ready(function ($) {
         }
 
         // Añadir el botón de ayuda al comienzo de la barra de controles
-        $topControls.prepend($helpButton);
-        // Autostart una sola vez si no ha sido visto
-        if(!localStorage.getItem('nmMapTourSeen')){
-            setTimeout(()=>{ startNmMapTour(true); }, 1200);
+        if($helpButton){
+            $topControls.prepend($helpButton);
+            // Autostart una sola vez si no ha sido visto
+            if(!localStorage.getItem('nmMapTourSeen')){
+                setTimeout(()=>{ startNmMapTour(true); }, 1200);
+            }
         }
     }
 
