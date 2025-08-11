@@ -598,7 +598,7 @@ jQuery(document).ready(function ($) {
                                     feature.geometry.coordinates[1],
                                     feature.geometry.coordinates[0]
                                 ], {
-                                    // Unificado para coincidir con el resto de capas (antes 8)
+                                   
                                     radius: 5,
                                     fillColor: textLayer.color,
                                     color: "#000",
