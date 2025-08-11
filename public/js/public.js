@@ -476,31 +476,56 @@ jQuery(document).ready(function ($) {
 
 
         function updateVisiblePoints(activeFilters) {
-            // Limpiar el contenido de todos los LayerGroup definidos en la variable global 'overlays'
-            for (const overlayName in overlays) {
-                if (overlays.hasOwnProperty(overlayName)) {                    const layerGroup = overlays[overlayName];
-                    if (layerGroup && typeof layerGroup.clearLayers === 'function') {
-                        layerGroup.clearLayers();
+            const clusteringEnabled = nmMapData.enable_clustering === true || nmMapData.enable_clustering === 'true';
+
+            if (!clusteringEnabled) {
+                // Modo original (sin clustering habilitado en ajustes)
+                for (const overlayName in overlays) {
+                    if (overlays.hasOwnProperty(overlayName)) {
+                        const layerGroup = overlays[overlayName];
+                        if (layerGroup && typeof layerGroup.clearLayers === 'function') {
+                            layerGroup.clearLayers();
+                        }
                     }
                 }
             }
 
-            // Recorrer todos los marcadores guardados
-            allMarkers.forEach(function (marker) {
-                let isVisibleByFilter = true;
+            // Reconstituir capa según estado de clustering
+            if (clusteringEnabled && clusteringActive && clusterGroup) {
+                clusterGroup.clearLayers();
+            }
 
+            allMarkers.forEach(function(marker){
+                let visible = true;
                 for (const field in activeFilters) {
                     if (activeFilters[field].size > 0) {
                         const fieldName = 'nm_' + field;
-                        const fieldValue = marker.feature.properties[fieldName];                        if (!fieldValue || !activeFilters[field].has(String(fieldValue))) {
-                            isVisibleByFilter = false;
+                        const fieldValue = marker.feature.properties[fieldName];
+                        if (!fieldValue || !activeFilters[field].has(String(fieldValue))) {
+                            visible = false;
                             break;
                         }
                     }
                 }
 
-                if (isVisibleByFilter && marker.originalLayerGroup) {
-                    marker.originalLayerGroup.addLayer(marker);
+                if (clusteringEnabled) {
+                    if (clusteringActive) {
+                        if (visible && clusterGroup) {
+                            clusterGroup.addLayer(marker);
+                        } // si no es visible simplemente no se añade
+                    } else {
+                        // clustering desactivado vía toggle: trabajamos directamente sobre markersLayer FeatureGroup plano
+                        if (visible) {
+                            if (!markersLayer.hasLayer(marker)) markersLayer.addLayer(marker);
+                        } else {
+                            if (markersLayer.hasLayer(marker)) markersLayer.removeLayer(marker);
+                        }
+                    }
+                } else {
+                    // Modo original sin clustering
+                    if (visible && marker.originalLayerGroup) {
+                        marker.originalLayerGroup.addLayer(marker);
+                    }
                 }
             });
 
@@ -1473,20 +1498,24 @@ jQuery(document).ready(function ($) {
      * (es decir, que están añadidos a sus LayerGroups y esos LayerGroups están en el mapa)
      */
     function getVisibleMarkers() {
-        const visibleMarkers = [];
-
+        const clusteringEnabled = nmMapData.enable_clustering === true || nmMapData.enable_clustering === 'true';
+        if (clusteringEnabled) {
+            if (clusteringActive && clusterGroup) {
+                return allMarkers.filter(m => clusterGroup.hasLayer(m));
+            } else if (!clusteringActive && markersLayer) {
+                return allMarkers.filter(m => markersLayer.hasLayer(m));
+            }
+        }
+        // Modo original
+        const visible = [];
         allMarkers.forEach(marker => {
-            // Verificar si el marcador está en su grupo original y ese grupo está en el mapa
             if (marker.originalLayerGroup && marker.originalLayerGroup.hasLayer(marker)) {
-                // Verificar si el LayerGroup está en el mapa o si está dentro de markersLayer que está en el mapa
-                if (map.hasLayer(marker.originalLayerGroup) || 
-                    (markersLayer && markersLayer.hasLayer(marker.originalLayerGroup) && map.hasLayer(markersLayer))) {
-                    visibleMarkers.push(marker);
+                if (map.hasLayer(marker.originalLayerGroup) || (markersLayer && markersLayer.hasLayer(marker.originalLayerGroup) && map.hasLayer(markersLayer))) {
+                    visible.push(marker);
                 }
             }
         });
-
-        return visibleMarkers;
+        return visible;
     }
 
     /**
