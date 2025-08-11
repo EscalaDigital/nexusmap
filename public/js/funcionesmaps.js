@@ -339,16 +339,66 @@ function showModal(properties) {
     }
 
     /* ----------  Construir el HTML final del modal ---------- */
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const currentThemeHref = Array.from(document.styleSheets).map(s=>s.href||'').find(h=>/theme3\.css/i.test(h));
+    const isAudioGuide = !!currentThemeHref; // Theme 3 activo
 
     let modalHtml = '<div class="nm-modal-content">';
-    Object.entries(sectionContent).forEach(([secName, items]) => {
-        if (!items.length) return;
+
+    if(isMobile && isAudioGuide){
+        // Recopilar imágenes y primer audio
+        const imageHtmlMatches = [];
+        const audioMatches = [];
+        Object.values(sectionContent).forEach(arr=>{
+            arr.forEach(html=>{
+                if(/<img /i.test(html)) imageHtmlMatches.push(html.match(/<img [^>]*>/i)[0]);
+                if(/<audio /i.test(html)) audioMatches.push(html.match(/<audio[\s\S]*?<\/audio>/i)[0]);
+            });
+        });
+        const heroSlides = imageHtmlMatches.length ? imageHtmlMatches.map(img=>`<div class="nm-audio-hero-slide">${img}</div>`).join('') : `<div class="nm-audio-hero-slide" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">Sin imágenes</div>`;
+        const audioTag = audioMatches.length ? audioMatches[0] : '';
+        // Timeline y play
         modalHtml += `
-            <div class="nm-modal-section">
-                ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
-                ${items.join('')}
-            </div>`;
-    });
+            <div class="nm-audio-hero">
+                <div class="nm-audio-hero-slider" data-index="0">${heroSlides}</div>
+                <div class="nm-audio-hero-nav">
+                    <button type="button" class="nm-audio-prev" aria-label="Anterior">❮</button>
+                    <button type="button" class="nm-audio-next" aria-label="Siguiente">❯</button>
+                </div>
+                <div class="nm-audio-play-wrapper">
+                    <button type="button" class="nm-audio-play-btn" aria-label="Reproducir / Pausar"><span class="nm-audio-play-icon">▶</span></button>
+                    <div class="nm-audio-timeline">
+                        <span class="nm-audio-current">00:00</span>
+                        <input type="range" min="0" value="0" class="nm-audio-progress" />
+                        <span class="nm-audio-duration">00:00</span>
+                    </div>
+                    <div class="nm-audio-hidden" style="height:0;overflow:hidden;">${audioTag}</div>
+                </div>
+            </div>
+            <div class="nm-modal-sections-wrapper">
+        `;
+        Object.entries(sectionContent).forEach(([secName, items]) => {
+            if (!items.length) return;
+            // Filtrar items que ya formaron parte del hero (imagenes/audio duplicados)
+            const filteredItems = items.filter(it=>!/<img /i.test(it) && !/<audio /i.test(it));
+            if(!filteredItems.length) return;
+            modalHtml += `
+                <div class="nm-modal-section">
+                    ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
+                    ${filteredItems.join('')}
+                </div>`;
+        });
+        modalHtml += '</div>'; // wrapper
+    } else {
+        Object.entries(sectionContent).forEach(([secName, items]) => {
+            if (!items.length) return;
+            modalHtml += `
+                <div class="nm-modal-section">
+                    ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
+                    ${items.join('')}
+                </div>`;
+        });
+    }
     modalHtml += '</div>';
 
     /* ----------  Crear o refrescar el modal en el DOM ---------- */
@@ -372,6 +422,9 @@ function showModal(properties) {
     // Inicializar reproductores de audio si los hay
     setTimeout(() => {
         initializeAudioPlayers();
+        if(isMobile && isAudioGuide){
+            initAudioGuideUI();
+        }
     }, 100);    /* ----------  Cierre del modal (click X o exterior) ---------- */
     jQuery('#nm-modal-close').off('click').on('click', closeModal);
     jQuery(window).off('click.modal').on('click.modal', (e) => {
@@ -388,6 +441,38 @@ function showModal(properties) {
         
         $modal.removeClass('active');
         setTimeout(() => $modal.css('display', 'none'), 300);
+    }
+}
+
+// =======================
+// Audioguía UI helpers
+// =======================
+function initAudioGuideUI(){
+    const root = jQuery('#nm-modal');
+    const slider = root.find('.nm-audio-hero-slider');
+    const slides = slider.find('.nm-audio-hero-slide');
+    const btnPrev = root.find('.nm-audio-prev');
+    const btnNext = root.find('.nm-audio-next');
+    const playBtn = root.find('.nm-audio-play-btn');
+    const playIcon = root.find('.nm-audio-play-icon');
+    const range = root.find('.nm-audio-progress');
+    const cur = root.find('.nm-audio-current');
+    const dur = root.find('.nm-audio-duration');
+    const audio = root.find('.nm-audio-hidden audio')[0];
+    let index = 0;
+
+    function updateSlider(){ slider.css('transform',`translateX(-${index*100}%)`); }
+    function pad(t){ return String(Math.floor(t/60)).padStart(2,'0')+':'+String(Math.floor(t%60)).padStart(2,'0'); }
+    btnPrev.on('click',()=>{ index = (index-1+slides.length)%slides.length; updateSlider(); });
+    btnNext.on('click',()=>{ index = (index+1)%slides.length; updateSlider(); });
+    if(audio){
+        audio.addEventListener('loadedmetadata',()=>{ range.attr('max', Math.floor(audio.duration)); dur.text(pad(audio.duration||0)); });
+        audio.addEventListener('timeupdate',()=>{ range.val(Math.floor(audio.currentTime)); cur.text(pad(audio.currentTime)); const pct = (audio.currentTime/audio.duration)*100; range[0].style.setProperty('--nm-audio-progress', pct+'%'); });
+        range.on('input',()=>{ audio.currentTime = range.val(); });
+        playBtn.on('click',()=>{ if(audio.paused){ audio.play(); playIcon.text('⏸'); playBtn.addClass('paused'); } else { audio.pause(); playIcon.text('▶'); playBtn.removeClass('paused'); } });
+    } else {
+        playBtn.hide();
+        range.closest('.nm-audio-timeline').hide();
     }
 }
 

@@ -1,0 +1,88 @@
+/* Theme 3 - Audioguia (optimizado móvil)
+   Objetivo: mantener lógica base pero ofrecer modal/popup fullscreen con hero multimedia (carrusel + audio). */
+
+/* Reutilizamos estilos generales base del mapa sin sobrescribir demasiado */
+
+/* Barra lateral / controles minimalistas */
+#nm-top-controls { 
+  position:absolute; top:0; left:0; width:56px; height:100%; background:#0d1b2a; 
+  display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:14px; z-index:1000;
+  box-shadow:2px 0 6px rgba(0,0,0,.35);
+}
+#nm-top-controls .nm-control-button { width:42px; height:42px; border-radius:14px; background:#1b263b; border:1px solid #1b263b; color:#e0e6ed; }
+#nm-top-controls .nm-control-button:hover { background:#24324d; }
+#nm-top-controls .nm-control-button i, #nm-top-controls .nm-control-button span { color:#e0e6ed; }
+
+/* Leyenda flotante compacta */
+.legend-panel { background:#0d1b2a; color:#fff; border:1px solid #1e2f44; }
+.legend-panel h4 { color:#fff; }
+.legend-item .legend-label { color:#e0e6ed; }
+.legend-color { border:1px solid #24324d; }
+
+/* Panel filtros overlay full-height tipo drawer */
+.nm-filters-panel { background:#0d1b2a !important; color:#e0e6ed; border-left:4px solid #415a77; }
+.nm-filters-header { background:linear-gradient(135deg,#1b263b,#415a77) !important; border-bottom:0 !important; }
+.nm-filters-title { color:#fff !important; }
+.nm-clear-filters { background:#ef4444 !important; }
+.nm-filter-group { border:1px solid #24324d !important; background:#1b263b !important; }
+.nm-filter-header { background:#1b263b !important; }
+.nm-filter-label { color:#a5b4c3 !important; }
+.nm-filter-button { border:1px solid #415a77 !important; background:#102132 !important; color:#e0e6ed !important; }
+.nm-filter-button.active { background:linear-gradient(135deg,#2563eb,#9333ea) !important; border-color:#2563eb !important; }
+.nm-button-count { background:rgba(255,255,255,.08) !important; }
+
+/* ========================= */
+/* Modal Audioguía Desktop   */
+/* ========================= */
+.nm-modal { /* desktop mantiene lateral */ }
+
+/* ========================= */
+/* Versión móvil fullscreen  */
+/* ========================= */
+@media (max-width: 768px) {
+  /* Reemplazamos el modal lateral por fullscreen tipo ficha */
+  .nm-modal { position:fixed !important; top:0; left:0; right:0; bottom:0; width:100% !important; height:100% !important; transform:translateY(100%); transition:transform .35s ease; background:#052338; border:none; box-shadow:none; }
+  .nm-modal.active { transform:translateY(0); }
+  .nm-modal-content { padding:0 !important; overflow-y:auto; height:100%; display:flex; flex-direction:column; background:#052338; color:#fff; }
+  .nm-modal-close { top:14px !important; right:14px !important; background:rgba(0,0,0,.45); }
+
+  /* Hero multimedia */
+  .nm-audio-hero { position:relative; background:#000; width:100%; aspect-ratio:16/10; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .nm-audio-hero-slider { position:absolute; inset:0; display:flex; transition:transform .5s ease; }
+  .nm-audio-hero-slide { min-width:100%; height:100%; position:relative; }
+  .nm-audio-hero-slide img { width:100%; height:100%; object-fit:cover; }
+  .nm-audio-hero-nav { position:absolute; top:50%; left:0; right:0; display:flex; justify-content:space-between; transform:translateY(-50%); z-index:5; }
+  .nm-audio-hero-nav button { background:rgba(0,0,0,.35); backdrop-filter:blur(4px); border:none; width:44px; height:44px; border-radius:50%; color:#fff; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .nm-audio-hero-nav button:active { transform:scale(.92); }
+
+  /* Play central circular */
+  .nm-audio-play-wrapper { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(5,35,56,.85) 70%); padding:18px 18px 28px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .nm-audio-play-btn { width:86px; height:86px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#9333ea); border:4px solid rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; color:#fff; font-size:34px; box-shadow:0 8px 25px -5px rgba(37,99,235,.5); }
+  .nm-audio-play-btn.paused { background:linear-gradient(135deg,#9333ea,#2563eb); }
+  .nm-audio-timeline { width:100%; max-width:600px; display:flex; align-items:center; gap:10px; font-size:12px; font-family:monospace; color:#cbd5e1; }
+  .nm-audio-progress { -webkit-appearance:none; appearance:none; width:100%; height:6px; background:#1e3a55; border-radius:4px; overflow:hidden; cursor:pointer; }
+  .nm-audio-progress::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:0; height:0; }
+  .nm-audio-progress::-webkit-slider-runnable-track { background:linear-gradient(90deg,#4f46e5,var(--nm-audio-progress,#9333ea)); height:6px; }
+
+  .nm-modal-sections-wrapper { padding:24px 20px 60px; display:flex; flex-direction:column; gap:32px; }
+  .nm-modal-section { background:#0d3a56; border:1px solid #134766; border-radius:18px; padding:20px 18px; box-shadow:0 6px 18px -6px rgba(0,0,0,.4); }
+  .nm-modal-section h3.nm-modal-header { margin:0 0 14px; padding:0; font-size:17px; color:#fff; border:none; border-left:6px solid #2563eb; padding-left:10px; }
+  .nm-modal-field { background:transparent !important; border:none !important; color:#dbeafe; margin:6px 0; padding:0; }
+  .nm-modal-field strong { color:#93c5fd; margin-bottom:4px; font-size:12px; letter-spacing:1px; opacity:.9; }
+  .nm-modal-field img { border-radius:12px; box-shadow:0 4px 16px -4px rgba(0,0,0,.5); }
+
+  /* Ocultar estilos base de p wrapper */
+  .nm-modal-content p { background:none; padding:0; border:none; }
+}
+
+/* Indicador mini etiqueta de sección en desktop para coherencia */
+.nm-modal-header { background:linear-gradient(90deg,#2563eb,#9333ea); color:#fff; padding:10px 14px; border-radius:8px; border:none; font-weight:600; }
+
+/* Accesibilidad focus */
+.nm-audio-play-btn:focus { outline:3px solid #fff; outline-offset:3px; }
+
+/* Animaciones */
+@media (max-width:768px){
+  .nm-audio-hero-slide { animation:fadeSlide .6s ease; }
+  @keyframes fadeSlide { from{opacity:0; transform:scale(1.04);} to{opacity:1; transform:scale(1);} }
+}

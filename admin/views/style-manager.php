@@ -126,6 +126,7 @@
 
 .theme-1 { background: linear-gradient(45deg, #3b82f6, #1d4ed8); }
 .theme-2 { background: linear-gradient(45deg, #10b981, #047857); }
+.theme-3 { background: linear-gradient(45deg, #1e3a8a, #9333ea); }
 
 @media (max-width: 768px) {
     .nm-admin-header {
@@ -163,6 +164,9 @@
                             </option>
                             <option value="2" <?php selected($current_theme, '2'); ?>>
                                 <span class="theme-preview theme-2"></span>🌿 Tema 2 - Verde Natural
+                            </option>
+                            <option value="3" <?php selected($current_theme, '3'); ?>>
+                                <span class="theme-preview theme-3"></span>🎧 Audioguía (Móvil)
                             </option>
                         </select>
                     </td>
