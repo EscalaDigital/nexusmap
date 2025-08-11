@@ -448,7 +448,8 @@ function saveForm(formSelector, formType) {
                       const condFieldData  = {
                           type : condFieldType,
                           label: condFieldLabel,
-                          name : condFieldName
+                          name : condFieldName,
+                          restricted: $condField.find('.field-restricted-toggle').is(':checked') ? 1 : 0
                       };
 
                       /* Opciones para select/radio/checkbox -------------------*/
@@ -478,7 +479,8 @@ function saveForm(formSelector, formType) {
                 label: fieldLabel,
                 name : fieldName,
                 select_id: selectId,
-                options  : optionsWithIds
+                options  : optionsWithIds,
+                restricted: $field.find('.field-restricted-toggle').is(':checked') ? 1 : 0
             });        /*────────────────────────────────────────────────────────
          * 2. CAMPOS NORMALES
          *──────────────────────────────────────────────────────*/
@@ -492,7 +494,8 @@ function saveForm(formSelector, formType) {
             }            const fieldData = { 
                 type: fieldType, 
                 label: fieldLabel || 'Campo sin título', 
-                name: fieldName || generateUniqueFieldName('campo_generico')
+                name: fieldName || generateUniqueFieldName('campo_generico'),
+                restricted: $field.find('.field-restricted-toggle').is(':checked') ? 1 : 0
             };
             
             if (fieldOptions.length) fieldData.options = fieldOptions;            // Procesamiento especial para geographic-selector

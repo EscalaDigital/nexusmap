@@ -5,7 +5,11 @@
         <!-- Dynamic Fields -->
         <?php
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+            $nm_is_privileged = current_user_can('manage_options') || current_user_can('edit_others_posts');
             foreach ($form_data['fields'] as $field) {
+                if (!empty($field['restricted']) && !$nm_is_privileged) {
+                    continue; // ocultar campos restringidos para usuarios sin privilegios
+                }
                 // Normalizar el nombre del campo
                 $field_name = empty($field['name']) ? '' : nm_normalize_field_name($field['name']);
                 $field_id = 'nm_field_' . $field_name;

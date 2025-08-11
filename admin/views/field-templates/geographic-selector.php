@@ -17,6 +17,11 @@ $geonames_user = nm_get_geonames_user();
         <div class="nm-field-controls">
             <button type="button" class="nm-configure-geo-btn" title="Configurar">⚙️</button>
             <button type="button" class="nm-remove-field-btn" title="Eliminar">✕</button>
+            <div class="nm-field-restricted" style="margin-left:6px;">
+                <label style="font-size:11px;display:inline-block;">
+                    <input type="checkbox" class="field-restricted-toggle" <?php echo !empty($field['restricted']) ? 'checked' : ''; ?>> Solo usuarios privilegiados
+                </label>
+            </div>
         </div>
     </div>
     
