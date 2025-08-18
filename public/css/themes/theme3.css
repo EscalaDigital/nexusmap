@@ -101,6 +101,36 @@
 @keyframes panelFadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
 /* ========================= */
+/* Control de zoom (reubicado al lado de barra lateral) */
+/* ========================= */
+.leaflet-control-zoom { 
+  position:absolute !important; 
+  left:66px !important; /* 56px barra + 10px separación */
+  top:12px !important; 
+  display:flex !important; flex-direction:column; gap:8px; 
+  background:transparent !important; box-shadow:none !important; border:none !important;
+  z-index:1200; /* por encima de barra */
+}
+.leaflet-control-zoom-in, .leaflet-control-zoom-out { 
+  width:44px !important; height:44px !important; line-height:44px !important; padding:0 !important; 
+  background:linear-gradient(145deg,var(--nm-color-primary),#2a78b4) !important; 
+  color:#fff !important; font-size:20px !important; font-weight:600; 
+  border:2px solid rgba(255,255,255,.55) !important; border-radius:14px !important; 
+  box-shadow:0 4px 12px -4px rgba(0,0,0,.55) !important; cursor:pointer; transition:.35s !important; 
+}
+.leaflet-control-zoom-in:hover, .leaflet-control-zoom-out:hover { 
+  transform:translateY(-3px); background:linear-gradient(145deg,#2f85c3,var(--nm-color-primary)) !important; 
+  box-shadow:0 10px 20px -8px rgba(0,0,0,.6) !important; 
+}
+.leaflet-control-zoom-in:active, .leaflet-control-zoom-out:active { transform:translateY(0) scale(.95) !important; }
+.leaflet-control-zoom-in:focus-visible, .leaflet-control-zoom-out:focus-visible { outline:3px solid var(--nm-color-sec2) !important; outline-offset:2px; }
+
+@media (max-width: 768px){
+  .leaflet-control-zoom { left:60px !important; top:auto !important; bottom:14px !important; flex-direction:row !important; }
+  .leaflet-control-zoom-in, .leaflet-control-zoom-out { width:48px !important; height:48px !important; line-height:48px !important; border-radius:18px !important; }
+}
+
+/* ========================= */
 /* Modal Audioguía Desktop   */
 /* ========================= */
 /* .nm-modal hereda estilos base del plugin; no redefinimos aquí para mantener compatibilidad */
