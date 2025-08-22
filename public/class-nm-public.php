@@ -32,7 +32,8 @@ class NM_Public
 
         $this->loader->add_action('wp_ajax_nm_get_conditional_fields',  $this, 'get_conditional_fields');
         $this->loader->add_action('wp_ajax_nopriv_nm_get_conditional_fields', $this, 'get_conditional_fields');
-    }    /**
+    }
+    /**
      * Register shortcodes
      */
     public function register_shortcodes()
@@ -45,7 +46,8 @@ class NM_Public
 
     /**
      * Enqueue public assets
-     */    public function enqueue_public_assets()
+     */
+    public function enqueue_public_assets()
     {
         global $post;
 
@@ -67,10 +69,20 @@ class NM_Public
             $post_content = $post->post_content;
         }
 
+        // Fuerza carga de jQuery si se usa alguno de los shortcodes
+        if (
+            has_shortcode($post_content, 'nm_form')
+            || has_shortcode($post_content, 'nm_map')
+            || has_shortcode($post_content, 'nm_entries_list')
+        ) {
+            wp_enqueue_script('jquery');
+        }
+
+
         // Load entries modal JS if entries list shortcode is used
         if (has_shortcode($post_content, 'nm_entries_list')) {
             wp_enqueue_script('nm-entries-modal-js', NM_PLUGIN_URL . 'public/js/entries-modal.js', array('jquery'), NM_VERSION, true);
-            
+
             // Localize script for modal AJAX
             wp_localize_script('nm-entries-modal-js', 'nm_ajax', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
@@ -130,7 +142,7 @@ class NM_Public
                 wp_enqueue_style('leaflet-markercluster-default-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css', array('leaflet-markercluster-css'), '1.5.3');
                 wp_enqueue_script('leaflet-markercluster-js', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', array('nm-leaflet-js'), '1.5.3', true);
             }
-            
+
             // Para gráficos Chart.js
             wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
             // Librería jsPDF para exportar gráficos a PDF
@@ -153,13 +165,14 @@ class NM_Public
                 wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form1.css', array(), NM_VERSION);
             } else {
                 wp_enqueue_style('nm-form-css', NM_PLUGIN_URL . 'public/css/themes/form' . $selected_theme_form  . '.css', array(), NM_VERSION);
-            }            wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);            // Enqueue geographic selector scripts
+            }
+            wp_enqueue_script('nm-form-js', NM_PLUGIN_URL . 'public/js/form.js', array('jquery', 'nm-leaflet-js', 'nm-leaflet-draw-js'), NM_VERSION, true);            // Enqueue geographic selector scripts
             wp_enqueue_style('nm-geographic-selector-css', NM_PLUGIN_URL . 'public/css/geographic-selector.css', array(), NM_VERSION);
             wp_enqueue_script('nm-geographic-selector-js', NM_PLUGIN_URL . 'public/js/geographic-selector.js', array('jquery'), NM_VERSION, true);            // Localize geographic selector script
             wp_localize_script('nm-geographic-selector-js', 'nmGeoSelector', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'    => wp_create_nonce('nm_public_nonce')
-            ));// Localize script for AJAX handling
+            )); // Localize script for AJAX handling
             wp_localize_script('nm-form-js', 'nmPublic', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'    => wp_create_nonce('nm_public_nonce')
@@ -220,9 +233,7 @@ class NM_Public
         }
 
         // Limpiar cualquier output buffer previo
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
+        //   while (ob_get_level()) { ob_end_clean();         }
 
         // Check if the A/B option is enabled
         $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
@@ -245,17 +256,18 @@ class NM_Public
             include NM_PLUGIN_DIR . 'public/views/form-display.php';
             $output = ob_get_clean();
         }
-        
+
         return $output;
-    }    /**
+    }
+    /**
      * Display entries list shortcode
      */    public function display_entries_list($atts)
     {
         // Verificar si el modelo existe
         if (!$this->model) {
             return '<div style="border: 1px solid red; padding: 10px;">Error: Modelo no encontrado</div>';
-        }        
-        
+        }
+
         // Obtener configuración de la galería
         $gallery_settings = get_option('nm_gallery_settings', array());
         $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
@@ -282,22 +294,22 @@ class NM_Public
 
             // Generate output
             ob_start();
-            ?>
+?>
             <div class="nm-entries-list-container">
-                <?php if (!empty($entries)): ?>                    <div class="nm-entries-grid">                        <?php foreach ($entries as $index => $entry): ?>
-                            <?php 
-                            // Intentar deserializar primero (formato correcto)
-                            $entry_data = maybe_unserialize($entry->entry_data);
-                            
-                            // Si no es array, intentar JSON decode como fallback
-                            if (!is_array($entry_data)) {
-                                $entry_data = json_decode($entry->entry_data, true);
-                            }
+                <?php if (!empty($entries)): ?> <div class="nm-entries-grid"> <?php foreach ($entries as $index => $entry): ?>
+                            <?php
+                                                                                    // Intentar deserializar primero (formato correcto)
+                                                                                    $entry_data = maybe_unserialize($entry->entry_data);
+
+                                                                                    // Si no es array, intentar JSON decode como fallback
+                                                                                    if (!is_array($entry_data)) {
+                                                                                        $entry_data = json_decode($entry->entry_data, true);
+                                                                                    }
                             ?>
                             <div class="nm-entry-card" data-entry-index="<?php echo esc_attr($index); ?>">
                                 <?php
-                                // Renderizar campos según configuración de galería
-                                $this->render_gallery_card_content($entry_data, $entry, $selected_fields);
+                                                                                    // Renderizar campos según configuración de galería
+                                                                                    $this->render_gallery_card_content($entry_data, $entry, $selected_fields);
                                 ?>
                             </div>
                         <?php endforeach; ?>
@@ -307,21 +319,21 @@ class NM_Public
                         <div class="nm-entries-pagination">
                             <?php
                             $base_url = remove_query_arg('entries_page');
-                            
+
                             // Previous page
                             if ($current_page > 1): ?>
-                                <a href="<?php echo esc_url(add_query_arg('entries_page', $current_page - 1, $base_url)); ?>" 
-                                   class="nm-page-link nm-prev">← Anterior</a>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', $current_page - 1, $base_url)); ?>"
+                                    class="nm-page-link nm-prev">← Anterior</a>
                             <?php endif;
 
                             // Page numbers (limitamos a mostrar solo algunas páginas)
                             $start_page = max(1, $current_page - 2);
                             $end_page = min($total_pages, $current_page + 2);
-                            
+
                             // Primera página si no está en el rango
                             if ($start_page > 1): ?>
-                                <a href="<?php echo esc_url(add_query_arg('entries_page', 1, $base_url)); ?>" 
-                                   class="nm-page-link">1</a>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', 1, $base_url)); ?>"
+                                    class="nm-page-link">1</a>
                                 <?php if ($start_page > 2): ?>
                                     <span class="nm-page-dots">...</span>
                                 <?php endif;
@@ -332,8 +344,8 @@ class NM_Public
                                 if ($i == $current_page): ?>
                                     <span class="nm-page-link nm-current"><?php echo $i; ?></span>
                                 <?php else: ?>
-                                    <a href="<?php echo esc_url(add_query_arg('entries_page', $i, $base_url)); ?>" 
-                                       class="nm-page-link"><?php echo $i; ?></a>
+                                    <a href="<?php echo esc_url(add_query_arg('entries_page', $i, $base_url)); ?>"
+                                        class="nm-page-link"><?php echo $i; ?></a>
                                 <?php endif;
                             endfor;
 
@@ -342,25 +354,24 @@ class NM_Public
                                 <?php if ($end_page < $total_pages - 1): ?>
                                     <span class="nm-page-dots">...</span>
                                 <?php endif; ?>
-                                <a href="<?php echo esc_url(add_query_arg('entries_page', $total_pages, $base_url)); ?>" 
-                                   class="nm-page-link"><?php echo $total_pages; ?></a>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', $total_pages, $base_url)); ?>"
+                                    class="nm-page-link"><?php echo $total_pages; ?></a>
                             <?php endif;
 
                             // Next page
                             if ($current_page < $total_pages): ?>
-                                <a href="<?php echo esc_url(add_query_arg('entries_page', $current_page + 1, $base_url)); ?>" 
-                                   class="nm-page-link nm-next">Siguiente →</a>
+                                <a href="<?php echo esc_url(add_query_arg('entries_page', $current_page + 1, $base_url)); ?>"
+                                    class="nm-page-link nm-next">Siguiente →</a>
                             <?php endif; ?>
                         </div>
-                    <?php endif; ?>                <?php else: ?>
+                    <?php endif; ?> <?php else: ?>
                     <div class="nm-no-entries">
                         <p>No se encontraron entradas aprobadas.</p>
                     </div>
                 <?php endif; ?>
             </div>
-            <?php
+<?php
             return ob_get_clean();
-            
         } catch (Exception $e) {
             return '<div style="border: 1px solid red; padding: 10px;">Error: ' . esc_html($e->getMessage()) . '</div>';
         }
@@ -529,7 +540,7 @@ class NM_Public
     public function get_entry_details()
     {
         check_ajax_referer('nm_public_nonce', 'nonce');
-        
+
         // Obtener el índice de la entrada en lugar del ID
         $entry_index = isset($_POST['entry_index']) ? intval($_POST['entry_index']) : -1;
 
@@ -539,42 +550,42 @@ class NM_Public
                 $per_page = 1000; // Un número alto para obtener todas las entradas
                 $offset = 0;
                 $status = 'approved';
-                
+
                 $entries = $this->model->get_entries_paginated($per_page, $offset, $status);
-                
+
                 // Verificar si el índice existe
                 if (isset($entries[$entry_index])) {
                     $entry = $entries[$entry_index];
-                    
+
                     // Deserializar los datos de la entrada
                     $entry_data = maybe_unserialize($entry->entry_data);
-                    
+
                     // Si no es array, intentar JSON decode como fallback
                     if (!is_array($entry_data)) {
                         $entry_data = json_decode($entry->entry_data, true);
                     }
-                    
+
                     // Preparar respuesta base
                     $response_data = array(
                         'id' => $entry->id,
                         'date_created' => $entry->date_created,
                         'custom_fields' => array()
                     );
-                    
+
                     // IMPORTANTE: Incluir datos del mapa primero si existen
                     if (isset($entry_data['map_data']) && !empty($entry_data['map_data'])) {
                         $response_data['map_data'] = $entry_data['map_data'];
                     }
-                    
+
                     // También incluir geometry directo si existe
                     if (isset($entry_data['geometry']) && !empty($entry_data['geometry'])) {
                         $response_data['geometry'] = $entry_data['geometry'];
                     }
-                    
+
                     // Campos a evitar (misma lógica que el modal principal)
                     $skip_keys = array(
                         'layers',
-                        'has_layer', 
+                        'has_layer',
                         'text_layers',
                         'entry_id',
                         'id',
@@ -591,7 +602,7 @@ class NM_Public
                         'geometry',
                         'nm_conditional_groups'  // Agregar este campo específicamente
                     );
-                    
+
                     // Procesar todos los campos con prefijo nm_ (misma lógica que el modal principal)
                     if (is_array($entry_data)) {
                         foreach ($entry_data as $key => $value) {
@@ -599,34 +610,34 @@ class NM_Public
                             if (in_array($key, $skip_keys)) {
                                 continue;
                             }
-                            
+
                             // Solo procesar campos con prefijo nm_ (igual que el modal principal)
                             if (strpos($key, 'nm_') === 0) {
                                 // Obtener el nombre del campo sin el prefijo
                                 $field_name = substr($key, 3);
-                                
+
                                 // Excluir específicamente "conditional_groups" si está vacío o es {}
                                 if ($field_name === 'conditional_groups') {
                                     if (empty($value) || $value === '{}' || $value === '[]') {
                                         continue;
                                     }
                                 }
-                                
+
                                 // Procesar el campo (ahora incluyendo campos vacíos)
                                 $processed_value = $this->process_field_value_for_display($value, $field_name, true);
-                                
+
                                 // Incluir el campo incluso si está vacío (excepto si process_field_value_for_display retorna null explícitamente)
                                 $response_data['custom_fields'][$field_name] = $processed_value;
                             }
                         }
                     }
-                    
+
                     // También extraer campos del map_data si existen (igual que el modal principal)
                     if (isset($entry_data['map_data'])) {
                         try {
                             $raw_json = wp_unslash($entry_data['map_data']);
                             $map_data = json_decode($raw_json, true, 512, JSON_THROW_ON_ERROR);
-                            
+
                             if (is_array($map_data)) {
                                 foreach ($map_data as $feature) {
                                     if (isset($feature['properties']) && is_array($feature['properties'])) {
@@ -635,14 +646,14 @@ class NM_Public
                                             if (in_array($prop_key, $skip_keys)) {
                                                 continue;
                                             }
-                                            
+
                                             // Excluir específicamente "conditional_groups" si está vacío o es {}
                                             if ($prop_key === 'nm_conditional_groups' || $prop_key === 'conditional_groups') {
                                                 if (empty($prop_value) || $prop_value === '{}' || $prop_value === '[]') {
                                                     continue;
                                                 }
                                             }
-                                            
+
                                             // Solo agregar si no existe ya en custom_fields
                                             if (!isset($response_data['custom_fields'][$prop_key])) {
                                                 $processed_value = $this->process_field_value_for_display($prop_value, $prop_key, true);
@@ -657,7 +668,7 @@ class NM_Public
                             error_log('Error decoding map_data in get_entry_details: ' . $e->getMessage());
                         }
                     }
-                    
+
                     wp_send_json_success($response_data);
                 } else {
                     wp_send_json_error('Índice de entrada no válido.');
@@ -670,27 +681,28 @@ class NM_Public
             wp_send_json_error('Índice de entrada no válido.');
         }
     }
-    
+
     /**
      * Procesa un valor de campo para su visualización en el modal (similar a la lógica del modal principal)
      */
-    private function process_field_value_for_display($value, $field_name, $include_empty = false) {
+    private function process_field_value_for_display($value, $field_name, $include_empty = false)
+    {
         // Si no se deben incluir campos vacíos y el valor está vacío, retornar null
         if (!$include_empty && empty($value) && $value !== '0') {
             return null;
         }
-        
+
         // Si el valor está completamente vacío, mostrar un valor por defecto
         if (empty($value) && $value !== '0') {
             return 'Sin especificar';
         }
-        
+
         // Si es una URL (imagen, archivo, audio), verificar que sea válida
         if (filter_var($value, FILTER_VALIDATE_URL)) {
             // Convertir HTTP a HTTPS para mayor seguridad
             return str_replace('http://', 'https://', $value);
         }
-        
+
         // Si es un ID numérico de adjunto de WordPress, obtener la URL
         if (is_numeric($value)) {
             $attachment_url = wp_get_attachment_url(intval($value));
@@ -698,14 +710,14 @@ class NM_Public
                 return str_replace('http://', 'https://', $attachment_url);
             }
         }
-        
+
         // Para fechas, intentar formatearlas
         if (strpos($field_name, 'fecha') !== false || strpos($field_name, 'date') !== false) {
             if (strtotime($value)) {
                 return date('d/m/Y', strtotime($value));
             }
         }
-        
+
         // Sanitizar el valor de texto
         return sanitize_text_field($value);
     }
@@ -784,7 +796,8 @@ class NM_Public
                 $up = wp_handle_upload($_FILES[$html_name], array(
                     'test_form' => false,
                     'mimes'     => $allowed,
-                ));                if ($up && ! isset($up['error'])) {
+                ));
+                if ($up && ! isset($up['error'])) {
                     $form_fields[$store_key] = esc_url_raw(
                         str_replace('http://', 'https://', $up['url'])
                     );
@@ -794,20 +807,19 @@ class NM_Public
                     wp_send_json_error('Error al subir ' . $file_type_name . ' "' . esc_html($orig_name) . '": ' . $up['error'] . '. Formatos permitidos: ' . $allowed_formats);
                     wp_die();
                 }
-            }            /* ---- AUDIO ---- */
-            elseif ($field['type'] === 'audio') {
+            }            /* ---- AUDIO ---- */ elseif ($field['type'] === 'audio') {
                 // También marcar el campo de archivo asociado como procesado
                 $already_processed[] = $html_name . '_file';
-                
+
                 try {
                     $audio_data = isset($_POST[$html_name]) ? $_POST[$html_name] : '';
                     $file_field_name = $html_name . '_file';
-                    
+
                     error_log("Processing audio field '{$html_name}', data: '{$audio_data}'");
                     error_log("Looking for file field: '{$file_field_name}'");
                     error_log("FILES data: " . print_r($_FILES, true));
                     error_log("POST data: " . print_r($_POST, true));
-                    
+
                     // Simplificar: solo procesar si hay un archivo cargado
                     if (isset($_FILES[$file_field_name]) && $_FILES[$file_field_name]['error'] === UPLOAD_ERR_OK) {
                         $audio_allowed = array(
@@ -880,12 +892,12 @@ class NM_Public
                 $is_audio_file = false;
                 $file_mime = $_FILES[$inkey]['type'];
                 $audio_mimes = array('audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac');
-                
+
                 // Verificar si es audio por MIME type
                 if (in_array($file_mime, $audio_mimes)) {
                     $is_audio_file = true;
                 }
-                
+
                 // Verificar si el nombre del campo termina en '_file' (indica campo de audio)
                 if (strpos($inkey, '_file') !== false) {
                     $base_field = str_replace('_file', '', $inkey);
@@ -1106,7 +1118,8 @@ class NM_Public
         ob_start();
         foreach ($fields as $subfield) {
             nm_render_conditional_field($subfield);   // misma función del paso 1
-        }        wp_send_json_success(ob_get_clean());
+        }
+        wp_send_json_success(ob_get_clean());
     }
 
     /**
@@ -1116,63 +1129,65 @@ class NM_Public
      * @param string $field_name El nombre del campo para generar el nombre de archivo
      * @return array Array con 'success', 'url' o 'error'
      */
-    private function save_audio_recording($base64_data, $field_name) {
+    private function save_audio_recording($base64_data, $field_name)
+    {
         try {
             // Verificar que tenemos datos válidos
             if (empty($base64_data) || !preg_match('/^data:audio\/([a-zA-Z0-9]+);base64,(.+)$/', $base64_data, $matches)) {
                 return array('success' => false, 'error' => 'Datos de audio inválidos');
             }
-            
+
             $audio_type = $matches[1]; // wav, mp3, etc.
             $encoded_data = $matches[2];
-            
+
             // Decodificar base64
             $audio_data = base64_decode($encoded_data);
             if ($audio_data === false) {
                 return array('success' => false, 'error' => 'Error al decodificar datos de audio');
             }
-            
+
             // Generar nombre de archivo único
             $upload_dir = wp_upload_dir();
             $filename = 'audio_' . $field_name . '_' . time() . '.' . $audio_type;
             $file_path = $upload_dir['path'] . '/' . $filename;
             $file_url = $upload_dir['url'] . '/' . $filename;
-            
+
             // Escribir archivo
             $bytes_written = file_put_contents($file_path, $audio_data);
             if ($bytes_written === false) {
                 return array('success' => false, 'error' => 'No se pudo escribir el archivo de audio');
             }
-            
+
             // Verificar que el archivo se creó correctamente
             if (!file_exists($file_path) || filesize($file_path) === 0) {
                 return array('success' => false, 'error' => 'El archivo de audio no se guardó correctamente');
             }
-            
+
             // Convertir a HTTPS si es necesario
             $secure_url = str_replace('http://', 'https://', $file_url);
-            
+
             return array('success' => true, 'url' => esc_url_raw($secure_url));
-            
         } catch (Exception $e) {
             error_log('Error saving audio recording: ' . $e->getMessage());
             return array('success' => false, 'error' => 'Error interno al guardar grabación');
         }
-    }    /**
+    }
+    /**
      * Helper function to get field value from entry data
-     */    private function get_entry_field_value($entry_data, $field_name, $default = '') {
+     */    private function get_entry_field_value($entry_data, $field_name, $default = '')
+    {
         // Primero buscar directamente en entry_data
         if (isset($entry_data[$field_name])) {
             return $entry_data[$field_name];
         }
-        
+
         // Si no está directamente, buscar en map_data (formato GeoJSON)
         if (isset($entry_data['map_data'])) {
             $raw_json = wp_unslash($entry_data['map_data']);
-            
+
             try {
                 $map_data = json_decode($raw_json, true, 512, JSON_THROW_ON_ERROR);
-                
+
                 if (is_array($map_data)) {
                     foreach ($map_data as $feature) {
                         if (isset($feature['properties']) && isset($feature['properties'][$field_name])) {
@@ -1184,7 +1199,7 @@ class NM_Public
                 error_log('Error decoding map_data in get_entry_field_value: ' . $e->getMessage());
             }
         }
-        
+
         // Look for field by name in nested structure (compatibilidad)
         if (isset($entry_data['fields'])) {
             foreach ($entry_data['fields'] as $field) {
@@ -1193,17 +1208,18 @@ class NM_Public
                 }
             }
         }
-        
+
         return $default;
     }
 
     /**
      * Helper function to get image URL from entry data
      */
-    private function get_entry_image_url($entry_data) {
+    private function get_entry_image_url($entry_data)
+    {
         // Look for image field
         $image_fields = ['image', 'foto', 'imagen', 'picture'];
-        
+
         foreach ($image_fields as $field_name) {
             $image_value = $this->get_entry_field_value($entry_data, $field_name);
             if (!empty($image_value)) {
@@ -1220,11 +1236,13 @@ class NM_Public
                 }
             }
         }
-        
+
         // Return null if no image found (will be handled in the template)
         return null;
-    }    /**
-     * Render gallery card content based on selected fields     */    private function render_gallery_card_content($entry_data, $entry, $selected_fields) {
+    }
+    /**
+     * Render gallery card content based on selected fields     */    private function render_gallery_card_content($entry_data, $entry, $selected_fields)
+    {
         // Verificar si hay algún campo seleccionado
         $has_any_field = false;
         foreach ($selected_fields as $field_value) {
@@ -1233,7 +1251,7 @@ class NM_Public
                 break;
             }
         }
-        
+
         // Si no hay campos configurados, mostrar mensaje
         if (!$has_any_field) {
             echo '<div class="nm-entry-content">';
@@ -1244,49 +1262,50 @@ class NM_Public
             echo '</div>';
             return;
         }
-        
+
         // Renderizar imagen si está seleccionada
         if (!empty($selected_fields['image'])) {
             $this->render_gallery_image_field($entry_data, $selected_fields['image']);
         }
-        
+
         // Contenido de la tarjeta
         echo '<div class="nm-entry-content">';
-        
+
         // Renderizar título si está seleccionado
         if (!empty($selected_fields['text'])) {
             $this->render_gallery_text_field($entry_data, $selected_fields['text']);
         }
-        
+
         // Renderizar texto largo si está seleccionado
         if (!empty($selected_fields['textarea'])) {
             $this->render_gallery_textarea_field($entry_data, $selected_fields['textarea']);
         }
-        
+
         // Renderizar audio si está seleccionado
         if (!empty($selected_fields['audio'])) {
             $this->render_gallery_audio_field($entry_data, $selected_fields['audio']);
         }
-        
+
         // Renderizar archivo si está seleccionado
         if (!empty($selected_fields['file'])) {
             $this->render_gallery_file_field($entry_data, $selected_fields['file']);
         }
-          // Renderizar fecha si está seleccionada
+        // Renderizar fecha si está seleccionada
         if (!empty($selected_fields['date'])) {
             $this->render_gallery_date_field($entry_data, $selected_fields['date']);
         }
-        
+
         echo '</div>';
     }
-    
+
     /**
      * Render image field for gallery card
      */
-    private function render_gallery_image_field($entry_data, $field_name) {
+    private function render_gallery_image_field($entry_data, $field_name)
+    {
         $image_value = $this->get_entry_field_value($entry_data, $field_name);
         $image_url = null;
-        
+
         if (!empty($image_value)) {
             // If it's already a URL, use it
             if (filter_var($image_value, FILTER_VALIDATE_URL)) {
@@ -1300,7 +1319,7 @@ class NM_Public
                 }
             }
         }
-        
+
         echo '<div class="nm-entry-image ' . ($image_url ? '' : 'no-image') . '">';
         if ($image_url) {
             echo '<img src="' . esc_url($image_url) . '" alt="Imagen">';
@@ -1309,30 +1328,33 @@ class NM_Public
         }
         echo '</div>';
     }
-    
+
     /**
      * Render text field for gallery card
      */
-    private function render_gallery_text_field($entry_data, $field_name) {
+    private function render_gallery_text_field($entry_data, $field_name)
+    {
         $text_value = $this->get_entry_field_value($entry_data, $field_name, 'Sin título');
         echo '<h3 class="nm-entry-title">' . esc_html($text_value) . '</h3>';
     }
-    
+
     /**
      * Render textarea field for gallery card
      */
-    private function render_gallery_textarea_field($entry_data, $field_name) {
+    private function render_gallery_textarea_field($entry_data, $field_name)
+    {
         $textarea_value = $this->get_entry_field_value($entry_data, $field_name);
         if (!empty($textarea_value)) {
             $truncated_text = strlen($textarea_value) > 120 ? substr($textarea_value, 0, 120) . '...' : $textarea_value;
             echo '<div class="nm-entry-description">' . esc_html($truncated_text) . '</div>';
         }
     }
-    
+
     /**
      * Render audio field for gallery card
      */
-    private function render_gallery_audio_field($entry_data, $field_name) {
+    private function render_gallery_audio_field($entry_data, $field_name)
+    {
         $audio_value = $this->get_entry_field_value($entry_data, $field_name);
         if (!empty($audio_value) && filter_var($audio_value, FILTER_VALIDATE_URL)) {
             echo '<div class="nm-entry-audio">';
@@ -1343,11 +1365,12 @@ class NM_Public
             echo '</div>';
         }
     }
-    
+
     /**
      * Render file field for gallery card
      */
-    private function render_gallery_file_field($entry_data, $field_name) {
+    private function render_gallery_file_field($entry_data, $field_name)
+    {
         $file_value = $this->get_entry_field_value($entry_data, $field_name);
         if (!empty($file_value) && filter_var($file_value, FILTER_VALIDATE_URL)) {
             $filename = basename(parse_url($file_value, PHP_URL_PATH));
@@ -1358,11 +1381,12 @@ class NM_Public
             echo '</div>';
         }
     }
-    
+
     /**
      * Render date field for gallery card
      */
-    private function render_gallery_date_field($entry_data, $field_name) {
+    private function render_gallery_date_field($entry_data, $field_name)
+    {
         $date_value = $this->get_entry_field_value($entry_data, $field_name);
         if (!empty($date_value)) {
             // Try to format the date
@@ -1377,13 +1401,14 @@ class NM_Public
     /**
      * Get available fields from entry data
      */
-    private function get_available_fields_from_entry($entry_data) {
+    private function get_available_fields_from_entry($entry_data)
+    {
         $fields = array();
-        
+
         if (!is_array($entry_data)) {
             return $fields;
         }
-        
+
         foreach ($entry_data as $key => $value) {
             $fields[$key] = array(
                 'label' => ucfirst(str_replace('_', ' ', $key)),
@@ -1391,29 +1416,30 @@ class NM_Public
                 'sample' => $value
             );
         }
-        
+
         return $fields;
     }
-    
+
     /**
      * Detect field type based on key and value
      */
-    private function detect_field_type($key, $value) {
+    private function detect_field_type($key, $value)
+    {
         $key_lower = strtolower($key);
-        
+
         // Detectar por nombre del campo
         if (in_array($key_lower, ['image', 'imagen', 'foto', 'picture', 'nm_imagen'])) {
             return 'image';
         }
-        
+
         if (in_array($key_lower, ['audio', 'sonido', 'recording', 'nm_audio', 'nm_audio2'])) {
             return 'audio';
         }
-        
+
         if (in_array($key_lower, ['file', 'archivo', 'document', 'documento', 'nm_documento', 'nm_file'])) {
             return 'file';
         }
-        
+
         // Detectar por contenido/URL
         if (filter_var($value, FILTER_VALIDATE_URL)) {
             if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $value)) {
@@ -1426,20 +1452,20 @@ class NM_Public
                 return 'file';
             }
         }
-        
+
         // Detectar por longitud y patrón
         if (strlen($value) > 100) {
             return 'textarea';
         }
-        
+
         if (is_numeric($value)) {
             return 'number';
         }
-        
+
         if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
             return 'date';
         }
-        
+
         return 'text';
     }
 }
