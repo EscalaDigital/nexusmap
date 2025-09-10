@@ -402,9 +402,15 @@ jQuery(document).ready(function ($) {
             });            // Manejar clicks en los filtros
             const activeFilters = {};
             $filterPanel.on('click', '.nm-filter-button', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
                 const $button = jQuery(this);
                 const field = $button.data('field');
                 const value = String($button.data('value')); // Convertir siempre a string
+
+                console.log(`=== FILTRO CLICKEADO ===`);
+                console.log(`Campo: ${field}, Valor: ${value}`);
 
                 $button.toggleClass('active');
 
@@ -414,13 +420,17 @@ jQuery(document).ready(function ($) {
 
                 if ($button.hasClass('active')) {
                     activeFilters[field].add(value);
+                    console.log(`Filtro agregado: ${field} = ${value}`);
                 } else {
                     activeFilters[field].delete(value);
                     if (activeFilters[field].size === 0) {
                         delete activeFilters[field];
                     }
+                    console.log(`Filtro removido: ${field} = ${value}`);
                 }
 
+                console.log('Filtros activos actuales:', activeFilters);
+                
                 updateVisiblePoints(activeFilters);
                 updateActiveFiltersDisplay(activeFilters);
                 updateFilterBadges();
@@ -513,13 +523,34 @@ jQuery(document).ready(function ($) {
 
             // Agregar el contenedor de filtros al contenedor de controles
             $topControls.append($filterContainer);
+            
+            // Debug: Verificar que los filtros se cargaron correctamente
+            console.log('=== FILTROS CARGADOS ===');
+            console.log('Cantidad de filtros:', nmMapData.filter_settings ? nmMapData.filter_settings.length : 0);
+            console.log('Configuración de filtros:', nmMapData.filter_settings);
+            
+            // Llamar a updateFilterCounts después de cargar los puntos
+            setTimeout(() => {
+                if (typeof updateFilterCounts === 'function') {
+                    updateFilterCounts();
+                    console.log('Conteos de filtros actualizados');
+                }
+            }, 1000);
         }
 
 
         function updateVisiblePoints(activeFilters) {
             const clusteringEnabled = nmMapData.enable_clustering === true || nmMapData.enable_clustering === 'true';
 
-            if (!clusteringEnabled) {
+            // IMPORTANTE: Limpiar todas las capas antes de aplicar filtros
+            if (clusteringEnabled) {
+                // Si clustering está habilitado, limpiar el cluster group o markersLayer
+                if (clusteringActive && clusterGroup) {
+                    clusterGroup.clearLayers();
+                } else if (!clusteringActive && markersLayer) {
+                    markersLayer.clearLayers();
+                }
+            } else {
                 // Modo original (sin clustering habilitado en ajustes)
                 for (const overlayName in overlays) {
                     if (overlays.hasOwnProperty(overlayName)) {
@@ -531,18 +562,26 @@ jQuery(document).ready(function ($) {
                 }
             }
 
-            // Reconstituir capa según estado de clustering
-            if (clusteringEnabled && clusteringActive && clusterGroup) {
-                clusterGroup.clearLayers();
-            }
-
+            let debugVisibleCount = 0;
+            let debugTotalCount = 0;
+            let actualVisibleMarkers = []; // Array para almacenar marcadores que pasan el filtro
+            
             allMarkers.forEach(function(marker){
+                debugTotalCount++;
                 let visible = true;
                 
                 // Si no hay filtros activos, mostrar todos
                 if (Object.keys(activeFilters).length === 0) {
                     visible = true;
                 } else {
+                    // Debug: Log para el primer marcador
+                    if (debugTotalCount === 1) {
+                        console.log('=== DEBUG FILTROS ===');
+                        console.log('Filtros activos:', activeFilters);
+                        console.log('Propiedades del marcador:', marker.feature.properties);
+                        console.log('Configuración de filtros:', nmMapData.filter_settings);
+                    }
+                    
                     // Verificar filtros regulares y condicionales
                     for (const field in activeFilters) {
                         if (activeFilters[field].size > 0) {
@@ -552,10 +591,14 @@ jQuery(document).ready(function ($) {
                             const filterConfig = nmMapData.filter_settings.find(f => f.field === field);
                             
                             if (filterConfig && filterConfig.is_conditional) {
-                                // Es un filtro condicional - solo verificar el campo condicional
-                                // El nombre del campo en las propiedades debe coincidir con field_name
+                                // Es un filtro condicional - usar el field_name original, no el nombre único
                                 const conditionalFieldName = 'nm_' + filterConfig.field_name;
                                 const conditionalFieldValue = marker.feature.properties[conditionalFieldName];
+                                
+                                // Debug para el primer marcador
+                                if (debugTotalCount === 1) {
+                                    console.log(`Filtro condicional: ${field}, campo original: ${filterConfig.field_name}, buscando: ${conditionalFieldName}, valor: ${conditionalFieldValue}, filtros activos:`, Array.from(activeFilters[field]));
+                                }
                                 
                                 if (conditionalFieldValue && activeFilters[field].has(String(conditionalFieldValue))) {
                                     fieldMatched = true;
@@ -564,6 +607,11 @@ jQuery(document).ready(function ($) {
                                 // Es un filtro regular
                                 const fieldName = 'nm_' + field;
                                 const fieldValue = marker.feature.properties[fieldName];
+                                
+                                // Debug para el primer marcador
+                                if (debugTotalCount === 1) {
+                                    console.log(`Filtro regular: ${field}, buscando: ${fieldName}, valor: ${fieldValue}, filtros activos:`, Array.from(activeFilters[field]));
+                                }
                                 
                                 if (fieldValue && activeFilters[field].has(String(fieldValue))) {
                                     fieldMatched = true;
@@ -576,6 +624,11 @@ jQuery(document).ready(function ($) {
                             }
                         }
                     }
+                }
+                
+                if (visible) {
+                    debugVisibleCount++;
+                    actualVisibleMarkers.push(marker); // Agregar a los marcadores que pasan el filtro
                 }
 
                 if (clusteringEnabled) {
@@ -596,13 +649,34 @@ jQuery(document).ready(function ($) {
                     if (visible && marker.originalLayerGroup) {
                         marker.originalLayerGroup.addLayer(marker);
                     }
+                    // No necesitamos remover aquí porque ya limpiamos todo al inicio
                 }
             });
 
-            // Calcular el conteo basado en features únicos visibles
-            const visibleMarkers = getVisibleMarkers();
-            const uniqueVisibleFeatures = getUniqueFeatures(visibleMarkers);
-            const visibleCount = uniqueVisibleFeatures.length;
+            // Debug de marcadores visibles antes de getUniqueFeatures
+            if (actualVisibleMarkers.length > 0) {
+                console.log(`Primer marcador visible:`, actualVisibleMarkers[0]);
+                console.log(`Estructura del feature:`, actualVisibleMarkers[0].feature);
+                console.log(`Geometry:`, actualVisibleMarkers[0].feature.geometry);
+            }
+            
+            // Usar el conteo directo de marcadores filtrados como temporal
+            // hasta que arreglemos getUniqueFeatures
+            const visibleCount = debugVisibleCount;
+            
+            // Debug: intentar getUniqueFeatures para diagnosticar
+            const uniqueVisibleFeatures = getUniqueFeatures(actualVisibleMarkers);
+            console.log(`getUniqueFeatures devolvió: ${uniqueVisibleFeatures.length} elementos`);
+            
+            // Debug: Mostrar resultado del filtrado
+            console.log(`=== RESULTADO FILTRADO ===`);
+            console.log(`Total marcadores procesados: ${debugTotalCount}`);
+            console.log(`Marcadores que pasaron el filtro: ${debugVisibleCount}`);
+            console.log(`Marcadores únicos visibles: ${visibleCount}`);
+            console.log(`Filtros activos:`, activeFilters);
+            if (debugTotalCount === 1 && actualVisibleMarkers.length > 0) {
+                console.log(`Propiedades del primer marcador visible:`, actualVisibleMarkers[0].feature.properties);
+            }
 
             const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
@@ -619,7 +693,8 @@ jQuery(document).ready(function ($) {
             // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
             const chartsModal = jQuery('#nm-charts-modal');
             if (chartsModal.length && chartsModal.hasClass('active')) {
-                const features = getUniqueFeatures(visibleMarkers);
+                // Extraer las features de los marcadores visibles
+                const features = actualVisibleMarkers.map(m => m.feature).filter(f => f);
                 if (features.length > 0) {
                     processCharts(features);
                 }
@@ -633,7 +708,11 @@ jQuery(document).ready(function ($) {
             nmMapData.filter_settings.forEach(filter => {
                 filter.options.forEach(option => {
                     let count = 0;
-                    const fieldName = 'nm_' + filter.field;
+                    
+                    // Usar el nombre del campo correcto basándose en si es condicional o no
+                    const fieldName = filter.is_conditional 
+                        ? 'nm_' + filter.field_name  // Para campos condicionales, usar field_name
+                        : 'nm_' + filter.field;      // Para campos regulares, usar field
                     
                     // Obtener marcadores únicos para evitar contar duplicados
                     const uniqueMarkers = getUniqueFeatures(allMarkers);
@@ -645,7 +724,7 @@ jQuery(document).ready(function ($) {
                         }
                     });
                     
-                    // Actualizar el contador en el botón
+                    // Actualizar el contador en el botón usando el field correcto (que puede ser único)
                     const $countElement = jQuery(`.nm-button-count[data-field="${filter.field}"][data-value="${option}"]`);
                     if ($countElement.length) {
                         $countElement.text(count > 0 ? `(${count})` : '(0)');
