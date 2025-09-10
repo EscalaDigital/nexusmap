@@ -9,6 +9,7 @@ $overlay_layers = get_option( 'nm_overlay_layers', array() );
 $active_layers = get_option( 'nm_active_layers', array() );
 $text_layer_name = get_option( 'nm_text_layer_name', 'Text Layer' );
 $filter_settings = $this->get_filter_settings();
+$chart_settings = get_option('nm_chart_settings', array());
 ?>
 
 <div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"><div id="nm-top-controls" class="nm-top-controls">

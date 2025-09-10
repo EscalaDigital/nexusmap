@@ -901,3 +901,134 @@
         gap: 4px !important;
     }
 }
+
+/* ========================================= */
+/* ESTILOS PARA FILTROS CONDICIONALES */
+/* ========================================= */
+
+/* Filtros condicionales - estilos base */
+.nm-conditional-filter {
+    position: relative;
+    border-left: 3px solid #28a745;
+    margin-left: 10px;
+    padding-left: 10px;
+    background: rgba(40, 167, 69, 0.05);
+    border-radius: 0 8px 8px 0;
+    margin-top: 8px;
+}
+
+.nm-conditional-filter .nm-filter-header {
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.nm-conditional-filter .nm-filter-label {
+    font-size: 13px;
+    color: #1e6f23;
+    font-weight: 500;
+}
+
+.nm-conditional-info {
+    display: block;
+    font-size: 10px;
+    color: #28a745;
+    font-weight: normal;
+    margin-top: 2px;
+}
+
+/* Indicador visual para filtros condicionales */
+.nm-conditional-filter::before {
+    content: '🔗';
+    position: absolute;
+    left: -8px;
+    top: 8px;
+    font-size: 12px;
+    color: #28a745;
+}
+
+/* Animación suave para mostrar/ocultar filtros condicionales */
+.nm-conditional-filter {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+/* Estados de los filtros condicionales */
+.nm-conditional-filter[style*="display: none"] {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Botones de filtros condicionales con estilo diferente */
+.nm-conditional-filter .nm-filter-button {
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    position: relative;
+    background: rgba(40, 167, 69, 0.05) !important;
+}
+
+.nm-conditional-filter .nm-filter-button::after {
+    content: '◦';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    color: #28a745;
+    opacity: 0.7;
+}
+
+.nm-conditional-filter .nm-filter-button.active {
+    background: rgba(40, 167, 69, 0.2) !important;
+    border-color: #28a745 !important;
+}
+
+.nm-conditional-filter .nm-filter-button.active::after {
+    content: '✓';
+    color: #28a745;
+    opacity: 1;
+}
+
+/* Mejoras para la legibilidad en filtros condicionales */
+.nm-conditional-filter .nm-filter-options {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+/* Tooltip para explicar los filtros condicionales */
+.nm-conditional-filter .nm-filter-header {
+    position: relative;
+}
+
+.nm-conditional-filter .nm-filter-header:hover::after {
+    content: 'Este filtro depende de la selección del campo padre';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #333;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1001;
+    opacity: 0.9;
+}
+
+/* Responsive para filtros condicionales */
+@media (max-width: 768px) {
+    .nm-conditional-filter {
+        margin-left: 5px;
+        padding-left: 8px;
+    }
+    
+    .nm-conditional-info {
+        font-size: 9px;
+    }
+    
+    .nm-conditional-filter .nm-filter-button::after {
+        font-size: 7px;
+    }
+}

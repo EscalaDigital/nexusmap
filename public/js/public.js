@@ -297,24 +297,41 @@ jQuery(document).ready(function ($) {
             // Crear el contenido de filtros
             var filterContent = '';
             nmMapData.filter_settings.forEach(filter => {
+                // Determinar si es un filtro condicional
+                const isConditional = filter.is_conditional === true;
+                const conditionalClass = isConditional ? 'nm-conditional-filter' : '';
+                // Los filtros condicionales ahora se muestran siempre
+                const conditionalStyle = '';
+                
                 filterContent += `
-                    <div class="nm-filter-group" data-field="${filter.field}">
+                    <div class="nm-filter-group ${conditionalClass}" 
+                         data-field="${filter.field}"
+                         ${isConditional ? `data-parent-field="${filter.parent_field}" data-parent-option="${filter.parent_option}"` : ''}>
                         <div class="nm-filter-header">
-                            <span class="nm-filter-label">${filter.button_text}</span>
+                            <span class="nm-filter-label">
+                                ${isConditional ? '🔗 ' : ''}${filter.button_text}
+                                ${isConditional ? `<small class="nm-conditional-info">(Subtipo)</small>` : ''}
+                            </span>
                             <span class="nm-filter-toggle" data-field="${filter.field}">▼</span>
                             <span class="nm-filter-badge" data-field="${filter.field}">0</span>
                         </div>
                         <div class="nm-filter-options" data-field="${filter.field}">
-                            ${filter.options.map(option => `
-                                <button class="nm-filter-button" 
-                                        data-field="${filter.field}" 
-                                        data-value="${option}"
-                                        style="background-color: ${filter.style?.background || '#fff'}; 
-                                               color: ${filter.style?.color || '#000'}">
-                                    <span class="nm-button-text">${option}</span>
-                                    <span class="nm-button-count" data-field="${filter.field}" data-value="${option}">0</span>
-                                </button>
-                            `).join('')}
+                            ${filter.options.map(option => {
+                                // Manejar tanto objetos como strings
+                                const optionValue = typeof option === 'object' ? (option.value || option.label || option) : option;
+                                const optionLabel = typeof option === 'object' ? (option.label || option.value || option) : option;
+                                
+                                return `
+                                    <button class="nm-filter-button" 
+                                            data-field="${filter.field}" 
+                                            data-value="${optionValue}"
+                                            style="background-color: ${filter.style?.background || '#fff'}; 
+                                                   color: ${filter.style?.color || '#000'}">
+                                        <span class="nm-button-text">${optionLabel}</span>
+                                        <span class="nm-button-count" data-field="${filter.field}" data-value="${optionValue}">0</span>
+                                    </button>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -363,6 +380,7 @@ jQuery(document).ready(function ($) {
                 e.stopPropagation();
                 $filterPanel.find('.nm-filter-button.active').removeClass('active');
                 Object.keys(activeFilters).forEach(key => delete activeFilters[key]);
+                
                 updateVisiblePoints(activeFilters);
                 updateActiveFiltersDisplay(activeFilters);
                 updateFilterBadges();
@@ -403,6 +421,29 @@ jQuery(document).ready(function ($) {
                     }
                 }
 
+                updateVisiblePoints(activeFilters);
+                updateActiveFiltersDisplay(activeFilters);
+                updateFilterBadges();
+            });
+
+            // Manejar clicks en las etiquetas de filtros activos para eliminar filtros específicos
+            $filterPanel.on('click', '.nm-remove-tag', function(e) {
+                e.stopPropagation();
+                const $tag = jQuery(this).parent();
+                const field = $tag.data('field');
+                const value = String($tag.data('value'));
+                
+                // Remover del filtro activo
+                if (activeFilters[field]) {
+                    activeFilters[field].delete(value);
+                    if (activeFilters[field].size === 0) {
+                        delete activeFilters[field];
+                    }
+                }
+                
+                // Desactivar el botón correspondiente
+                $filterPanel.find(`.nm-filter-button[data-field="${field}"][data-value="${value}"]`).removeClass('active');
+                
                 updateVisiblePoints(activeFilters);
                 updateActiveFiltersDisplay(activeFilters);
                 updateFilterBadges();
@@ -497,13 +538,42 @@ jQuery(document).ready(function ($) {
 
             allMarkers.forEach(function(marker){
                 let visible = true;
-                for (const field in activeFilters) {
-                    if (activeFilters[field].size > 0) {
-                        const fieldName = 'nm_' + field;
-                        const fieldValue = marker.feature.properties[fieldName];
-                        if (!fieldValue || !activeFilters[field].has(String(fieldValue))) {
-                            visible = false;
-                            break;
+                
+                // Si no hay filtros activos, mostrar todos
+                if (Object.keys(activeFilters).length === 0) {
+                    visible = true;
+                } else {
+                    // Verificar filtros regulares y condicionales
+                    for (const field in activeFilters) {
+                        if (activeFilters[field].size > 0) {
+                            let fieldMatched = false;
+                            
+                            // Verificar si es un filtro condicional
+                            const filterConfig = nmMapData.filter_settings.find(f => f.field === field);
+                            
+                            if (filterConfig && filterConfig.is_conditional) {
+                                // Es un filtro condicional - solo verificar el campo condicional
+                                // El nombre del campo en las propiedades debe coincidir con field_name
+                                const conditionalFieldName = 'nm_' + filterConfig.field_name;
+                                const conditionalFieldValue = marker.feature.properties[conditionalFieldName];
+                                
+                                if (conditionalFieldValue && activeFilters[field].has(String(conditionalFieldValue))) {
+                                    fieldMatched = true;
+                                }
+                            } else {
+                                // Es un filtro regular
+                                const fieldName = 'nm_' + field;
+                                const fieldValue = marker.feature.properties[fieldName];
+                                
+                                if (fieldValue && activeFilters[field].has(String(fieldValue))) {
+                                    fieldMatched = true;
+                                }
+                            }
+                            
+                            if (!fieldMatched) {
+                                visible = false;
+                                break;
+                            }
                         }
                     }
                 }

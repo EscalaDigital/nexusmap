@@ -1034,16 +1034,77 @@ class NM_Public
 
             foreach ($filter_settings as $field_key => $settings) {
                 if ($settings['active']) {
-                    // Buscar el campo en el formulario para obtener sus opciones
-                    foreach ($form_data['fields'] as $field) {
-                        if ($field['name'] === $field_key && isset($field['options'])) {
-                            $formatted_filters[] = array(
-                                'field' => $field_key,
-                                'button_text' => $settings['button_text'],
-                                'options' => $field['options'],
-                                'style' => $settings['style']
-                            );
-                            break;
+                    $field_found = false;
+                    
+                    // Verificar si es un campo condicional
+                    if (isset($settings['is_conditional']) && $settings['is_conditional']) {
+                        // Es un campo condicional, buscar en los campos anidados
+                        foreach ($form_data['fields'] as $field) {
+                            if ($field['type'] === 'conditional-select' && $field['name'] === $settings['parent_field']) {
+                                // Buscar en las opciones del conditional-select
+                                foreach ($field['options'] as $option) {
+                                    if (($option['id'] ?? $option['value']) === $settings['parent_option']) {
+                                        // Buscar el campo específico en los campos condicionales
+                                        if (isset($option['conditional_fields'])) {
+                                            foreach ($option['conditional_fields'] as $conditional_field) {
+                                                if ($conditional_field['name'] === $settings['field_name'] && isset($conditional_field['options'])) {
+                                                    // Procesar las opciones para asegurar que sean strings
+                                                    $processed_options = array();
+                                                    if (is_array($conditional_field['options'])) {
+                                                        foreach ($conditional_field['options'] as $opt) {
+                                                            if (is_array($opt) && isset($opt['value'])) {
+                                                                $processed_options[] = $opt['value'];
+                                                            } else {
+                                                                $processed_options[] = (string)$opt;
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    $formatted_filters[] = array(
+                                                        'field' => $field_key,
+                                                        'button_text' => $settings['button_text'],
+                                                        'options' => $processed_options,
+                                                        'style' => $settings['style'],
+                                                        'is_conditional' => true,
+                                                        'parent_field' => $settings['parent_field'],
+                                                        'parent_option' => $settings['parent_option'],
+                                                        'field_name' => $settings['field_name']
+                                                    );
+                                                    $field_found = true;
+                                                    break 3; // Salir de todos los loops anidados
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Es un campo normal, buscar directamente
+                        foreach ($form_data['fields'] as $field) {
+                            if ($field['name'] === $field_key && isset($field['options'])) {
+                                // Procesar las opciones para asegurar que sean strings
+                                $processed_options = array();
+                                if (is_array($field['options'])) {
+                                    foreach ($field['options'] as $opt) {
+                                        if (is_array($opt) && isset($opt['value'])) {
+                                            $processed_options[] = $opt['value'];
+                                        } else {
+                                            $processed_options[] = (string)$opt;
+                                        }
+                                    }
+                                }
+                                
+                                $formatted_filters[] = array(
+                                    'field' => $field_key,
+                                    'button_text' => $settings['button_text'],
+                                    'options' => $processed_options,
+                                    'style' => $settings['style'],
+                                    'is_conditional' => false
+                                );
+                                $field_found = true;
+                                break;
+                            }
                         }
                     }
                 }

@@ -136,6 +136,27 @@
     color: #991b1b;
 }
 
+.conditional-field-row {
+    background: #fafbfc;
+    border-left: 3px solid #667eea;
+}
+
+.conditional-field-info {
+    padding-left: 10px;
+}
+
+.conditional-field-parent {
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: #f0f4f8;
+    border-radius: 4px;
+    border-left: 2px solid #667eea;
+}
+
+.conditional-field-parent small {
+    line-height: 1.4;
+}
+
 @media (max-width: 768px) {
     .nm-admin-header {
         padding: 20px;
@@ -180,12 +201,35 @@
                     <tbody>
                         <?php
                         foreach ($this->valid_fields as $field):
-                            $field_key = $field['name'];
+                            // Usar unique_name para campos condicionales, o name para campos normales
+                            $field_key = isset($field['unique_name']) ? $field['unique_name'] : $field['name'];
                             $is_active = isset($saved_settings[$field_key]['active']) && $saved_settings[$field_key]['active'];
+                            $is_conditional = isset($field['is_conditional']) && $field['is_conditional'];
                         ?>
-                            <tr>
-                                <td><strong><?php echo esc_html($field['label']); ?></strong></td>
-                                <td><span class="filter-status-badge" style="background: #f1f5f9; color: #374151;"><?php echo esc_html($field['type']); ?></span></td>
+                            <tr class="<?php echo $is_conditional ? 'conditional-field-row' : ''; ?>">
+                                <td>
+                                    <?php if ($is_conditional): ?>
+                                        <div class="conditional-field-info">
+                                            <strong><?php echo esc_html($field['label']); ?></strong>
+                                            <div class="conditional-field-parent">
+                                                <small style="color: #666; display: block; margin-top: 2px;">
+                                                    📋 Campo condicional de: <strong><?php echo esc_html($field['parent_label']); ?></strong>
+                                                    <br>🎯 Opción: <strong><?php echo esc_html($field['parent_option_label']); ?></strong>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <strong><?php echo esc_html($field['label']); ?></strong>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="filter-status-badge" style="background: #f1f5f9; color: #374151;">
+                                        <?php echo esc_html($field['type']); ?>
+                                        <?php if ($is_conditional): ?>
+                                            <span style="margin-left: 4px; font-size: 10px;">🔗</span>
+                                        <?php endif; ?>
+                                    </span>
+                                </td>
                                 <td>
                                     <input type="hidden" name="filters[<?php echo esc_attr($field_key); ?>][active]" value="off">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -222,6 +266,13 @@
                                                        value="<?php echo isset($saved_settings[$field_key]['style']['color']) ? esc_attr($saved_settings[$field_key]['style']['color']) : '#000000'; ?>">
                                             </label>
                                         </p>
+                                        <?php if ($is_conditional): ?>
+                                            <p>
+                                                <small style="color: #666; font-style: italic;">
+                                                    ⚠️ Este filtro solo estará disponible cuando se seleccione la opción correspondiente en el campo padre.
+                                                </small>
+                                            </p>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
