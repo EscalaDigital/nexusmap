@@ -991,21 +991,33 @@ function saveForm(formSelector, formType) {
     /****************************************************
      * Chart Manager
      ****************************************************/
-    var chartIndex = $('.chart-box').length;
+    function getNextChartIndex() {
+        var maxIndex = -1;
+        jQuery('#chart-container').find('[name^="charts["]').each(function(){
+            var m = this.name.match(/^charts\[(\d+)\]/);
+            if (m) {
+                var idx = parseInt(m[1], 10);
+                if (!isNaN(idx) && idx > maxIndex) maxIndex = idx;
+            }
+        });
+        return maxIndex + 1;
+    }
 
-    console.log(chartIndex);
+    var chartIndex = getNextChartIndex();
+    console.log('NM Chart Manager: next index', chartIndex);
 
     // Al hacer clic en "Añadir Gráfico"
     jQuery('#add-chart').on('click', function () {
-        alert('Añadir Gráfico');
         var template = $('#chart-template').html();
-        template = template.replace(/{index}/g, chartIndex++);
+        var idx = getNextChartIndex();
+        template = template.replace(/{index}/g, idx);
         jQuery('#chart-container').append(template);
+        chartIndex = idx + 1;
     });
 
     // Al hacer clic en "Eliminar Gráfico"
     $(document).on('click', '.remove-chart', function () {
-        $(this).closest('.chart-box').remove();
+        $(this).closest('.nm-chart-box').remove();
     });
 
     // Manejo del Submit

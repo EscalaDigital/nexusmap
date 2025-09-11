@@ -993,8 +993,12 @@ jQuery(document).ready(function ($) {
 
                 // Actualizar contadores de filtros después de cargar todos los datos
                 setTimeout(() => {
-                    updateFilterCounts();
-                    updateFilterBadges();
+                    if (typeof updateFilterCounts === 'function') {
+                        updateFilterCounts();
+                    }
+                    if (typeof updateFilterBadges === 'function') {
+                        updateFilterBadges();
+                    }
                     
                     // Actualizar contador total inicial
                     const totalPointsElement = document.getElementById('nm-total-points');
@@ -1170,7 +1174,8 @@ jQuery(document).ready(function ($) {
             }
         }
 
-        nmMapData.chart_settings.forEach((chartConfig, index) => {
+    console.log('NM Charts: rendering', nmMapData.chart_settings.length, 'charts');
+    nmMapData.chart_settings.forEach((chartConfig, index) => {
             const canvasWrapper = document.createElement('div');
             canvasWrapper.style.height = '100%';
             canvasWrapper.style.position = 'relative';

@@ -306,12 +306,27 @@
 
 /* Contenedor de gráficos con scroll horizontal */
 #nm-charts-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-  gap: 30px;
-  padding: 20px;
-  height: calc(100% - 40px);
-  overflow-y: auto;
+    display: grid;
+    gap: 30px;
+    padding: 20px;
+    max-height: calc(100% - 20px); /* scroll interno en modal */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 2 columnas en pantallas grandes */
+@media (min-width: 1024px) {
+    #nm-charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 1 columna en pantallas pequeñas */
+@media (max-width: 1023.98px) {
+    #nm-charts-container {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
 }
 /* Contenedor individual de cada gráfico */
 #nm-charts-container > div {
@@ -387,12 +402,8 @@
     transform: translateY(0);
   }
 
-  #nm-charts-container {
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 15px;
-  }
+    /* Ajustes en móviles */
+    #nm-charts-container { grid-template-columns: 1fr; }
 
   #nm-charts-container > div {
     min-width: 100%;
@@ -404,13 +415,7 @@
     height: 400px !important;
   }
 
-  #nm-charts-container {
-    grid-template-columns: 1fr;
-}
-
-#nm-charts-container > div {
-    min-height: 300px;
-}
+    #nm-charts-container > div { min-height: 300px; }
 }
 
 /* Estilos para el campo de audio */
