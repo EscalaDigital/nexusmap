@@ -1682,8 +1682,13 @@ jQuery(document).ready(function ($) {
         // Modo original
         const visible = [];
         allMarkers.forEach(marker => {
-            if (marker.originalLayerGroup && marker.originalLayerGroup.hasLayer(marker)) {
-                if (map.hasLayer(marker.originalLayerGroup) || (markersLayer && markersLayer.hasLayer(marker.originalLayerGroup) && map.hasLayer(markersLayer))) {
+            if (marker.originalLayerGroup) {
+                if (marker.originalLayerGroup.hasLayer(marker) && (map.hasLayer(marker.originalLayerGroup) || (markersLayer && markersLayer.hasLayer(marker.originalLayerGroup) && map.hasLayer(markersLayer)))) {
+                    visible.push(marker);
+                }
+            } else if (markersLayer) {
+                // Fallback SIN capas configuradas: el marcador está directamente en markersLayer
+                if (markersLayer.hasLayer(marker) && map.hasLayer(markersLayer)) {
                     visible.push(marker);
                 }
             }
