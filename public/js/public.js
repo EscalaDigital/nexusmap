@@ -552,13 +552,20 @@ jQuery(document).ready(function ($) {
                 }
             } else {
                 // Modo original (sin clustering habilitado en ajustes)
-                for (const overlayName in overlays) {
-                    if (overlays.hasOwnProperty(overlayName)) {
+                const overlayKeys = Object.keys(overlays || {});
+                if (overlayKeys.length) {
+                    // Solo limpiar si realmente hay overlays (capas configuradas)
+                    for (const overlayName of overlayKeys) {
                         const layerGroup = overlays[overlayName];
                         if (layerGroup && typeof layerGroup.clearLayers === 'function') {
                             layerGroup.clearLayers();
                         }
                     }
+                } else if (markersLayer && typeof markersLayer.eachLayer === 'function') {
+                    // Caso SIN capas configuradas: limpiar markersLayer para reconstruir según filtros
+                    const toRemove = [];
+                    markersLayer.eachLayer(l => { toRemove.push(l); });
+                    toRemove.forEach(l => markersLayer.removeLayer(l));
                 }
             }
 
@@ -591,30 +598,34 @@ jQuery(document).ready(function ($) {
                             const filterConfig = nmMapData.filter_settings.find(f => f.field === field);
                             
                             if (filterConfig && filterConfig.is_conditional) {
-                                // Es un filtro condicional - usar el field_name original, no el nombre único
                                 const conditionalFieldName = 'nm_' + filterConfig.field_name;
-                                const conditionalFieldValue = marker.feature.properties[conditionalFieldName];
-                                
-                                // Debug para el primer marcador
+                                let conditionalFieldValue = marker.feature.properties[conditionalFieldName];
+
                                 if (debugTotalCount === 1) {
-                                    console.log(`Filtro condicional: ${field}, campo original: ${filterConfig.field_name}, buscando: ${conditionalFieldName}, valor: ${conditionalFieldValue}, filtros activos:`, Array.from(activeFilters[field]));
+                                    console.log(`Filtro condicional: ${field}, campo original: ${filterConfig.field_name}, buscando: ${conditionalFieldName}, valor:`, conditionalFieldValue, 'filtros activos:', Array.from(activeFilters[field]));
                                 }
-                                
-                                if (conditionalFieldValue && activeFilters[field].has(String(conditionalFieldValue))) {
-                                    fieldMatched = true;
+
+                                if (Array.isArray(conditionalFieldValue)) {
+                                    for (const v of conditionalFieldValue) {
+                                        if (activeFilters[field].has(String(v))) { fieldMatched = true; break; }
+                                    }
+                                } else if (conditionalFieldValue !== undefined && conditionalFieldValue !== null) {
+                                    if (activeFilters[field].has(String(conditionalFieldValue))) fieldMatched = true;
                                 }
                             } else {
-                                // Es un filtro regular
                                 const fieldName = 'nm_' + field;
-                                const fieldValue = marker.feature.properties[fieldName];
-                                
-                                // Debug para el primer marcador
+                                let fieldValue = marker.feature.properties[fieldName];
+
                                 if (debugTotalCount === 1) {
-                                    console.log(`Filtro regular: ${field}, buscando: ${fieldName}, valor: ${fieldValue}, filtros activos:`, Array.from(activeFilters[field]));
+                                    console.log(`Filtro regular: ${field}, buscando: ${fieldName}, valor:`, fieldValue, 'filtros activos:', Array.from(activeFilters[field]));
                                 }
-                                
-                                if (fieldValue && activeFilters[field].has(String(fieldValue))) {
-                                    fieldMatched = true;
+
+                                if (Array.isArray(fieldValue)) {
+                                    for (const v of fieldValue) {
+                                        if (activeFilters[field].has(String(v))) { fieldMatched = true; break; }
+                                    }
+                                } else if (fieldValue !== undefined && fieldValue !== null) {
+                                    if (activeFilters[field].has(String(fieldValue))) fieldMatched = true;
                                 }
                             }
                             
@@ -646,10 +657,20 @@ jQuery(document).ready(function ($) {
                     }
                 } else {
                     // Modo original sin clustering
-                    if (visible && marker.originalLayerGroup) {
-                        marker.originalLayerGroup.addLayer(marker);
+                    if (marker.originalLayerGroup) {
+                        // Caso con capas (layer groups existentes)
+                        if (visible) {
+                            marker.originalLayerGroup.addLayer(marker);
+                        }
+                        // Remover no necesario tras limpieza previa
+                    } else if (markersLayer) {
+                        // Fallback SIN capas: añadir / quitar directamente del markersLayer
+                        if (visible) {
+                            if (!markersLayer.hasLayer(marker)) markersLayer.addLayer(marker);
+                        } else {
+                            if (markersLayer.hasLayer(marker)) markersLayer.removeLayer(marker);
+                        }
                     }
-                    // No necesitamos remover aquí porque ya limpiamos todo al inicio
                 }
             });
 
@@ -708,24 +729,27 @@ jQuery(document).ready(function ($) {
             nmMapData.filter_settings.forEach(filter => {
                 filter.options.forEach(option => {
                     let count = 0;
-                    
-                    // Usar el nombre del campo correcto basándose en si es condicional o no
-                    const fieldName = filter.is_conditional 
-                        ? 'nm_' + filter.field_name  // Para campos condicionales, usar field_name
-                        : 'nm_' + filter.field;      // Para campos regulares, usar field
-                    
-                    // Obtener marcadores únicos para evitar contar duplicados
-                    const uniqueMarkers = getUniqueFeatures(allMarkers);
-                    
-                    uniqueMarkers.forEach(feature => {
-                        const fieldValue = feature.properties[fieldName];
-                        if (fieldValue && String(fieldValue) === String(option)) {
-                            count++;
+
+                    // Normalizar valor de opción (puede ser objeto)
+                    const optionValue = (typeof option === 'object' && option !== null)
+                        ? (option.value || option.label || Object.values(option)[0] || '')
+                        : option;
+
+                    const fieldName = filter.is_conditional
+                        ? 'nm_' + filter.field_name
+                        : 'nm_' + filter.field;
+
+                    const features = getUniqueFeatures(allMarkers);
+                    features.forEach(feature => {
+                        let fieldValue = feature.properties[fieldName];
+                        if (Array.isArray(fieldValue)) {
+                            if (fieldValue.some(v => String(v) === String(optionValue))) count++;
+                        } else if (fieldValue !== undefined && fieldValue !== null) {
+                            if (String(fieldValue) === String(optionValue)) count++;
                         }
                     });
-                    
-                    // Actualizar el contador en el botón usando el field correcto (que puede ser único)
-                    const $countElement = jQuery(`.nm-button-count[data-field="${filter.field}"][data-value="${option}"]`);
+
+                    const $countElement = jQuery(`.nm-button-count[data-field="${filter.field}"][data-value="${optionValue}"]`);
                     if ($countElement.length) {
                         $countElement.text(count > 0 ? `(${count})` : '(0)');
                     }
