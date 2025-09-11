@@ -1456,6 +1456,105 @@ jQuery(document).ready(function ($) {
         
         return colors;
     }
+    // ================================
+    // UTILIDADES Y TEMA DE CHART.JS
+    // ================================
+    function formatNumber(value) {
+        if (value === null || value === undefined || isNaN(value)) return '';
+        const n = Number(value);
+        // Mostrar enteros sin decimales; si hay decimales relevantes, 1-2 máx
+        if (Number.isInteger(n)) return n.toLocaleString();
+        return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    function formatPercent(value, total) {
+        if (!total) return '';
+        const pct = (Number(value) / Number(total)) * 100;
+        return pct.toFixed(pct < 1 ? 1 : 0) + '%';
+    }
+
+    function abbreviateLabel(label, max = 22) {
+        if (!label && label !== 0) return '';
+        const s = String(label);
+        return s.length > max ? s.slice(0, max - 1) + '…' : s;
+    }
+
+    // Registrar un plugin para fondo sutil del área del gráfico
+    if (window.Chart && !Chart._nmThemeRegistered) {
+        const nmThemeBg = {
+            id: 'nmThemeBg',
+            beforeDraw(chart, args, opts) {
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return;
+                ctx.save();
+                ctx.fillStyle = (opts && opts.fillStyle) || 'rgba(0,0,0,0.025)';
+                ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+                ctx.restore();
+            }
+        };
+        const nmValueLabels = {
+            id: 'nmValueLabels',
+            afterDatasetsDraw(chart, args, pluginOptions){
+                const { ctx, data } = chart;
+                const isPieChart = chart.config.type === 'pie';
+                const maxItems = pluginOptions?.maxItems ?? 10;
+                ctx.save();
+                ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+                ctx.fillStyle = pluginOptions?.color || '#444';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+
+                if(isPieChart){
+                    const ds = data.datasets[0];
+                    if(!ds) { ctx.restore(); return; }
+                    const total = (ds.data || []).reduce((a,b)=>Number(a)+Number(b||0),0);
+                    if(!total) { ctx.restore(); return; }
+                    const items = chart.getDatasetMeta(0).data;
+                    if(!items || items.length > 16){ ctx.restore(); return; }
+                    (items || []).forEach((el, i) => {
+                        const v = Number(ds.data[i]||0);
+                        if(v <= 0) return;
+                        const pct = (v/total)*100;
+                        if(pct < (pluginOptions?.pieMinPercent ?? 5)) return; // evitar ruido
+                        const pos = el.tooltipPosition();
+                        ctx.fillStyle = '#222';
+                        ctx.fillText(`${pct.toFixed(pct<10?1:0)}%`, pos.x, pos.y);
+                    });
+                    ctx.restore();
+                    return;
+                }
+
+                // Para barras y línea, mostrar valores si hay pocos elementos
+                const labelsCount = (data.labels||[]).length;
+                if(labelsCount > maxItems){ ctx.restore(); return; }
+                (data.datasets||[]).forEach((dataset, dsi) => {
+                    const meta = chart.getDatasetMeta(dsi);
+                    if(!meta || meta.hidden) return;
+                    const isLine = (dataset.type||chart.config.type) === 'line';
+                    // Evitar saturación: sólo mostrar del primer dataset en barras apiladas/mixtas
+                    if(!isLine && dsi > 0 && (chart.config.type === 'mixed' || chart.config.type === 'bar')) return;
+                    (meta.data||[]).forEach((el, idx) => {
+                        const raw = dataset.data[idx];
+                        const val = Number(raw);
+                        if(!isFinite(val) || val === 0) return;
+                        const pos = el.tooltipPosition();
+                        ctx.fillStyle = '#222';
+                        ctx.fillText(formatNumber(val), pos.x, pos.y - 6);
+                    });
+                });
+                ctx.restore();
+            }
+        };
+        Chart.register(nmThemeBg, nmValueLabels);
+
+        // Defaults globales más elegantes
+        Chart.defaults.font.family = 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#333';
+        Chart.defaults.plugins.legend.labels.boxWidth = 12;
+        Chart.defaults.plugins.legend.labels.boxHeight = 12;
+        Chart._nmThemeRegistered = true;
+    }
 
     function createChart(canvas, chartConfig, data) {
         const ctx = canvas.getContext('2d');
@@ -1465,6 +1564,7 @@ jQuery(document).ready(function ($) {
         if (old) old.destroy();
 
         // Configuración base para las opciones
+        const isPieLike = chartConfig.chart_type === 'pie' || chartConfig.chart_type === 'doughnut';
         const options = {
             responsive: true,
             maintainAspectRatio: false,
@@ -1480,30 +1580,83 @@ jQuery(document).ready(function ($) {
                 },
                 legend: {
                     display: true,
-                    position: chartConfig.chart_type === 'pie' ? 'right' : 'bottom',
+                    position: isPieLike ? 'right' : 'bottom',
                     labels: {
-                        padding: 20,
-                        boxWidth: 12
+                        padding: 16,
+                        boxWidth: 12,
+                        usePointStyle: false,
+                        // Ocultar entradas con valor 0 en pie/donut
+                        filter: function(item, chart) {
+                            try {
+                                if (!isPieLike) return true;
+                                const v = chart.chart.data.datasets[0].data[item.index] || 0;
+                                return Number(v) > 0;
+                            } catch (e) { return true; }
+                        },
+                        generateLabels: function(chart){
+                            const defaultGen = Chart.defaults.plugins.legend.labels.generateLabels;
+                            const labels = defaultGen(chart);
+                            try {
+                                if(!isPieLike) return labels;
+                                const ds = chart.data.datasets[0];
+                                const total = (ds.data||[]).reduce((a,b)=>Number(a)+Number(b||0),0) || 1;
+                                return labels.map(l => {
+                                    const val = Number(ds.data[l.index]||0);
+                                    const pct = (val/total)*100;
+                                    return Object.assign({}, l, { text: `${l.text} (${pct.toFixed(pct<10?1:0)}%)` });
+                                });
+                            } catch(e){ return labels; }
+                        }
                     }
-                }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const raw = context.raw;
+                            const label = context.label || '';
+                            if (isPieLike) {
+                                const dataArr = context.dataset.data || [];
+                                const total = dataArr.reduce((a, b) => Number(a) + Number(b), 0);
+                                return `${label}: ${formatNumber(raw)} (${formatPercent(raw, total)})`;
+                            }
+                            const dsLabel = context.dataset && context.dataset.label ? context.dataset.label + ': ' : '';
+                            return `${dsLabel}${formatNumber(raw)}`;
+                        }
+                    }
+                },
+                nmThemeBg: { fillStyle: 'rgba(0,0,0,0.02)' },
+                nmValueLabels: { maxItems: 10, pieMinPercent: 5 }
             },
+            animation: { duration: 700, easing: 'easeOutCubic' },
             scales: {
-                y: {
+                y: isPieLike ? undefined : {
                     beginAtZero: true,
                     position: 'left',
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    ticks: {
+                        precision: 0,
+                        callback: (val) => formatNumber(val),
+                        maxTicksLimit: 6
+                    },
                     title: {
                         display: true,
                         text: chartConfig.numeric_field1 || 'Cantidad',
-                        font: {
-                            weight: 'bold'
-                        }
+                        font: { weight: 'bold' }
+                    }
+                },
+                x: isPieLike ? undefined : {
+                    grid: { display: false },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 8,
+                        callback: (val, idx, ticks) => abbreviateLabel(data.labels[idx] || '')
                     }
                 }
             },
             layout: {
                 padding: {
                     left: 10,
-                    right: chartConfig.chart_type === 'pie' ? 50 : 10,
+                    right: isPieLike ? 50 : 10,
                     top: 10,
                     bottom: 10
                 }
@@ -1511,8 +1664,11 @@ jQuery(document).ready(function ($) {
         };
 
         // Ajustes específicos según el tipo de gráfico
-        if (chartConfig.chart_type === 'pie') {
+        if (isPieLike) {
             options.aspectRatio = 1.5;
+            if(chartConfig.chart_type === 'doughnut'){
+                options.cutout = '55%';
+            }
         } else if (chartConfig.chart_type === 'bar') {
             options.aspectRatio = 2;
             if (data.labels.length > 10) {
@@ -1583,6 +1739,10 @@ jQuery(document).ready(function ($) {
                     dataset.pointBackgroundColor = dataset.backgroundColor;
                     dataset.pointBorderColor = dataset.borderColor;
                 }
+                dataset.tension = 0.35;
+                dataset.pointRadius = 2;
+                dataset.pointHoverRadius = 5;
+                dataset.borderWidth = 2;
             });
         } else if (chartConfig.chart_type === 'mixed') {
             // Para gráficos mixtos, ajustar colores por tipo
@@ -1593,8 +1753,28 @@ jQuery(document).ready(function ($) {
                     dataset.borderColor = dataset.borderColor[0];
                     dataset.pointBackgroundColor = dataset.backgroundColor;
                     dataset.pointBorderColor = dataset.borderColor;
+                    dataset.borderWidth = 2;
                 }
                 // Las barras mantienen sus arrays de colores
+            });
+        }
+
+        // Bordes redondeados y ancho de barra agradable
+        if (chartConfig.chart_type === 'bar' || chartConfig.chart_type === 'mixed') {
+            data.datasets.forEach(ds => {
+                if (!ds.type || ds.type === 'bar') {
+                    ds.borderRadius = 8;
+                    ds.barPercentage = 0.9;
+                    ds.categoryPercentage = 0.8;
+                }
+            });
+        }
+
+        // Ajustes de borde para pie/doughnut
+        if (isPieLike) {
+            data.datasets.forEach(ds => {
+                ds.borderWidth = 1;
+                ds.borderColor = Array.isArray(ds.borderColor) ? ds.borderColor : '#fff';
             });
         }
 

@@ -323,6 +323,7 @@
                                     <option value="bar" <?php selected($chart['chart_type'], 'bar'); ?>>📊 Barras</option>
                                     <option value="line" <?php selected($chart['chart_type'], 'line'); ?>>📈 Líneas</option>
                                     <option value="pie" <?php selected($chart['chart_type'], 'pie'); ?>>🥧 Circular</option>
+                                    <option value="doughnut" <?php selected($chart['chart_type'], 'doughnut'); ?>>🍩 Donut</option>
                                     <option value="mixed" <?php selected($chart['chart_type'], 'mixed'); ?>>📊📈 Mixto (Barras y Líneas)</option>
                                 </select>
                             </div>
@@ -432,6 +433,7 @@
                     <option value="bar" selected>📊 Barras</option>
                     <option value="line">📈 Líneas</option>
                     <option value="pie">🥧 Circular</option>
+                    <option value="doughnut">🍩 Donut</option>
                     <option value="mixed">📊📈 Mixto (Barras y Líneas)</option>
                 </select>
             </div>
