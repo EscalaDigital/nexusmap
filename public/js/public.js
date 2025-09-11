@@ -280,62 +280,47 @@ jQuery(document).ready(function ($) {
             `;
 
             // Crear estadísticas generales
-            var statsContent = `
-                <div class="nm-filters-stats">
-                    <div class="nm-stats-item">
-                        <span class="nm-stats-label">Mostrando:</span>
-                        <span class="nm-stats-value" id="nm-points-count">0</span>
-                        <span class="nm-stats-total">de <span id="nm-total-points">0</span></span>
-                    </div>
-                    <div class="nm-active-filters" id="nm-active-filters" style="display: none;">
-                        <span class="nm-active-label">Filtros activos:</span>
-                        <div class="nm-active-list"></div>
-                    </div>
-                </div>
-            `;
+                        var statsContent = `
+                                <div class="nm-filters-stats">
+                                        <div class="nm-stats-item">
+                                                <span class="nm-stats-label">Mostrando:</span>
+                                                <span class="nm-stats-value" id="nm-points-count">0</span>
+                                                <span class="nm-stats-total">de <span id="nm-total-points">0</span></span>
+                                        </div>
+                                        <div class="nm-active-filters" id="nm-active-filters" style="display: none;">
+                                                <span class="nm-active-label">Filtros activos:</span>
+                                                <div class="nm-active-list"></div>
+                                        </div>
+                                </div>`;
 
-            // Crear el contenido de filtros
-            var filterContent = '';
-            nmMapData.filter_settings.forEach(filter => {
-                // Determinar si es un filtro condicional
-                const isConditional = filter.is_conditional === true;
-                const conditionalClass = isConditional ? 'nm-conditional-filter' : '';
-                // Los filtros condicionales ahora se muestran siempre
-                const conditionalStyle = '';
-                
-                filterContent += `
-                    <div class="nm-filter-group ${conditionalClass}" 
-                         data-field="${filter.field}"
-                         ${isConditional ? `data-parent-field="${filter.parent_field}" data-parent-option="${filter.parent_option}"` : ''}>
-                        <div class="nm-filter-header">
-                            <span class="nm-filter-label">
-                                ${isConditional ? '🔗 ' : ''}${filter.button_text}
-                                ${isConditional ? `<small class="nm-conditional-info">(Subtipo)</small>` : ''}
-                            </span>
-                            <span class="nm-filter-toggle" data-field="${filter.field}">▼</span>
-                            <span class="nm-filter-badge" data-field="${filter.field}">0</span>
-                        </div>
-                        <div class="nm-filter-options" data-field="${filter.field}">
-                            ${filter.options.map(option => {
-                                // Manejar tanto objetos como strings
-                                const optionValue = typeof option === 'object' ? (option.value || option.label || option) : option;
-                                const optionLabel = typeof option === 'object' ? (option.label || option.value || option) : option;
-                                
-                                return `
-                                    <button class="nm-filter-button" 
-                                            data-field="${filter.field}" 
-                                            data-value="${optionValue}"
-                                            style="background-color: ${filter.style?.background || '#fff'}; 
-                                                   color: ${filter.style?.color || '#000'}">
-                                        <span class="nm-button-text">${optionLabel}</span>
-                                        <span class="nm-button-count" data-field="${filter.field}" data-value="${optionValue}">0</span>
-                                    </button>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            });
+                        var filterContent = '';
+                        nmMapData.filter_settings.forEach(filter => {
+                                const isConditional = filter.is_conditional === true;
+                                const conditionalClass = isConditional ? 'nm-conditional-filter' : '';
+                                const initiallyCollapsed = isConditional;
+                                const initialToggleIcon = initiallyCollapsed ? '▶' : '▼';
+                                const optionsDisplay = initiallyCollapsed ? 'style="display:none;"' : '';
+
+                                filterContent += `
+<div class="nm-filter-group ${conditionalClass} ${initiallyCollapsed ? 'collapsed' : ''}" data-field="${filter.field}" ${isConditional ? 'data-parent-field="'+filter.parent_field+'" data-parent-option="'+filter.parent_option+'"' : ''}>
+    <div class="nm-filter-header">
+        <span class="nm-filter-label">${isConditional ? '🔗 ' : ''}${filter.button_text} ${isConditional ? '<small class="nm-conditional-info">(Subtipo)</small>' : ''}</span>
+        <span class="nm-filter-toggle" data-field="${filter.field}">${initialToggleIcon}</span>
+        <span class="nm-filter-badge" data-field="${filter.field}">0</span>
+    </div>
+    <div class="nm-filter-options" data-field="${filter.field}" ${optionsDisplay}>
+        ${filter.options.map(option => {
+                const optionValue = typeof option === 'object' ? (option.value || option.label || option) : option;
+                const optionLabel = typeof option === 'object' ? (option.label || option.value || option) : option;
+                return `
+            <button class="nm-filter-button" data-field="${filter.field}" data-value="${optionValue}" style="background-color: ${(filter.style && filter.style.background) ? filter.style.background : '#fff'}; color: ${(filter.style && filter.style.color) ? filter.style.color : '#000'}">
+                <span class="nm-button-text">${optionLabel}</span>
+                <span class="nm-button-count" data-field="${filter.field}" data-value="${optionValue}">0</span>
+            </button>`;
+        }).join('')}
+    </div>
+</div>`;
+                        });
 
             // Agregar contador
             filterContent += `
@@ -573,74 +558,61 @@ jQuery(document).ready(function ($) {
             let debugTotalCount = 0;
             let actualVisibleMarkers = []; // Array para almacenar marcadores que pasan el filtro
             
+            // Construir grupos: OR dentro del grupo (padre + subfiltros), AND entre grupos distintos
+            const groupStructures = {}; // groupName => { mainValues:Set|null, subFilters:[{prop, values:Set}] }
+            if (Object.keys(activeFilters).length > 0) {
+                nmMapData.filter_settings.forEach(cfg => {
+                    if (!activeFilters[cfg.field] || activeFilters[cfg.field].size === 0) return;
+                    if (cfg.is_conditional) {
+                        const g = cfg.parent_field;
+                        if (!groupStructures[g]) groupStructures[g] = { mainValues: null, subFilters: [] };
+                        groupStructures[g].subFilters.push({ prop: 'nm_' + cfg.field_name, values: activeFilters[cfg.field] });
+                    } else {
+                        const g = cfg.field; // nombre del campo padre normal
+                        if (!groupStructures[g]) groupStructures[g] = { mainValues: null, subFilters: [] };
+                        groupStructures[g].mainValues = activeFilters[cfg.field];
+                    }
+                });
+            }
+
             allMarkers.forEach(function(marker){
                 debugTotalCount++;
                 let visible = true;
-                
-                // Si no hay filtros activos, mostrar todos
-                if (Object.keys(activeFilters).length === 0) {
-                    visible = true;
-                } else {
-                    // Debug: Log para el primer marcador
-                    if (debugTotalCount === 1) {
-                        console.log('=== DEBUG FILTROS ===');
-                        console.log('Filtros activos:', activeFilters);
-                        console.log('Propiedades del marcador:', marker.feature.properties);
-                        console.log('Configuración de filtros:', nmMapData.filter_settings);
-                    }
-                    
-                    // Verificar filtros regulares y condicionales
-                    for (const field in activeFilters) {
-                        if (activeFilters[field].size > 0) {
-                            let fieldMatched = false;
-                            
-                            // Verificar si es un filtro condicional
-                            const filterConfig = nmMapData.filter_settings.find(f => f.field === field);
-                            
-                            if (filterConfig && filterConfig.is_conditional) {
-                                const conditionalFieldName = 'nm_' + filterConfig.field_name;
-                                let conditionalFieldValue = marker.feature.properties[conditionalFieldName];
 
-                                if (debugTotalCount === 1) {
-                                    console.log(`Filtro condicional: ${field}, campo original: ${filterConfig.field_name}, buscando: ${conditionalFieldName}, valor:`, conditionalFieldValue, 'filtros activos:', Array.from(activeFilters[field]));
-                                }
+                if (Object.keys(groupStructures).length > 0) {
+                    for (const gName in groupStructures) {
+                        const group = groupStructures[gName];
+                        let groupMatched = false;
 
-                                if (Array.isArray(conditionalFieldValue)) {
-                                    for (const v of conditionalFieldValue) {
-                                        if (activeFilters[field].has(String(v))) { fieldMatched = true; break; }
-                                    }
-                                } else if (conditionalFieldValue !== undefined && conditionalFieldValue !== null) {
-                                    if (activeFilters[field].has(String(conditionalFieldValue))) fieldMatched = true;
-                                }
-                            } else {
-                                const fieldName = 'nm_' + field;
-                                let fieldValue = marker.feature.properties[fieldName];
-
-                                if (debugTotalCount === 1) {
-                                    console.log(`Filtro regular: ${field}, buscando: ${fieldName}, valor:`, fieldValue, 'filtros activos:', Array.from(activeFilters[field]));
-                                }
-
-                                if (Array.isArray(fieldValue)) {
-                                    for (const v of fieldValue) {
-                                        if (activeFilters[field].has(String(v))) { fieldMatched = true; break; }
-                                    }
-                                } else if (fieldValue !== undefined && fieldValue !== null) {
-                                    if (activeFilters[field].has(String(fieldValue))) fieldMatched = true;
-                                }
-                            }
-                            
-                            if (!fieldMatched) {
-                                visible = false;
-                                break;
+                        // Evaluar campo principal
+                        if (group.mainValues && group.mainValues.size > 0) {
+                            const fieldProp = 'nm_' + gName;
+                            let val = marker.feature.properties[fieldProp];
+                            if (Array.isArray(val)) {
+                                for (const v of val) { if (group.mainValues.has(String(v))) { groupMatched = true; break; } }
+                            } else if (val !== undefined && val !== null) {
+                                if (group.mainValues.has(String(val))) groupMatched = true;
                             }
                         }
+
+                        // Evaluar subfiltros si aún no hubo match
+                        if (!groupMatched && group.subFilters.length) {
+                            for (const sf of group.subFilters) {
+                                let sval = marker.feature.properties[sf.prop];
+                                if (Array.isArray(sval)) {
+                                    for (const v of sval) { if (sf.values.has(String(v))) { groupMatched = true; break; } }
+                                } else if (sval !== undefined && sval !== null) {
+                                    if (sf.values.has(String(sval))) groupMatched = true;
+                                }
+                                if (groupMatched) break;
+                            }
+                        }
+
+                        if (!groupMatched) { visible = false; break; }
                     }
                 }
-                
-                if (visible) {
-                    debugVisibleCount++;
-                    actualVisibleMarkers.push(marker); // Agregar a los marcadores que pasan el filtro
-                }
+
+                if (visible) { debugVisibleCount++; actualVisibleMarkers.push(marker); }
 
                 if (clusteringEnabled) {
                     if (clusteringActive) {
