@@ -1143,14 +1143,22 @@ jQuery(document).ready(function ($) {
             }
 
             // Calcular el total de features únicos en lugar de marcadores
-            const totalFeatures = getUniqueFeatures(allMarkers).length;
             const visibleMarkers = getVisibleMarkers();
-            const visibleFeatures = getUniqueFeatures(visibleMarkers).length;
+            // Contemos ambos: marcadores visibles reales y features únicas
+            const visibleMarkerCount = visibleMarkers.length;
+            const visibleUnique = getUniqueFeatures(visibleMarkers).length;
+            const totalMarkerCount = allMarkers.length;
+            const totalUnique = getUniqueFeatures(allMarkers).length;
 
             const filterIndicator = document.createElement('div');
             filterIndicator.className = 'nm-filter-indicator';
             filterIndicator.style.cssText = 'background: #e3f2fd; border: 1px solid #1976d2; border-radius: 4px; padding: 10px; margin-bottom: 20px; text-align: center; color: #1976d2; font-weight: bold; width: 100%; box-sizing: border-box;';
-            filterIndicator.innerHTML = `📊 Mostrando gráficos filtrados: ${visibleFeatures} de ${totalFeatures} puntos`;
+            // Si hay diferencia notable entre únicos y marcadores (mismos coords) mostrar ambos
+            if (visibleMarkerCount !== visibleUnique) {
+                filterIndicator.innerHTML = `📊 Filtrado: ${visibleMarkerCount} marcadores (${visibleUnique} únicos) de ${totalMarkerCount} (${totalUnique} únicos)`;
+            } else {
+                filterIndicator.innerHTML = `📊 Filtrado: ${visibleUnique} de ${totalUnique} puntos`;
+            }
 
             // Insertar ANTES del contenedor de gráficos
             chartsContainer.parentNode.insertBefore(filterIndicator, chartsContainer);
@@ -1232,49 +1240,42 @@ jQuery(document).ready(function ($) {
         const categoryFieldName = `nm_${chartConfig.category_field}`;
 
         features.forEach(feature => {
-            const categoryValue = feature.properties[categoryFieldName];
-            // Usar el valor como string para la clave, para asegurar consistencia con las opciones del filtro
-            const categoryKey = categoryValue !== undefined && categoryValue !== null ? categoryValue.toString() : '';
-
-            if (!groupedData[categoryKey]) {
-                groupedData[categoryKey] = {
-                    count: 0,
-                    numeric1: [],
-                    numeric2: []
-                };
-            }
-
-            groupedData[categoryKey].count++;
-
-            if (!isCountMode) {
-                const numericFieldName1 = `nm_${chartConfig.numeric_field1}`;
-                const numeric1Value = parseFloat(feature.properties[numericFieldName1]);
-                if (!isNaN(numeric1Value)) {
-                    groupedData[categoryKey].numeric1.push(numeric1Value);
+            let categoryValue = feature.properties[categoryFieldName];
+            // Si es array (checkbox), contar cada valor por separado
+            const valuesArray = Array.isArray(categoryValue) ? categoryValue : [categoryValue];
+            valuesArray.forEach(singleVal => {
+                const categoryKey = (singleVal !== undefined && singleVal !== null) ? String(singleVal) : '';
+                if (!groupedData[categoryKey]) {
+                    groupedData[categoryKey] = { count: 0, numeric1: [], numeric2: [] };
                 }
-
-                if (chartConfig.numeric_field2) {
-                    const numericFieldName2 = `nm_${chartConfig.numeric_field2}`;
-                    const numeric2Value = parseFloat(feature.properties[numericFieldName2]);
-                    if (!isNaN(numeric2Value)) {
-                        groupedData[categoryKey].numeric2.push(numeric2Value);
+                groupedData[categoryKey].count++;
+                if (!isCountMode) {
+                    const numericFieldName1 = `nm_${chartConfig.numeric_field1}`;
+                    const numeric1Value = parseFloat(feature.properties[numericFieldName1]);
+                    if (!isNaN(numeric1Value)) groupedData[categoryKey].numeric1.push(numeric1Value);
+                    if (chartConfig.numeric_field2) {
+                        const numericFieldName2 = `nm_${chartConfig.numeric_field2}`;
+                        const numeric2Value = parseFloat(feature.properties[numericFieldName2]);
+                        if (!isNaN(numeric2Value)) groupedData[categoryKey].numeric2.push(numeric2Value);
                     }
                 }
-            }
+            });
         });
 
         let finalOrderedKeys = [];
 
         // Intentar obtener el orden de las etiquetas desde la configuración de filtros
-        const categoryFilterSetting = nmMapData.filter_settings.find(
-            setting => setting.field === chartConfig.category_field
-        );
+        // Buscar configuración de filtro que corresponda a este campo (normal o condicional)
+        const categoryFilterSetting = nmMapData.filter_settings.find(setting => {
+            if (setting.field === chartConfig.category_field) return true; // campo normal
+            if (setting.is_conditional && setting.field_name === chartConfig.category_field) return true; // subcampo condicional
+            return false;
+        });
 
         if (categoryFilterSetting && Array.isArray(categoryFilterSetting.options)) {
-            // Usar el orden de las opciones del filtro, incluyendo solo las categorías que tienen datos
-            finalOrderedKeys = categoryFilterSetting.options.filter(
-                option => groupedData.hasOwnProperty(option.toString())
-            );
+            finalOrderedKeys = categoryFilterSetting.options
+                .map(o => (typeof o === 'object' ? (o.value || o.label || o) : o))
+                .filter(option => groupedData.hasOwnProperty(option.toString()));
         }
 
         // Si no se pudo determinar un orden desde filter_settings o si resultó en una lista vacía
