@@ -263,9 +263,9 @@
                                 <select id="numeric_field1_<?php echo $index; ?>" name="charts[<?php echo $index; ?>][numeric_field1]">
                                     <option value="">Ninguno (contar ocurrencias)</option>
                                     <?php foreach ($numeric_fields as $field): ?>
-                                        <option value="<?php echo esc_attr($field['name']); ?>"
-                                            <?php selected($chart['numeric_field1'], $field['name']); ?>>
-                                            Sumar <?php echo esc_html($field['label']); ?>
+                                        <?php $is_conditional = !empty($field['is_conditional']); ?>
+                                        <option value="<?php echo esc_attr($field['name']); ?>" <?php selected($chart['numeric_field1'], $field['name']); ?>>
+                                            <?php echo $is_conditional ? '🔗 Sub ' : 'Sumar '; ?><?php echo esc_html($field['label']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -278,9 +278,9 @@
                                         class="secondary-field" <?php echo ($chart['chart_type'] !== 'mixed') ? 'disabled' : ''; ?>>
                                     <option value="">Ninguno</option>
                                     <?php foreach ($numeric_fields as $field): ?>
-                                        <option value="<?php echo esc_attr($field['name']); ?>"
-                                            <?php selected($chart['numeric_field2'], $field['name']); ?>>
-                                            <?php echo esc_html($field['label']); ?>
+                                        <?php $is_conditional = !empty($field['is_conditional']); ?>
+                                        <option value="<?php echo esc_attr($field['name']); ?>" <?php selected($chart['numeric_field2'], $field['name']); ?>>
+                                            <?php echo $is_conditional ? '🔗 Sub ' : ''; ?><?php echo esc_html($field['label']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -292,9 +292,9 @@
                                 <select id="category_field_<?php echo $index; ?>" name="charts[<?php echo $index; ?>][category_field]" required>
                                     <option value="">Seleccionar campo...</option>
                                     <?php foreach ($category_fields as $field): ?>
-                                        <option value="<?php echo esc_attr($field['name']); ?>"
-                                            <?php selected($chart['category_field'], $field['name']); ?>>
-                                            <?php echo esc_html($field['label']); ?>
+                                        <?php $is_conditional = !empty($field['is_conditional']); ?>
+                                        <option value="<?php echo esc_attr($field['name']); ?>" <?php selected($chart['category_field'], $field['name']); ?>>
+                                            <?php echo $is_conditional ? '🔗 Sub ' : ''; ?><?php echo esc_html($field['label']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -307,13 +307,9 @@
                                         class="secondary-field" <?php echo ($chart['chart_type'] !== 'mixed') ? 'disabled' : ''; ?>>
                                     <option value="">Ninguno</option>
                                     <?php foreach ($category_fields as $field): ?>
-                                        <option value="<?php echo esc_attr($field['name']); ?>"
-                                            <?php
-                                            if (isset($chart['category_field_2'])) {
-                                                selected($chart['category_field_2'], $field['name']);
-                                            }
-                                            ?>>
-                                            <?php echo esc_html($field['label']); ?>
+                                        <?php $is_conditional = !empty($field['is_conditional']); ?>
+                                        <option value="<?php echo esc_attr($field['name']); ?>" <?php if (isset($chart['category_field_2'])) { selected($chart['category_field_2'], $field['name']); } ?>>
+                                            <?php echo $is_conditional ? '🔗 Sub ' : ''; ?><?php echo esc_html($field['label']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -379,8 +375,9 @@
                 <select name="charts[{index}][numeric_field1]">
                     <option value="">Ninguno (contar ocurrencias)</option>
                     <?php foreach ($numeric_fields as $field): ?>
+                        <?php $is_conditional = !empty($field['is_conditional']); ?>
                         <option value="<?php echo esc_attr($field['name']); ?>">
-                            Sumar <?php echo esc_html($field['label']); ?>
+                            <?php echo $is_conditional ? '🔗 Sub ' : 'Sumar '; ?><?php echo esc_html($field['label']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -392,8 +389,9 @@
                 <select name="charts[{index}][numeric_field2]" class="secondary-field" disabled>
                     <option value="">Ninguno</option>
                     <?php foreach ($numeric_fields as $field): ?>
+                        <?php $is_conditional = !empty($field['is_conditional']); ?>
                         <option value="<?php echo esc_attr($field['name']); ?>">
-                            <?php echo esc_html($field['label']); ?>
+                            <?php echo $is_conditional ? '🔗 Sub ' : ''; ?><?php echo esc_html($field['label']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -405,8 +403,9 @@
                 <select name="charts[{index}][category_field]" required>
                     <option value="">Seleccionar campo...</option>
                     <?php foreach ($category_fields as $field): ?>
+                        <?php $is_conditional = !empty($field['is_conditional']); ?>
                         <option value="<?php echo esc_attr($field['name']); ?>">
-                            <?php echo esc_html($field['label']); ?>
+                            <?php echo $is_conditional ? '🔗 Sub ' : ''; ?><?php echo esc_html($field['label']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -418,8 +417,9 @@
                 <select name="charts[{index}][category_field_2]" class="secondary-field" disabled>
                     <option value="">Ninguno</option>
                     <?php foreach ($category_fields as $field): ?>
+                        <?php $is_conditional = !empty($field['is_conditional']); ?>
                         <option value="<?php echo esc_attr($field['name']); ?>">
-                            <?php echo esc_html($field['label']); ?>
+                            <?php echo $is_conditional ? '🔗 Sub ' : ''; ?><?php echo esc_html($field['label']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

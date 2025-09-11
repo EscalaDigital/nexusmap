@@ -61,15 +61,53 @@ class NM_Chart_Manager
          * Si la estructura de $form_data es diferente, ajusta la lógica.
          */
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+            global $wpdb;
             foreach ($form_data['fields'] as $field) {
-                if (isset($field['type'])) {
-                    // Campos que pueden ser contados o usados como categoría
-                    if (in_array($field['type'], ['select', 'radio', 'checkbox', 'text', 'textarea', 'number'])) {
-                        $category_fields[] = $field;
-                    }
-                    // Campos numéricos para sumas
-                    if ($field['type'] === 'number') {
-                        $numeric_fields[] = $field;
+                if (!isset($field['type'])) continue;
+
+                if (in_array($field['type'], ['select','radio','checkbox','text','textarea','number','conditional-select'])) {
+                    $category_fields[] = $field;
+                }
+                if ($field['type'] === 'number') {
+                    $numeric_fields[] = $field;
+                }
+
+                if ($field['type'] === 'conditional-select' && !empty($field['select_id'])) {
+                    $table = $wpdb->prefix . 'nm_conditional_fields';
+                    $rows = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT option_id, fields_json FROM {$table} WHERE select_id = %s",
+                            $field['select_id']
+                        ),
+                        ARRAY_A
+                    );
+                    if ($rows) {
+                        foreach ($rows as $row) {
+                            $subfields = json_decode($row['fields_json'], true);
+                            if (!is_array($subfields)) continue;
+                            foreach ($subfields as $sub) {
+                                if (!is_array($sub) || !isset($sub['type']) || !isset($sub['name'])) continue;
+                                // Evitar duplicados por nombre
+                                $alreadyCategory = false;
+                                foreach ($category_fields as $cf) { if (isset($cf['name']) && $cf['name'] === $sub['name']) { $alreadyCategory = true; break; } }
+                                if (in_array($sub['type'], ['select','radio','checkbox','text','textarea','number']) && !$alreadyCategory) {
+                                    $sub_copy = $sub;
+                                    $sub_copy['is_conditional'] = true;
+                                    $sub_copy['parent_field'] = $field['name'];
+                                    $category_fields[] = $sub_copy;
+                                }
+                                if ($sub['type'] === 'number') {
+                                    $alreadyNumeric = false;
+                                    foreach ($numeric_fields as $nf) { if (isset($nf['name']) && $nf['name'] === $sub['name']) { $alreadyNumeric = true; break; } }
+                                    if (!$alreadyNumeric) {
+                                        $sub_num = $sub;
+                                        $sub_num['is_conditional'] = true;
+                                        $sub_num['parent_field'] = $field['name'];
+                                        $numeric_fields[] = $sub_num;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
