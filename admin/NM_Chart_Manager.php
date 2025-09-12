@@ -159,6 +159,9 @@ class NM_Chart_Manager
                 $category_field = isset($chart['category_field']) ? sanitize_text_field($chart['category_field']) : '';
                 $category_field_2 = isset($chart['category_field_2']) ? sanitize_text_field($chart['category_field_2']) : '';
                 $chart_type     = isset($chart['chart_type'])     ? sanitize_text_field($chart['chart_type'])     : '';
+                $stacked        = isset($chart['stacked']) ? sanitize_text_field($chart['stacked']) : 'auto';
+                $value_labels_mode = isset($chart['value_labels_mode']) ? sanitize_text_field($chart['value_labels_mode']) : 'auto';
+                $bar_orientation   = isset($chart['bar_orientation']) ? sanitize_text_field($chart['bar_orientation']) : 'auto';
 
                 if (!empty($title) && !empty($category_field) && !empty($chart_type)) {
                     $charts[] = array(
@@ -168,7 +171,10 @@ class NM_Chart_Manager
                         'numeric_field2' => $numeric_field2,
                         'category_field' => $category_field,
                         'category_field_2' => $category_field_2,
-                        'chart_type'     => $chart_type
+                        'chart_type'     => $chart_type,
+                        'stacked'        => $stacked,
+                        'value_labels_mode' => $value_labels_mode,
+                        'bar_orientation'   => $bar_orientation
                     );
                 }
             }

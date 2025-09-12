@@ -115,6 +115,11 @@
     border-top: 1px solid #f1f3f4;
 }
 
+/* Controles avanzados del gráfico */
+.nm-advanced-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 10px; }
+.nm-advanced-controls .nm-form-group { margin: 0; }
+@media (max-width: 768px){ .nm-advanced-controls { grid-template-columns: 1fr; } }
+
 .nm-btn {
     padding: 10px 20px;
     border: none;
@@ -324,12 +329,40 @@
                                     <option value="line" <?php selected($chart['chart_type'], 'line'); ?>>📈 Líneas</option>
                                     <option value="pie" <?php selected($chart['chart_type'], 'pie'); ?>>🥧 Circular</option>
                                     <option value="doughnut" <?php selected($chart['chart_type'], 'doughnut'); ?>>🍩 Donut</option>
+                                    <option value="polarArea" <?php selected($chart['chart_type'], 'polarArea'); ?>>🧭 Polar Area</option>
+                                    <option value="radar" <?php selected($chart['chart_type'], 'radar'); ?>>🕸️ Radar</option>
                                     <option value="mixed" <?php selected($chart['chart_type'], 'mixed'); ?>>📊📈 Mixto (Barras y Líneas)</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="nm-chart-actions">
+                            <div class="nm-advanced-controls">
+                                <div class="nm-form-group">
+                                    <label for="stacked_<?php echo $index; ?>">Barras apiladas</label>
+                                    <select id="stacked_<?php echo $index; ?>" name="charts[<?php echo $index; ?>][stacked]" class="advanced-opt">
+                                        <option value="auto" <?php selected(isset($chart['stacked']) ? $chart['stacked'] : 'auto', 'auto'); ?>>Auto</option>
+                                        <option value="yes" <?php selected(isset($chart['stacked']) ? $chart['stacked'] : 'auto', 'yes'); ?>>Sí</option>
+                                        <option value="no" <?php selected(isset($chart['stacked']) ? $chart['stacked'] : 'auto', 'no'); ?>>No</option>
+                                    </select>
+                                </div>
+                                <div class="nm-form-group">
+                                    <label for="value_labels_mode_<?php echo $index; ?>">Etiquetas de valores</label>
+                                    <select id="value_labels_mode_<?php echo $index; ?>" name="charts[<?php echo $index; ?>][value_labels_mode]" class="advanced-opt">
+                                        <option value="auto" <?php selected(isset($chart['value_labels_mode']) ? $chart['value_labels_mode'] : 'auto', 'auto'); ?>>Auto</option>
+                                        <option value="always" <?php selected(isset($chart['value_labels_mode']) ? $chart['value_labels_mode'] : 'auto', 'always'); ?>>Siempre</option>
+                                        <option value="never" <?php selected(isset($chart['value_labels_mode']) ? $chart['value_labels_mode'] : 'auto', 'never'); ?>>Nunca</option>
+                                    </select>
+                                </div>
+                                <div class="nm-form-group">
+                                    <label for="bar_orientation_<?php echo $index; ?>">Orientación</label>
+                                    <select id="bar_orientation_<?php echo $index; ?>" name="charts[<?php echo $index; ?>][bar_orientation]" class="advanced-opt">
+                                        <option value="auto" <?php selected(isset($chart['bar_orientation']) ? $chart['bar_orientation'] : 'auto', 'auto'); ?>>Auto</option>
+                                        <option value="vertical" <?php selected(isset($chart['bar_orientation']) ? $chart['bar_orientation'] : 'auto', 'vertical'); ?>>Vertical</option>
+                                        <option value="horizontal" <?php selected(isset($chart['bar_orientation']) ? $chart['bar_orientation'] : 'auto', 'horizontal'); ?>>Horizontal</option>
+                                    </select>
+                                </div>
+                            </div>
                             <button type="button" class="nm-btn nm-btn-danger remove-chart">
                                 🗑️ Eliminar Gráfico
                             </button>
@@ -434,12 +467,40 @@
                     <option value="line">📈 Líneas</option>
                     <option value="pie">🥧 Circular</option>
                     <option value="doughnut">🍩 Donut</option>
+                    <option value="polarArea">🧭 Polar Area</option>
+                    <option value="radar">🕸️ Radar</option>
                     <option value="mixed">📊📈 Mixto (Barras y Líneas)</option>
                 </select>
             </div>
         </div>
 
         <div class="nm-chart-actions">
+            <div class="nm-advanced-controls">
+                <div class="nm-form-group">
+                    <label>Barras apiladas</label>
+                    <select name="charts[{index}][stacked]" class="advanced-opt">
+                        <option value="auto" selected>Auto</option>
+                        <option value="yes">Sí</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="nm-form-group">
+                    <label>Etiquetas de valores</label>
+                    <select name="charts[{index}][value_labels_mode]" class="advanced-opt">
+                        <option value="auto" selected>Auto</option>
+                        <option value="always">Siempre</option>
+                        <option value="never">Nunca</option>
+                    </select>
+                </div>
+                <div class="nm-form-group">
+                    <label>Orientación</label>
+                    <select name="charts[{index}][bar_orientation]" class="advanced-opt">
+                        <option value="auto" selected>Auto</option>
+                        <option value="vertical">Vertical</option>
+                        <option value="horizontal">Horizontal</option>
+                    </select>
+                </div>
+            </div>
             <button type="button" class="nm-btn nm-btn-danger remove-chart">
                 🗑️ Eliminar Gráfico
             </button>
@@ -574,7 +635,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (chartTypeSelect) {
             chartTypeSelect.addEventListener('change', function() {
                 toggleSecondaryFields(chartBox);
+
+                // Mostrar/ocultar controles avanzados según tipo
+                const adv = chartBox.querySelector('.nm-advanced-controls');
+                const t = chartTypeSelect.value;
+                if (adv) {
+                    adv.style.display = (t === 'bar' || t === 'mixed') ? 'grid' : 'none';
+                }
             });
+            // Estado inicial
+            const advInit = chartBox.querySelector('.nm-advanced-controls');
+            if (advInit) {
+                advInit.style.display = (chartTypeSelect.value === 'bar' || chartTypeSelect.value === 'mixed') ? 'grid' : 'none';
+            }
         }
     });
     

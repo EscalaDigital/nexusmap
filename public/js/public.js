@@ -1565,6 +1565,8 @@ jQuery(document).ready(function ($) {
 
         // Configuración base para las opciones
         const isPieLike = chartConfig.chart_type === 'pie' || chartConfig.chart_type === 'doughnut';
+        const isPolar = chartConfig.chart_type === 'polarArea';
+        const isRadar = chartConfig.chart_type === 'radar';
         const options = {
             responsive: true,
             maintainAspectRatio: false,
@@ -1580,7 +1582,7 @@ jQuery(document).ready(function ($) {
                 },
                 legend: {
                     display: true,
-                    position: isPieLike ? 'right' : 'bottom',
+                    position: (isPieLike || isPolar) ? 'right' : 'bottom',
                     labels: {
                         padding: 16,
                         boxWidth: 12,
@@ -1588,7 +1590,7 @@ jQuery(document).ready(function ($) {
                         // Ocultar entradas con valor 0 en pie/donut
                         filter: function(item, chart) {
                             try {
-                                if (!isPieLike) return true;
+                                if (!(isPieLike || isPolar)) return true;
                                 const v = chart.chart.data.datasets[0].data[item.index] || 0;
                                 return Number(v) > 0;
                             } catch (e) { return true; }
@@ -1597,7 +1599,7 @@ jQuery(document).ready(function ($) {
                             const defaultGen = Chart.defaults.plugins.legend.labels.generateLabels;
                             const labels = defaultGen(chart);
                             try {
-                                if(!isPieLike) return labels;
+                                if(!(isPieLike || isPolar)) return labels;
                                 const ds = chart.data.datasets[0];
                                 const total = (ds.data||[]).reduce((a,b)=>Number(a)+Number(b||0),0) || 1;
                                 return labels.map(l => {
@@ -1614,7 +1616,7 @@ jQuery(document).ready(function ($) {
                         label: function(context) {
                             const raw = context.raw;
                             const label = context.label || '';
-                            if (isPieLike) {
+                            if (isPieLike || isPolar) {
                                 const dataArr = context.dataset.data || [];
                                 const total = dataArr.reduce((a, b) => Number(a) + Number(b), 0);
                                 return `${label}: ${formatNumber(raw)} (${formatPercent(raw, total)})`;
@@ -1629,7 +1631,14 @@ jQuery(document).ready(function ($) {
             },
             animation: { duration: 700, easing: 'easeOutCubic' },
             scales: {
-                y: isPieLike ? undefined : {
+                r: (isPolar || isRadar) ? {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    angleLines: { color: 'rgba(0,0,0,0.06)' },
+                    pointLabels: { color: '#333', font: { size: 11 } },
+                    ticks: { showLabelBackdrop: false, callback: (val) => formatNumber(val) }
+                } : undefined,
+                y: (isPieLike || isPolar || isRadar) ? undefined : {
                     beginAtZero: true,
                     position: 'left',
                     grid: { color: 'rgba(0,0,0,0.06)' },
@@ -1644,7 +1653,7 @@ jQuery(document).ready(function ($) {
                         font: { weight: 'bold' }
                     }
                 },
-                x: isPieLike ? undefined : {
+                x: (isPieLike || isPolar || isRadar) ? undefined : {
                     grid: { display: false },
                     ticks: {
                         autoSkip: true,
@@ -1656,7 +1665,7 @@ jQuery(document).ready(function ($) {
             layout: {
                 padding: {
                     left: 10,
-                    right: isPieLike ? 50 : 10,
+                    right: (isPieLike || isPolar) ? 50 : 10,
                     top: 10,
                     bottom: 10
                 }
@@ -1669,6 +1678,10 @@ jQuery(document).ready(function ($) {
             if(chartConfig.chart_type === 'doughnut'){
                 options.cutout = '55%';
             }
+        } else if (isPolar) {
+            options.aspectRatio = 1.2;
+        } else if (isRadar) {
+            options.aspectRatio = 1.3;
         } else if (chartConfig.chart_type === 'bar') {
             options.aspectRatio = 2;
             if (data.labels.length > 10) {
@@ -1770,12 +1783,79 @@ jQuery(document).ready(function ($) {
             });
         }
 
+        // Ajustes dataset para radar (relleno suave) y polarArea (bordes)
+        if (isRadar) {
+            data.datasets.forEach(ds => {
+                ds.fill = true;
+                if (Array.isArray(ds.backgroundColor)) {
+                    ds.backgroundColor = ds.backgroundColor[0].replace(', 0.7)', ', 0.3)');
+                    ds.borderColor = ds.borderColor[0];
+                } else {
+                    ds.backgroundColor = (ds.backgroundColor || 'rgba(54,162,235,0.7)').replace(', 0.7)', ', 0.3)');
+                }
+                ds.pointRadius = 2;
+                ds.pointHoverRadius = 5;
+            });
+        } else if (isPolar) {
+            data.datasets.forEach(ds => {
+                ds.borderWidth = 1;
+            });
+        }
+
         // Ajustes de borde para pie/doughnut
         if (isPieLike) {
             data.datasets.forEach(ds => {
                 ds.borderWidth = 1;
                 ds.borderColor = Array.isArray(ds.borderColor) ? ds.borderColor : '#fff';
             });
+        }
+
+        // ================================
+        // RESPETAR OPCIONES AVANZADAS
+        // ================================
+        // 1) Orientación de barras (bar/mixed)
+        if ((chartConfig.chart_type === 'bar' || chartConfig.chart_type === 'mixed')) {
+            const orientation = chartConfig.bar_orientation || 'auto';
+            if (orientation === 'horizontal') {
+                options.indexAxis = 'y';
+            } else if (orientation === 'vertical') {
+                options.indexAxis = 'x';
+            } else if (!options.indexAxis && data.labels.length > 10) {
+                options.indexAxis = 'y';
+            }
+        }
+
+        // 2) Barras apiladas
+        if ((chartConfig.chart_type === 'bar' || chartConfig.chart_type === 'mixed')) {
+            const stackedMode = chartConfig.stacked || 'auto';
+            const shouldStack = stackedMode === 'yes' || (stackedMode === 'auto' && data.datasets.filter(d => (!d.type || d.type === 'bar')).length > 1);
+            if (!isPieLike && !isPolar && !isRadar) {
+                options.scales.x = options.scales.x || {};
+                options.scales.y = options.scales.y || {};
+                options.scales.x.stacked = shouldStack;
+                options.scales.y.stacked = shouldStack;
+            }
+            // En mixed, sólo apilar los datasets de barras
+            if (chartConfig.chart_type === 'mixed' && shouldStack) {
+                let stackId = 'nmStack1';
+                data.datasets.forEach(ds => {
+                    if (!ds.type || ds.type === 'bar') {
+                        ds.stack = stackId;
+                    }
+                });
+            }
+        }
+
+        // 3) Etiquetas de valor: forzar siempre/ocultar nunca
+        if (options.plugins && options.plugins.nmValueLabels) {
+            const mode = chartConfig.value_labels_mode || 'auto';
+            if (mode === 'always') {
+                options.plugins.nmValueLabels.maxItems = 1000; // mostrar siempre
+                options.plugins.nmValueLabels.pieMinPercent = 0; // también en porciones pequeñas
+            } else if (mode === 'never') {
+                // Desactivar el plugin para este gráfico
+                options.plugins.nmValueLabels = false;
+            }
         }
 
     // Crear el gráfico y guardar referencia en dataset para exportación futura
