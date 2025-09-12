@@ -23,7 +23,13 @@
                             $is_active = isset($saved_settings[$field_key]['active']) && $saved_settings[$field_key]['active'] === 'on';
                         ?>
                             <tr>
-                                <td><?php echo esc_html($field['label']); ?></td>
+                                <td>
+                                    <?php echo esc_html($field['label']); ?>
+                                    <?php if (!empty($field['is_conditional'])): ?>
+                                        <span style="display:inline-block;margin-left:8px;padding:2px 6px;border-radius:4px;background:#eef6ff;color:#1d4ed8;font-size:11px;">Subcampo condicional</span>
+                                        <div style="color:#6b7280;font-size:11px;">Padre: <?php echo esc_html($field['parent_field'] ?? ''); ?> · Opción: <?php echo esc_html($field['parent_option'] ?? ''); ?></div>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo esc_html($field['type']); ?></td>
                                 <td>
                                     <input type="hidden" name="layers[<?php echo esc_attr($field_key); ?>][active]" value="off">

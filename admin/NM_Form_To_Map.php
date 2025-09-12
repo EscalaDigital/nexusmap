@@ -43,11 +43,36 @@ class NM_Form_To_Map
         $select_fields = array();
         $text_fields = array();
 
-        // Filtrar campos por tipo
+        // Filtrar campos por tipo (e incluir subcampos de selects condicionales)
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
             foreach ($form_data['fields'] as $field) {
                 if (in_array($field['type'], ['select', 'radio', 'checkbox'])) {
                     $select_fields[] = $field;
+                } elseif ($field['type'] === 'conditional-select') {
+                    // Explorar opciones y subcampos condicionales como capas posibles
+                    if (!empty($field['options']) && is_array($field['options'])) {
+                        foreach ($field['options'] as $opt) {
+                            $optId = isset($opt['id']) ? $opt['id'] : (isset($opt['value']) ? $opt['value'] : '');
+                            if (!empty($opt['conditional_fields']) && is_array($opt['conditional_fields'])) {
+                                foreach ($opt['conditional_fields'] as $cfield) {
+                                    if (in_array($cfield['type'], ['select', 'radio', 'checkbox'])) {
+                                        // Preparar entrada similar a un campo normal, con metadatos condicionales
+                                        $cf = array(
+                                            'name'  => $cfield['name'] ?? '',
+                                            'label' => $cfield['label'] ?? ($cfield['name'] ?? ''),
+                                            'type'  => $cfield['type'],
+                                            'options' => $cfield['options'] ?? array(),
+                                            'is_conditional' => true,
+                                            'parent_field' => $field['name'] ?? '',
+                                            'parent_option' => $optId,
+                                            'field_name' => $cfield['name'] ?? ''
+                                        );
+                                        $select_fields[] = $cf;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } elseif (in_array($field['type'], ['text', 'textarea'])) {
                     $text_fields[] = $field;
                 }

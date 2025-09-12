@@ -206,12 +206,55 @@ class NM_Public
 
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
             foreach ($form_data['fields'] as $field) {
+                // Incluir headers y campos sin nombre solo si ayudan al modal (headers no tienen name)
                 if (!empty($field['name'])) {
-                    $form_structure[] = array(
-                        'name' => $field['name'],
-                        'label' => $field['label'],
-                        'type' => $field['type']
+                    $item = array(
+                        'name'  => $field['name'],
+                        'label' => isset($field['label']) ? $field['label'] : $field['name'],
+                        'type'  => isset($field['type']) ? $field['type'] : 'text',
                     );
+
+                    // Añadir select_id si es un select condicional (lo usa el modal)
+                    if (isset($field['type']) && $field['type'] === 'conditional-select' && !empty($field['select_id'])) {
+                        $item['select_id'] = $field['select_id'];
+                    }
+
+                    // Añadir config si es geographic-selector (para mostrar niveles con etiquetas propias)
+                    if (isset($field['type']) && $field['type'] === 'geographic-selector' && !empty($field['config'])) {
+                        $item['config'] = $field['config'];
+                    }
+
+                    $form_structure[] = $item;
+                } else {
+                    // Registrar headers para que el modal pueda crear secciones
+                    if (isset($field['type']) && $field['type'] === 'header') {
+                        $form_structure[] = array(
+                            'name'  => '',
+                            'label' => isset($field['label']) ? $field['label'] : 'Sección',
+                            'type'  => 'header'
+                        );
+                    }
+                }
+
+                // Incluir también subcampos de selects condicionales para resolver labels en leyenda/modal
+                if (isset($field['type']) && $field['type'] === 'conditional-select' && !empty($field['options']) && is_array($field['options'])) {
+                    foreach ($field['options'] as $opt) {
+                        if (!empty($opt['conditional_fields']) && is_array($opt['conditional_fields'])) {
+                            foreach ($opt['conditional_fields'] as $cfield) {
+                                if (!empty($cfield['name'])) {
+                                    $form_structure[] = array(
+                                        'name'  => $cfield['name'],
+                                        'label' => isset($cfield['label']) ? $cfield['label'] : $cfield['name'],
+                                        'type'  => isset($cfield['type']) ? $cfield['type'] : 'text',
+                                        // metadatos útiles (opcionales)
+                                        'is_conditional' => true,
+                                        'parent_field'   => isset($field['name']) ? $field['name'] : '',
+                                        'parent_option'  => isset($opt['id']) ? $opt['id'] : (isset($opt['value']) ? $opt['value'] : '')
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -463,7 +506,7 @@ class NM_Public
                             // Si hay configuración de capas, buscar coincidencias
                             if ($has_layers) {
                                 foreach ($layer_settings as $field_name => $layer_config) {
-                                    $field_key = 'nm_' . $field_name;
+                                    $field_key = 'nm_' . $field_name; // para subcampos condicionales, field_name ya es el nombre del subcampo
 
                                     // Comprobar si existe la propiedad en feature properties
                                     if (isset($feature['properties'][$field_key])) {
@@ -516,12 +559,37 @@ class NM_Public
             }
         }
 
-        // Preparar respuesta con configuración de capas
+        // Preparar respuesta con configuración de capas (añadiendo labels)
         $formatted_layer_settings = array();
+        $form_data_for_labels = $this->model->get_form(0);
         foreach ($layer_settings as $field_name => $config) {
+            $label = isset($config['label']) ? $config['label'] : $field_name;
+            // Intentar encontrar un label más amigable desde el formulario
+            if (isset($form_data_for_labels['fields']) && is_array($form_data_for_labels['fields'])) {
+                foreach ($form_data_for_labels['fields'] as $f) {
+                    if (!empty($f['name']) && $f['name'] === $field_name && !empty($f['label'])) {
+                        $label = $f['label'];
+                        break;
+                    }
+                    // Buscar en subcampos condicionales
+                    if (isset($f['type']) && $f['type'] === 'conditional-select' && !empty($f['options'])) {
+                        foreach ($f['options'] as $opt) {
+                            if (!empty($opt['conditional_fields'])) {
+                                foreach ($opt['conditional_fields'] as $cf) {
+                                    if (!empty($cf['name']) && $cf['name'] === $field_name && !empty($cf['label'])) {
+                                        $label = $cf['label'];
+                                        break 3;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             $formatted_layer_settings[] = array(
                 'field' => $field_name,
-                'label' => isset($config['label']) ? $config['label'] : $field_name,
+                'label' => $label,
                 'type' => $config['type'],
                 'colors' => isset($config['colors']) ? array_combine(
                     array_map('strval', array_keys($config['colors'])),
