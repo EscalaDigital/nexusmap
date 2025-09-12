@@ -915,10 +915,10 @@ jQuery(document).ready(function ($) {
                             feature.geometry.coordinates[1],
                             feature.geometry.coordinates[0]
                         ], {
-                            radius: 5,
-                            fillColor: '#ff0000',
-                            color: "#000",
-                            weight: 1,
+                            radius: 7,
+                            fillColor: '#080cf1ff',
+                            color: "#ffffffff",
+                            weight: 1.5,
                             opacity: 1,
                             fillOpacity: 0.8
                         });
