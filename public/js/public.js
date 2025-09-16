@@ -653,13 +653,43 @@ jQuery(document).ready(function ($) {
                 console.log(`Geometry:`, actualVisibleMarkers[0].feature.geometry);
             }
             
-            // Usar el conteo directo de marcadores filtrados como temporal
-            // hasta que arreglemos getUniqueFeatures
-            const visibleCount = debugVisibleCount;
-            
-            // Debug: intentar getUniqueFeatures para diagnosticar
-            const uniqueVisibleFeatures = getUniqueFeatures(actualVisibleMarkers);
-            console.log(`getUniqueFeatures devolvió: ${uniqueVisibleFeatures.length} elementos`);
+            // Contar puntos únicos basados SOLO en filtros (no por capas/overlays)
+            function featureMatchesGroups(feature, groups){
+                if (!feature || !feature.properties) return false;
+                if (Object.keys(groups).length === 0) return true; // sin filtros = todo
+                for (const gName in groups) {
+                    const group = groups[gName];
+                    let groupMatched = false;
+                    // Campo principal
+                    if (group.mainValues && group.mainValues.size > 0) {
+                        const fieldProp = 'nm_' + gName;
+                        let val = feature.properties[fieldProp];
+                        if (Array.isArray(val)) {
+                            for (const v of val) { if (group.mainValues.has(String(v))) { groupMatched = true; break; } }
+                        } else if (val !== undefined && val !== null) {
+                            if (group.mainValues.has(String(val))) groupMatched = true;
+                        }
+                    }
+                    // Subfiltros
+                    if (!groupMatched && group.subFilters.length) {
+                        for (const sf of group.subFilters) {
+                            let sval = feature.properties[sf.prop];
+                            if (Array.isArray(sval)) {
+                                for (const v of sval) { if (sf.values.has(String(v))) { groupMatched = true; break; } }
+                            } else if (sval !== undefined && sval !== null) {
+                                if (sf.values.has(String(sval))) groupMatched = true;
+                            }
+                            if (groupMatched) break;
+                        }
+                    }
+                    if (!groupMatched) return false;
+                }
+                return true;
+            }
+
+            const uniqueAll = getUniqueFeatures(allMarkers);
+            const filteredUnique = uniqueAll.filter(f => featureMatchesGroups(f, groupStructures));
+            const visibleCount = filteredUnique.length;
             
             // Debug: Mostrar resultado del filtrado
             console.log(`=== RESULTADO FILTRADO ===`);
@@ -676,18 +706,18 @@ jQuery(document).ready(function ($) {
                 pointsCountElement.textContent = visibleCount;
             }
 
-            // Actualizar contador total
+            // Actualizar contador total (features únicas en toda la sesión)
             const totalPointsElement = document.getElementById('nm-total-points');
             if (totalPointsElement) {
-                const totalMarkers = getUniqueFeatures(allMarkers);
-                totalPointsElement.textContent = totalMarkers.length;
+                const totalUnique = getUniqueFeatures(allMarkers);
+                totalPointsElement.textContent = totalUnique.length;
             }
 
             // Si el modal de gráficos está abierto, actualizar los gráficos con los datos filtrados
             const chartsModal = jQuery('#nm-charts-modal');
             if (chartsModal.length && chartsModal.hasClass('active')) {
-                // Extraer las features de los marcadores visibles
-                const features = actualVisibleMarkers.map(m => m.feature).filter(f => f);
+                // Extraer las features de los marcadores visibles (mismo criterio que contador)
+                const features = visibleMarkers.map(m => m.feature).filter(f => f);
                 if (features.length > 0) {
                     processCharts(features);
                 }
@@ -1940,23 +1970,29 @@ jQuery(document).ready(function ($) {
     
      */
     function getUniqueFeatures(markers) {
-        const vistos = new Set();
-        const unicos = [];
+        const seen = new Set();
+        const unique = [];
 
         markers.forEach(m => {
-            const coords = m.feature.geometry?.coordinates;
-            if (!Array.isArray(coords)) return;
-
-
-            const key = coords.join(',');
-
-            if (!vistos.has(key)) {
-                vistos.add(key);
-                unicos.push(m.feature);
+            const f = m && m.feature;
+            if (!f) return;
+            const props = f.properties || {};
+            const entryId = props.entry_id || props.nm_entry_id; // preferir ID de entrada si existe
+            let key = null;
+            if (entryId !== undefined && entryId !== null) {
+                key = 'id:' + String(entryId);
+            } else {
+                const coords = f.geometry && f.geometry.coordinates;
+                if (Array.isArray(coords)) key = 'xy:' + coords.join(',');
+            }
+            if (!key) return;
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(f);
             }
         });
 
-        return unicos;
+        return unique;
     }
 
     // ================================

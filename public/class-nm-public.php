@@ -128,12 +128,31 @@ class NM_Public
                 true
             );
             */
-            // Enqueue functions related to the map
-            wp_enqueue_script('nm-funcionesmaps-js', NM_PLUGIN_URL . 'public/js/funcionesmaps.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), NM_VERSION, true);
-            wp_enqueue_script('nm-public-js', NM_PLUGIN_URL . 'public/js/public.js', array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), NM_VERSION, true);            // AGREGAR ESTA LOCALIZACIÓN PARA EL MAPA
+            // Enqueue functions related to the map (con versión basada en filemtime para evitar caché)
+            $ver_nm_funciones = @filemtime(NM_PLUGIN_DIR . 'public/js/funcionesmaps.js');
+            $ver_nm_public    = @filemtime(NM_PLUGIN_DIR . 'public/js/public.js');
+            if (!$ver_nm_funciones) { $ver_nm_funciones = NM_VERSION; }
+            if (!$ver_nm_public)    { $ver_nm_public    = NM_VERSION; }
+
+            // Asegurar que no quede una versión previa registrada/enqueued
+            wp_dequeue_script('nm-funcionesmaps-js');
+            wp_deregister_script('nm-funcionesmaps-js');
+            wp_dequeue_script('nm-public-js');
+            wp_deregister_script('nm-public-js');
+
+            // Registrar con busting explícito en la URL
+            $src_func = add_query_arg('v', $ver_nm_funciones, NM_PLUGIN_URL . 'public/js/funcionesmaps.js');
+            $src_pub  = add_query_arg('v', $ver_nm_public,    NM_PLUGIN_URL . 'public/js/public.js');
+
+            wp_register_script('nm-funcionesmaps-js', $src_func, array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js'), null, true);
+            wp_register_script('nm-public-js',        $src_pub,  array('jquery', 'nm-leaflet-js', 'leaflet-geocoder-js', 'nm-funcionesmaps-js'), null, true);
+
+            wp_enqueue_script('nm-funcionesmaps-js');
+            wp_enqueue_script('nm-public-js');            // AGREGAR ESTA LOCALIZACIÓN PARA EL MAPA
             wp_localize_script('nm-public-js', 'nmPublic', array(
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce')
+                'ajax_url'  => admin_url('admin-ajax.php'),
+                'nonce'     => wp_create_nonce('nm_public_nonce'),
+                'build_ver' => $ver_nm_public,
             ));
 
             // Clustering: cargar assets sólo si está habilitado
