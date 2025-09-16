@@ -483,10 +483,10 @@ function initAudioGuideUI(){
  * y el nombre de la capa WMS que desea agregar
  */
 window.showAddWmsForm = function() {
-    console.log('showAddWmsForm called'); // Debug log
+    
     
     if (jQuery('#nm-wms-form').length === 0) {
-        console.log('Creating new WMS form'); // Debug log
+        
         var $wmsForm = jQuery('<div>', { id: 'nm-wms-form', class: 'nm-wms-modal' }); // Cambiar clase para evitar conflictos
         var $wmsFormContent = jQuery('<div>', { class: 'nm-modal-content' });
         
@@ -687,24 +687,9 @@ window.showAddWmsForm = function() {
         });
     }
 
-    console.log('Showing WMS form'); // Debug log
     var $wmsForm = jQuery('#nm-wms-form');
     
-    // Debug adicional
-    console.log('WMS form found:', $wmsForm.length > 0);
-    console.log('WMS form initial display:', $wmsForm.css('display'));
-    console.log('WMS form initial visibility:', $wmsForm.css('visibility'));
-    console.log('WMS form z-index:', $wmsForm.css('z-index'));
-    console.log('WMS form position:', $wmsForm.css('position'));
-    console.log('WMS form width:', $wmsForm.css('width'));
-    console.log('WMS form height:', $wmsForm.css('height'));
     
-    // Verificar si hay conflictos de estilo
-    var computedStyle = window.getComputedStyle($wmsForm[0]);
-    console.log('Computed display:', computedStyle.display);
-    console.log('Computed visibility:', computedStyle.visibility);
-    console.log('Computed z-index:', computedStyle.zIndex);
-    console.log('Computed position:', computedStyle.position);
     
     // Forzar la visibilidad con estilos más agresivos
     $wmsForm.css({
@@ -731,20 +716,7 @@ window.showAddWmsForm = function() {
     $wmsForm.show();
     $wmsForm.attr('style', $wmsForm.attr('style') + '; display: flex !important;');
     
-    // Verificar después del cambio
-    console.log('WMS form after show - display:', $wmsForm.css('display'));
-    console.log('WMS form after show - visibility:', $wmsForm.css('visibility'));
-    console.log('WMS form is visible:', $wmsForm.is(':visible'));
-    console.log('WMS form offset width:', $wmsForm[0].offsetWidth);
-    console.log('WMS form offset height:', $wmsForm[0].offsetHeight);
     
-    // También verificar si hay elementos padre que puedan estar ocultando el modal
-    console.log('Body overflow:', jQuery('body').css('overflow'));
-    console.log('Html overflow:', jQuery('html').css('overflow'));
-    
-    // Verificar si el elemento está realmente en el DOM
-    console.log('Element is in DOM:', jQuery.contains(document, $wmsForm[0]));
-    console.log('Element parent:', $wmsForm.parent().length);
     
     // Intentar traer el elemento al frente de forma agresiva
     $wmsForm.appendTo('body');
@@ -753,7 +725,7 @@ window.showAddWmsForm = function() {
     // Si después de todo esto el modal sigue sin tener dimensiones, usar el respaldo
     setTimeout(function() {
         if ($wmsForm[0].offsetWidth === 0 || $wmsForm[0].offsetHeight === 0) {
-            console.log('Modal principal no visible, usando función de respaldo');
+            
             $wmsForm.remove(); // Limpiar el modal problemático
             showSimpleWmsForm(); // Llamar función de respaldo
         }
@@ -930,7 +902,7 @@ window.showSimpleWmsForm = function() {
         }
     });
     
-    console.log('Simple WMS form created and should be visible');
+    
 };
 
 /**

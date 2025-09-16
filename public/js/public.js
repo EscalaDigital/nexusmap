@@ -149,15 +149,12 @@ jQuery(document).ready(function ($) {
             });
             $addWmsButton.on('click', function (e) {
                 e.stopPropagation(); // Evita que el evento se propague al mapa
-                console.log('Add WMS button clicked'); // Debug log
                 if (typeof window.showAddWmsForm === 'function') {
-                    console.log('Calling showAddWmsForm function'); // Debug log
                     window.showAddWmsForm();
                     
                     // Respaldo: si después de 500ms no hay modal visible, usar función simple
                     setTimeout(function() {
                         if (jQuery('#nm-wms-form:visible').length === 0 && jQuery('#nm-wms-form-simple:visible').length === 0) {
-                            console.log('No modal visible, trying simple form'); // Debug log
                             if (typeof window.showSimpleWmsForm === 'function') {
                                 window.showSimpleWmsForm();
                             } else {
@@ -394,8 +391,7 @@ jQuery(document).ready(function ($) {
                 const field = $button.data('field');
                 const value = String($button.data('value')); // Convertir siempre a string
 
-                console.log(`=== FILTRO CLICKEADO ===`);
-                console.log(`Campo: ${field}, Valor: ${value}`);
+                
 
                 $button.toggleClass('active');
 
@@ -405,16 +401,15 @@ jQuery(document).ready(function ($) {
 
                 if ($button.hasClass('active')) {
                     activeFilters[field].add(value);
-                    console.log(`Filtro agregado: ${field} = ${value}`);
+                    
                 } else {
                     activeFilters[field].delete(value);
                     if (activeFilters[field].size === 0) {
                         delete activeFilters[field];
                     }
-                    console.log(`Filtro removido: ${field} = ${value}`);
+                    
                 }
-
-                console.log('Filtros activos actuales:', activeFilters);
+                
                 
                 updateVisiblePoints(activeFilters);
                 updateActiveFiltersDisplay(activeFilters);
@@ -509,16 +504,11 @@ jQuery(document).ready(function ($) {
             // Agregar el contenedor de filtros al contenedor de controles
             $topControls.append($filterContainer);
             
-            // Debug: Verificar que los filtros se cargaron correctamente
-            console.log('=== FILTROS CARGADOS ===');
-            console.log('Cantidad de filtros:', nmMapData.filter_settings ? nmMapData.filter_settings.length : 0);
-            console.log('Configuración de filtros:', nmMapData.filter_settings);
             
             // Llamar a updateFilterCounts después de cargar los puntos
             setTimeout(() => {
                 if (typeof updateFilterCounts === 'function') {
                     updateFilterCounts();
-                    console.log('Conteos de filtros actualizados');
                 }
             }, 1000);
         }
@@ -646,12 +636,7 @@ jQuery(document).ready(function ($) {
                 }
             });
 
-            // Debug de marcadores visibles antes de getUniqueFeatures
-            if (actualVisibleMarkers.length > 0) {
-                console.log(`Primer marcador visible:`, actualVisibleMarkers[0]);
-                console.log(`Estructura del feature:`, actualVisibleMarkers[0].feature);
-                console.log(`Geometry:`, actualVisibleMarkers[0].feature.geometry);
-            }
+            
             
             // Contar puntos únicos basados SOLO en filtros (no por capas/overlays)
             function featureMatchesGroups(feature, groups){
@@ -691,15 +676,7 @@ jQuery(document).ready(function ($) {
             const filteredUnique = uniqueAll.filter(f => featureMatchesGroups(f, groupStructures));
             const visibleCount = filteredUnique.length;
             
-            // Debug: Mostrar resultado del filtrado
-            console.log(`=== RESULTADO FILTRADO ===`);
-            console.log(`Total marcadores procesados: ${debugTotalCount}`);
-            console.log(`Marcadores que pasaron el filtro: ${debugVisibleCount}`);
-            console.log(`Marcadores únicos visibles: ${visibleCount}`);
-            console.log(`Filtros activos:`, activeFilters);
-            if (debugTotalCount === 1 && actualVisibleMarkers.length > 0) {
-                console.log(`Propiedades del primer marcador visible:`, actualVisibleMarkers[0].feature.properties);
-            }
+            
 
             const pointsCountElement = document.getElementById('nm-points-count');
             if (pointsCountElement) {
@@ -1204,7 +1181,6 @@ jQuery(document).ready(function ($) {
             }
         }
 
-    console.log('NM Charts: rendering', nmMapData.chart_settings.length, 'charts');
     nmMapData.chart_settings.forEach((chartConfig, index) => {
             const canvasWrapper = document.createElement('div');
             canvasWrapper.style.height = '100%';

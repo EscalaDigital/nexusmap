@@ -9,11 +9,11 @@ let leafletLoaded = false;
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar si estamos en el contexto correcto (frontend con entradas)
     if (!document.querySelector('.nm-entry-card') && !document.querySelector('.nm-entries-grid')) {
-        console.log('NexusMap: No se encontraron entradas, saltando inicialización del modal');
+        
         return;
     }
     
-    console.log('NexusMap: Inicializando modal de entradas...');
+    
     
     // Crear el HTML del modal y añadirlo al DOM
     createModalHTML();
@@ -135,9 +135,9 @@ function openEntryModal(entryIndex) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Respuesta AJAX:', data); // Debug
+        
         if (data.success) {
-            console.log('Datos de la entrada:', data.data); // Debug
+            
             displayEntryDetails(data.data);
         } else {
             console.error('Error en la respuesta:', data.data); // Debug
@@ -378,7 +378,7 @@ function closeEntryModal() {
         if (modalMap) {
             try {
                 modalMap.remove();
-                console.log('Mapa limpiado correctamente');
+                
             } catch (error) {
                 console.warn('Error limpiando el mapa:', error);
             }
@@ -397,7 +397,7 @@ function closeEntryModal() {
             modalData.innerHTML = '<div class="nm-modal-loading">Cargando información...</div>';
         }
         
-        console.log('Modal cerrado y limpiado');
+        
     }, 300);
 }
 
@@ -412,7 +412,7 @@ function capitalizeFirst(str) {
  * Inicializar el mapa en el modal
  */
 async function initModalMap(entryData, mapContainer) {
-    console.log('Inicializando mapa con datos:', entryData); // Debug
+    
     
     // Mostrar indicador de carga mejorado
     mapContainer.innerHTML = `
@@ -440,7 +440,7 @@ async function initModalMap(entryData, mapContainer) {
     try {
         // Verificar si Leaflet está disponible, si no, cargarlo
         if (!leafletLoaded && typeof L === 'undefined') {
-            console.log('Cargando Leaflet dinámicamente...');
+            
             
             // Actualizar indicador de carga
             mapContainer.innerHTML = `
@@ -495,7 +495,7 @@ async function initModalMap(entryData, mapContainer) {
         
         // Procesar datos geográficos si existen
         if (entryData.map_data || entryData.geometry || entryData.coordinates) {
-            console.log('Procesando datos geográficos...'); // Debug
+            
             addGeographicData(modalMap, entryData);
         } else {
             console.warn('No se encontraron datos geográficos en:', entryData); // Debug
@@ -656,14 +656,14 @@ function showAlternativeMapContent(mapContainer, entryData) {
  * Añadir datos geográficos al mapa
  */
 function addGeographicData(map, entryData) {
-    console.log('Añadiendo datos geográficos:', entryData); // Debug
+    
     let bounds = L.latLngBounds();
     let hasData = false;
     
     try {
         // Función para procesar geometría
         function processGeometry(geometry) {
-            console.log('Procesando geometría:', geometry); // Debug
+            
             if (!geometry || !geometry.type) {
                 console.warn('Geometría inválida:', geometry);
                 return;
@@ -673,12 +673,12 @@ function addGeographicData(map, entryData) {
             
             if (type === 'point') {
                 const latLng = [geometry.coordinates[1], geometry.coordinates[0]];
-                console.log('Añadiendo punto:', latLng); // Debug
+                
                 L.marker(latLng).addTo(map);
                 bounds.extend(latLng);
                 hasData = true;
             } else if (type === 'polygon') {
-                console.log('Añadiendo polígono:', geometry.coordinates); // Debug
+                
                 const latLngs = geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
                 L.polygon(latLngs, {
                     color: '#667eea',
@@ -688,7 +688,7 @@ function addGeographicData(map, entryData) {
                 latLngs.forEach(latLng => bounds.extend(latLng));
                 hasData = true;
             } else if (type === 'multipolygon') {
-                console.log('Añadiendo multipolígono:', geometry.coordinates); // Debug
+                
                 geometry.coordinates.forEach(polygon => {
                     const latLngs = polygon[0].map(coord => [coord[1], coord[0]]);
                     L.polygon(latLngs, {
@@ -700,7 +700,7 @@ function addGeographicData(map, entryData) {
                 });
                 hasData = true;
             } else if (type === 'geometrycollection') {
-                console.log('Procesando colección de geometrías:', geometry.geometries); // Debug
+                
                 geometry.geometries.forEach(geom => processGeometry(geom));
             } else {
                 console.warn('Tipo de geometría no soportado:', type);
@@ -709,16 +709,16 @@ function addGeographicData(map, entryData) {
         
         // Procesar map_data si existe (formato JSON string)
         if (entryData.map_data) {
-            console.log('Procesando map_data:', entryData.map_data); // Debug
+            
             try {
                 const decodedData = decodeEscapedJsonString(entryData.map_data);
-                console.log('Datos decodificados:', decodedData); // Debug
+                
                 const geoData = JSON.parse(decodedData);
-                console.log('GeoJSON parseado:', geoData); // Debug
+                
                 
                 if (Array.isArray(geoData)) {
                     geoData.forEach((feature, index) => {
-                        console.log(`Procesando feature ${index}:`, feature); // Debug
+                        
                         if (feature.geometry) {
                             processGeometry(feature.geometry);
                         }
@@ -733,13 +733,13 @@ function addGeographicData(map, entryData) {
         
         // Procesar geometry directo si existe
         if (entryData.geometry) {
-            console.log('Procesando geometry directo:', entryData.geometry); // Debug
+            
             processGeometry(entryData.geometry);
         }
         
         // Procesar coordinates simples si existen
         if (entryData.coordinates && Array.isArray(entryData.coordinates)) {
-            console.log('Procesando coordinates simples:', entryData.coordinates); // Debug
+            
             const latLng = [entryData.coordinates[1], entryData.coordinates[0]];
             L.marker(latLng).addTo(map);
             bounds.extend(latLng);
@@ -748,10 +748,10 @@ function addGeographicData(map, entryData) {
         
         // Buscar en custom_fields por si hay datos geográficos allí
         if (entryData.custom_fields) {
-            console.log('Buscando datos geográficos en custom_fields:', entryData.custom_fields); // Debug
+            
             for (const [key, value] of Object.entries(entryData.custom_fields)) {
                 if (key === 'map_data' && value) {
-                    console.log('Encontrado map_data en custom_fields:', value); // Debug
+                    
                     try {
                         const decodedData = decodeEscapedJsonString(value);
                         const geoData = JSON.parse(decodedData);
@@ -774,7 +774,7 @@ function addGeographicData(map, entryData) {
         
         // Ajustar vista del mapa a los datos
         if (hasData && bounds.isValid()) {
-            console.log('Ajustando vista del mapa a bounds:', bounds); // Debug
+            
             map.fitBounds(bounds, { padding: [20, 20] });
         } else {
             console.warn('No se encontraron datos geográficos válidos para mostrar');
@@ -802,15 +802,15 @@ function decodeEscapedJsonString(escapedString) {
 async function checkAndLoadLeaflet() {
     if (typeof L !== 'undefined') {
         leafletLoaded = true;
-        console.log('Leaflet ya está cargado');
+        
         return Promise.resolve();
     }
     
-    console.log('Leaflet no está disponible, intentando cargar...');
+    
     try {
         await loadLeaflet();
         leafletLoaded = true;
-        console.log('Leaflet cargado exitosamente');
+        
         return Promise.resolve();
     } catch (error) {
         console.error('Error al cargar Leaflet:', error);
@@ -826,7 +826,7 @@ function loadLeaflet() {
     return new Promise((resolve, reject) => {
         // Verificar si ya se está cargando
         if (document.querySelector('script[src*="leaflet"]')) {
-            console.log('Leaflet ya se está cargando...');
+            
             // Esperar un momento y verificar de nuevo
             setTimeout(() => {
                 if (typeof L !== 'undefined') {
@@ -865,7 +865,7 @@ function loadLeaflet() {
         cssLink.crossOrigin = '';
         
         cssLink.onload = function() {
-            console.log('CSS de Leaflet cargado');
+            
             cssLoaded = true;
             checkComplete();
         };
@@ -883,7 +883,7 @@ function loadLeaflet() {
         script.crossOrigin = '';
         
         script.onload = function() {
-            console.log('JavaScript de Leaflet cargado');
+            
             jsLoaded = true;
             // Pequeña espera para asegurar que L esté disponible
             setTimeout(() => {
@@ -922,41 +922,30 @@ function loadLeaflet() {
  * Ejecute "window.nmModalDiagnostic()" en la consola para obtener información del estado
  */
 window.nmModalDiagnostic = function() {
-    console.log('=== DIAGNÓSTICO DEL MODAL NEXUSMAP ===');
-    console.log('1. Leaflet disponible:', typeof L !== 'undefined');
-    console.log('2. Leaflet cargado:', leafletLoaded);
-    console.log('3. Modal presente:', !!document.getElementById('nm-entries-modal'));
-    console.log('4. AJAX disponible:', typeof nm_ajax !== 'undefined');
-    console.log('5. Tarjetas encontradas:', document.querySelectorAll('.nm-entry-card').length);
+    
     
     if (typeof nm_ajax !== 'undefined') {
-        console.log('6. AJAX URL:', nm_ajax.ajax_url);
-        console.log('7. AJAX nonce:', nm_ajax.nonce);
+        
     }
     
     if (modalMap) {
-        console.log('8. Mapa actual activo:', true);
-        console.log('9. Centro del mapa:', modalMap.getCenter());
-        console.log('10. Zoom del mapa:', modalMap.getZoom());
+        
     } else {
-        console.log('8. Mapa actual activo:', false);
+        
     }
     
     // Verificar si hay errores en la consola
-    console.log('11. Para probar la carga de Leaflet, ejecute: window.nmTestLeaflet()');
-    console.log('12. Para abrir modal de prueba, ejecute: window.nmTestModal(0)');
-    console.log('==========================================');
+    
 };
 
 /**
  * FUNCIÓN DE PRUEBA - Cargar Leaflet manualmente
  */
 window.nmTestLeaflet = function() {
-    console.log('Probando carga de Leaflet...');
+    
     loadLeaflet()
         .then(() => {
-            console.log('✅ Leaflet cargado exitosamente');
-            console.log('Versión de Leaflet:', L.version);
+            
         })
         .catch(error => {
             console.error('❌ Error cargando Leaflet:', error);
@@ -967,7 +956,7 @@ window.nmTestLeaflet = function() {
  * FUNCIÓN DE PRUEBA - Abrir modal con datos de prueba
  */
 window.nmTestModal = function(entryIndex = 0) {
-    console.log('Abriendo modal de prueba...');
+    
     
     if (!document.getElementById('nm-entries-modal')) {
         console.error('❌ Modal no encontrado en el DOM');
@@ -992,15 +981,7 @@ window.nmTestModal = function(entryIndex = 0) {
  * FUNCIÓN DE UTILIDAD - Información del entorno
  */
 window.nmEnvironmentInfo = function() {
-    console.log('=== INFORMACIÓN DEL ENTORNO ===');
-    console.log('Navegador:', navigator.userAgent);
-    console.log('Viewport:', window.innerWidth + 'x' + window.innerHeight);
-    console.log('Protocolo:', window.location.protocol);
-    console.log('Dominio:', window.location.hostname);
-    console.log('Scripts Leaflet en DOM:', document.querySelectorAll('script[src*="leaflet"]').length);
-    console.log('CSS Leaflet en DOM:', document.querySelectorAll('link[href*="leaflet"]').length);
-    console.log('Conexión online:', navigator.onLine);
-    console.log('===============================');
+    
 };
 
-console.log('🗺️ NexusMap Modal cargado. Ejecute window.nmModalDiagnostic() para diagnóstico completo.');
+ 

@@ -40,20 +40,18 @@
         const $selectors = $('.nm-geographic-selector');
         
         if ($selectors.length === 0) {
-            console.log('No geographic selectors found on page');
             return;
         }
         
-        console.log(`Found ${$selectors.length} geographic selector(s)`);
         
         $selectors.each(function() {
             const $container = $(this);
-            console.log('Processing selector with ID:', $container.attr('id'));
+            
             
             const config = getFieldConfig($container);
             
             if (config) {
-                console.log('Valid config found:', config);
+                
                 setupCascadingSelects($container, config);
             } else {
                 console.error('No valid config found for geographic selector', $container.attr('id'));
@@ -69,7 +67,7 @@
             if (!configData) {
                 const configId = $container.data('config-id');
                 if (configId && window.nmGeoConfigs && window.nmGeoConfigs[configId]) {
-                    console.log('Using fallback config for', configId);
+                    
                     return window.nmGeoConfigs[configId];
                 }
                 
@@ -127,7 +125,7 @@
                     // Intentar usar la configuración alternativa
                     const configId = $container.data('config-id');
                     if (configId && window.nmGeoConfigs && window.nmGeoConfigs[configId]) {
-                        console.log('Using fallback config for', configId);
+                        
                         return window.nmGeoConfigs[configId];
                     }
                     
@@ -146,7 +144,7 @@
             // Intentar usar la configuración alternativa como último recurso
             const configId = $container.data('config-id');
             if (configId && window.nmGeoConfigs && window.nmGeoConfigs[configId]) {
-                console.log('Using fallback config after error for', configId);
+                
                 return window.nmGeoConfigs[configId];
             }
             
