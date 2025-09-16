@@ -532,11 +532,13 @@ class NM_Public
                                                 ? $feature['properties'][$field_key][0]
                                                 : $feature['properties'][$field_key];
 
-                                            // Convertir índices numéricos a strings para la comparación
-                                            $colors = array_combine(
-                                                array_map('strval', array_keys($layer_config['colors'])),
-                                                $layer_config['colors']
-                                            );
+                                            // Normalizar claves a string para comparación; UI ahora guarda por value
+                                            $colors = array();
+                                            if (isset($layer_config['colors']) && is_array($layer_config['colors'])) {
+                                                foreach ($layer_config['colors'] as $k => $c) {
+                                                    $colors[(string)$k] = $c;
+                                                }
+                                            }
 
                                             if (isset($colors[$value])) {
                                                 $feature['properties']['layers'][] = array(

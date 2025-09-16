@@ -42,16 +42,17 @@
                                     <?php if (isset($field['options']) && is_array($field['options'])): ?>
                                         <?php foreach ($field['options'] as $index => $option): ?>
                                             <?php
-                                            $label = is_array($option) ? $option['label'] : $option;
-                                            $value = is_array($option) ? $option['value'] : $index;
+                                            $label = is_array($option) ? ($option['label'] ?? $option['value'] ?? $option) : $option;
+                                            $value = is_array($option) ? ($option['value'] ?? $label) : (is_string($option) ? $option : $index);
+                                            // Mantener compatibilidad: si ya existía por label, úsala; si no, por value
                                             $saved_color = isset($saved_settings[$field_key]['colors'][$label]) 
                                                 ? $saved_settings[$field_key]['colors'][$label] 
-                                                : '#' . substr(md5($value), 0, 6);
+                                                : (isset($saved_settings[$field_key]['colors'][$value]) ? $saved_settings[$field_key]['colors'][$value] : '#' . substr(md5($value), 0, 6));
                                             ?>
                                             <div class="color-row">
                                                 <input type="hidden" 
                                                        name="layers[<?php echo esc_attr($field_key); ?>][labels][]" 
-                                                       value="<?php echo esc_attr($label); ?>">
+                                                       value="<?php echo esc_attr($value); ?>">
                                                 <label>
                                                     <?php echo esc_html($label); ?>:
                                                     <input type="color"

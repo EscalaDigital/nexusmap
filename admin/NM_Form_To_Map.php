@@ -49,6 +49,14 @@ class NM_Form_To_Map
                 if (in_array($field['type'], ['select', 'radio', 'checkbox'])) {
                     $select_fields[] = $field;
                 } elseif ($field['type'] === 'conditional-select') {
+                    // Añadir también el propio select condicional como capa posible
+                    // Sus opciones vienen con estructura {id, value}
+                    $parentField = $field;
+                    // Asegurar estructura mínima
+                    $parentField['label'] = isset($parentField['label']) ? $parentField['label'] : ($parentField['name'] ?? '');
+                    $parentField['type'] = 'select';
+                    $select_fields[] = $parentField;
+
                     // Explorar opciones y subcampos condicionales como capas posibles
                     if (!empty($field['options']) && is_array($field['options'])) {
                         foreach ($field['options'] as $opt) {
