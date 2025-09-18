@@ -191,7 +191,58 @@ function showModal(properties) {
         return `<p class="nm-modal-field ${extraClass}">
                     <strong>${cleanedLabel}:</strong> ${cleanedValue}
                 </p>`;
-    };    /* ----------  Recorremos la estructura del formulario ---------- */
+    };
+
+    // Detectar el título y su clave de propiedad para no duplicarlo después
+    let selectedTitleKey = null; // ejemplo: "nm_denom..."
+    let titleHtml = '';
+    (function detectTitle(){
+        const getProp = (field) => {
+            const k = 'nm_' + field.name;
+            return Object.prototype.hasOwnProperty.call(properties, k) ? properties[k] : '';
+        };
+        const pick = (key, rawVal) => {
+            const v = cleanValue(rawVal);
+            const has = typeof v === 'string' ? v.trim() !== '' : !!v;
+            if (has) {
+                selectedTitleKey = key;
+                titleHtml = `<h2 class="nm-modal-title">${v}</h2>`;
+                return true;
+            }
+            return false;
+        };
+
+        // 1) Campo marcado explícitamente como título
+        if (nmFormStructure && Array.isArray(nmFormStructure.fields)) {
+            const flagged = nmFormStructure.fields.find(f => f.type === 'text' && (f.is_title === 1 || f.is_title === '1'));
+            if (flagged) {
+                const key = 'nm_' + flagged.name;
+                if (pick(key, getProp(flagged))) return;
+            }
+
+            // 2) Heurística por label/nombre: título, denominación, nombre
+            const titleRegex = /(t[íi]tulo|titulo|denominaci[óo]n|nombre)/i;
+            const byLabel = nmFormStructure.fields.find(f => f.type === 'text' && (titleRegex.test(f.label || '') || titleRegex.test(f.name || '')) && (cleanValue(getProp(f)) || '').toString().trim() !== '');
+            if (byLabel) {
+                const key = 'nm_' + byLabel.name;
+                if (pick(key, getProp(byLabel))) return;
+            }
+
+            // 3) Primer campo de texto con valor
+            const firstText = nmFormStructure.fields.find(f => f.type === 'text' && (cleanValue(getProp(f)) || '').toString().trim() !== '');
+            if (firstText) {
+                const key = 'nm_' + firstText.name;
+                if (pick(key, getProp(firstText))) return;
+            }
+        }
+
+        // 4) Último recurso: inspección directa de propiedades
+        const entries = Object.entries(properties || {}).filter(([k]) => /^nm_/i.test(k));
+        const heuristic = entries.find(([k, v]) => /(denominaci[óo]n|titulo|t[íi]tulo|nombre)/i.test(k) && (cleanValue(v) || '').toString().trim() !== '');
+        if (heuristic) pick(heuristic[0], heuristic[1]);
+    })();
+
+    /* ----------  Recorremos la estructura del formulario ---------- */
 
     let currentSection = null;
     const sectionContent = {};     // { "Nombre sección": [html, html...] }
@@ -251,11 +302,12 @@ function showModal(properties) {
                 return;
             }
 
-            // Omitir el campo marcado como título para no duplicarlo
-            if ((field.type === 'text') && (field.is_title === 1 || field.is_title === '1')) {
+            const key = 'nm_' + field.name;
+            // Omitir el campo que fue seleccionado como título (explícito o por fallback)
+            if (selectedTitleKey && key === selectedTitleKey) {
                 return;
             }
-            const key = 'nm_' + field.name;
+            
             if (!properties.hasOwnProperty(key)) return;  // no se envió valor
 
             const value = properties[key];
@@ -333,6 +385,8 @@ function showModal(properties) {
         for (const [key, value] of Object.entries(properties)) {
             if (!key.startsWith('nm_')) continue;
             if (['layers', 'has_layer', 'text_layers', 'entry_id'].includes(key)) continue;
+            // No duplicar el campo ya usado como título
+            if (selectedTitleKey && key === selectedTitleKey) continue;
             
             // Filtrar nm_conditional_groups si está vacío, es {} o []
             if (key === 'nm_conditional_groups' && (value === '' || value === '{}' || value === '[]')) continue;
@@ -348,22 +402,6 @@ function showModal(properties) {
     const isAudioGuide = !!currentThemeHref; // Theme 3 activo
 
     let modalHtml = '<div class="nm-modal-content">';
-
-    // Detectar campo título designado
-    let titleHtml = '';
-    if (nmFormStructure && Array.isArray(nmFormStructure.fields)) {
-        const titleField = nmFormStructure.fields.find(f => f.type === 'text' && (f.is_title === 1 || f.is_title === '1'));
-        if (titleField) {
-            const key = 'nm_' + titleField.name;
-            if (properties && Object.prototype.hasOwnProperty.call(properties, key)) {
-                const titleValue = properties[key];
-                const cleanedTitle = cleanValue(titleValue);
-                if (cleanedTitle) {
-                    titleHtml = `<h2 class="nm-modal-title">${cleanedTitle}</h2>`;
-                }
-            }
-        }
-    }
 
     if(isMobile && isAudioGuide){
         // Recopilar imágenes y primer audio
