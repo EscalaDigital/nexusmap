@@ -95,6 +95,16 @@ jQuery(document).ready(function ($) {
 
     // Make form fields sortable
     jQuery('.nm-form-droppable').sortable();
+    
+        // Enforce only one title per form: when checking one, uncheck others
+        jQuery(document).on('change', '.field-title-toggle', function(){
+            const $this = jQuery(this);
+            if ($this.is(':checked')) {
+                const $form = $this.closest('.nm-form-droppable');
+                // Uncheck all other title toggles in the same form
+                $form.find('.field-title-toggle').not($this).prop('checked', false);
+            }
+        });
 
     // Remove Field
     jQuery(document).on('click', '.nm-remove-field', function () {
@@ -458,6 +468,7 @@ function saveForm(formSelector, formType) {
                           $condField.find('.field-option').each(function () {
                               const optVal = jQuery(this).val();
                               if (optVal) condOptions.push(optVal);
+                                is_title: ($field.data('type') === 'text' && $field.find('.field-title-toggle').is(':checked')) ? 1 : 0
                           });
                           if (condOptions.length) condFieldData.options = condOptions;
                       }
@@ -495,7 +506,8 @@ function saveForm(formSelector, formType) {
                 type: fieldType, 
                 label: fieldLabel || 'Campo sin título', 
                 name: fieldName || generateUniqueFieldName('campo_generico'),
-                restricted: $field.find('.field-restricted-toggle').is(':checked') ? 1 : 0
+                restricted: $field.find('.field-restricted-toggle').is(':checked') ? 1 : 0,
+                is_title: ($field.data('type') === 'text' && $field.find('.field-title-toggle').is(':checked')) ? 1 : 0
             };
             
             if (fieldOptions.length) fieldData.options = fieldOptions;            // Procesamiento especial para geographic-selector
@@ -548,6 +560,18 @@ function saveForm(formSelector, formType) {
         alert('No hay campos para guardar en el formulario.');
         return;
     }
+        // Asegurar unicidad de título: mantener solo el primero marcado
+        let titleFound = false;
+        for (let i = 0; i < formFields.length; i++) {
+            const f = formFields[i];
+            if (f && f.type === 'text' && f.is_title) {
+                if (!titleFound) {
+                    titleFound = true;
+                } else {
+                    f.is_title = 0;
+                }
+            }
+        }
     
     // Validar que todos los campos tengan propiedades básicas
     for (let i = 0; i < formFields.length; i++) {

@@ -231,6 +231,7 @@ class NM_Public
                         'name'  => $field['name'],
                         'label' => isset($field['label']) ? $field['label'] : $field['name'],
                         'type'  => isset($field['type']) ? $field['type'] : 'text',
+                        'is_title' => isset($field['is_title']) && $field['is_title'] ? 1 : 0,
                     );
 
                     // Añadir select_id si es un select condicional (lo usa el modal)

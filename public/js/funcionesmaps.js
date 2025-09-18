@@ -251,6 +251,10 @@ function showModal(properties) {
                 return;
             }
 
+            // Omitir el campo marcado como título para no duplicarlo
+            if ((field.type === 'text') && (field.is_title === 1 || field.is_title === '1')) {
+                return;
+            }
             const key = 'nm_' + field.name;
             if (!properties.hasOwnProperty(key)) return;  // no se envió valor
 
@@ -345,6 +349,22 @@ function showModal(properties) {
 
     let modalHtml = '<div class="nm-modal-content">';
 
+    // Detectar campo título designado
+    let titleHtml = '';
+    if (nmFormStructure && Array.isArray(nmFormStructure.fields)) {
+        const titleField = nmFormStructure.fields.find(f => f.type === 'text' && (f.is_title === 1 || f.is_title === '1'));
+        if (titleField) {
+            const key = 'nm_' + titleField.name;
+            if (properties && Object.prototype.hasOwnProperty.call(properties, key)) {
+                const titleValue = properties[key];
+                const cleanedTitle = cleanValue(titleValue);
+                if (cleanedTitle) {
+                    titleHtml = `<h2 class="nm-modal-title">${cleanedTitle}</h2>`;
+                }
+            }
+        }
+    }
+
     if(isMobile && isAudioGuide){
         // Recopilar imágenes y primer audio
         const imageHtmlMatches = [];
@@ -357,8 +377,9 @@ function showModal(properties) {
         });
         const heroSlides = imageHtmlMatches.length ? imageHtmlMatches.map(img=>`<div class="nm-audio-hero-slide">${img}</div>`).join('') : `<div class="nm-audio-hero-slide" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">Sin imágenes</div>`;
         const audioTag = audioMatches.length ? audioMatches[0] : '';
-        // Timeline y play
+        // Título primero, luego hero con timeline y play
         modalHtml += `
+            ${titleHtml}
             <div class="nm-audio-hero">
                 <div class="nm-audio-hero-slider" data-index="0">${heroSlides}</div>
                 <div class="nm-audio-hero-nav">
@@ -390,6 +411,10 @@ function showModal(properties) {
         });
         modalHtml += '</div>'; // wrapper
     } else {
+        // Desktop: título al inicio
+        if (titleHtml) {
+            modalHtml += titleHtml;
+        }
         Object.entries(sectionContent).forEach(([secName, items]) => {
             if (!items.length) return;
             modalHtml += `
