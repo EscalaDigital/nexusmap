@@ -81,6 +81,32 @@
             saveConfiguration();
         });
 
+            // Toggle de nivel para mostrar u ocultar selector de valor fijo
+            $(document).on('change', '.nm-level-enabled', function() {
+                const $levelConfig = $(this).closest('.nm-level-config');
+                const level = $(this).val();
+                const $fixedWrapper = $levelConfig.find('.nm-fixed-parent');
+                if ($(this).is(':checked')) {
+                    $fixedWrapper.hide();
+                } else {
+                    $fixedWrapper.show();
+                    // Intentar precargar valores si aún no se han cargado
+                    const $select = $fixedWrapper.find('.nm-fixed-value-select');
+                    if ($select.children('option').length <= 1) {
+                        loadFixedLevelValues($levelConfig.closest('.nm-geo-config-panel'), level, $select);
+                    }
+                }
+            });
+
+            // Botón para cargar valores fijos manualmente
+            $(document).on('click', '.nm-load-fixed-values', function(e) {
+                e.preventDefault();
+                const level = $(this).data('level');
+                const $panel = $(this).closest('.nm-geo-config-panel');
+                const $select = $panel.find(`.nm-fixed-value-select[data-level="${level}"]`);
+                loadFixedLevelValues($panel, level, $select, true);
+            });
+
         // Cancel configuration
         $(document).on('click', '.nm-cancel-geo-config', function(e) {
             e.preventDefault();
@@ -101,6 +127,59 @@
                 }
             });
         }    }
+
+    // Carga valores posibles para un nivel desactivado (valor fijo)
+    function loadFixedLevelValues($panel, level, $select, force = false) {
+        const country = $panel.find('.nm-country-selector').val();
+        const username = $panel.find('.nm-geonames-user').val().trim();
+        const language = $panel.find('.nm-language-selector').val() || 'es';
+        if (!country || !username) return;
+
+        // geonameId base del país
+        const parentCountryId = getCountryGeonameId(country);
+        let parentIdForCall = parentCountryId;
+        const targetLevelCode = level;
+
+        if (targetLevelCode !== 'admin1') {
+            // Necesitamos un geonameId del nivel inmediatamente superior (admin1 fijo)
+            const admin1FixedSelect = $panel.find('.nm-fixed-value-select[data-level="admin1"]');
+            const admin1FixedOption = admin1FixedSelect.find('option:selected');
+            if (admin1FixedOption.length && admin1FixedOption.data('geoname-id')) {
+                parentIdForCall = admin1FixedOption.data('geoname-id');
+            } else {
+                // No se puede determinar padre: intentar cargar primero admin1
+                if (level !== 'admin1') {
+                    // Cargar admin1 primero
+                    parentIdForCall = parentCountryId;
+                }
+            }
+        }
+
+        $select.prop('disabled', true).html('<option value="">Cargando...</option>');
+        callGeonamesProxy('childrenJSON', { username: username, geonameId: parentIdForCall, featureClass: 'A', lang: language })
+            .done(function(response) {
+                if (response.success && response.data && response.data.geonames) {
+                    const items = response.data.geonames.filter(item => {
+                        const fcode = item.fcode;
+                        if (targetLevelCode === 'admin1') return fcode === 'ADM1' || fcode === 'ADMD';
+                        if (targetLevelCode === 'admin2') return fcode === 'ADM2' || fcode === 'ADMD';
+                        if (targetLevelCode === 'admin3') return fcode === 'ADM3' || fcode === 'ADMD';
+                        if (targetLevelCode === 'admin4') return fcode === 'ADM4' || fcode === 'ADMD';
+                        return false;
+                    }).sort((a,b)=> a.name.localeCompare(b.name));
+                    $select.empty().append('<option value="">-- Valor fijo --</option>');
+                    items.forEach(it => {
+                        $select.append(`<option value="${it.name}" data-geoname-id="${it.geonameId}">${it.name}</option>`);
+                    });
+                    $select.prop('disabled', false);
+                } else {
+                    $select.html('<option value="">(Sin datos)</option>');
+                }
+            })
+            .fail(function() {
+                $select.html('<option value="">(Error)</option>');
+            });
+    }
 
     function validateGeonamesUser(username, language, $configRow) {
         const $button = $configRow.find('.nm-validate-user-btn');
@@ -367,7 +446,7 @@
         
         structure.levels.forEach(levelInfo => {
             const levelDiv = $(`
-                <div class="nm-level-config">
+                <div class="nm-level-config" data-level="${levelInfo.code}">
                     <input type="checkbox" class="nm-level-enabled" value="${levelInfo.code}" ${levelInfo.enabled ? 'checked' : ''}>
                     <span class="nm-level-info">
                         <strong>${levelInfo.name}</strong>
@@ -375,6 +454,15 @@
                     </span>
                     <input type="text" class="nm-level-label" data-level="${levelInfo.code}" 
                            value="${levelInfo.default_label}" placeholder="Nombre personalizado">
+                    <div class="nm-fixed-parent" data-fixed-for="${levelInfo.code}" style="display:none; margin-left:10px; flex: 1;">
+                        <div style="display:flex; gap:6px; align-items:center; margin-top:6px;">
+                            <select class="nm-fixed-value-select" data-level="${levelInfo.code}" style="flex:1;">
+                                <option value="">-- Valor fijo (${levelInfo.default_label}) --</option>
+                            </select>
+                            <button type="button" class="button nm-load-fixed-values" data-level="${levelInfo.code}">Cargar valores</button>
+                        </div>
+                        <small>Si no activas este nivel puedes fijar un valor específico para filtrar los niveles inferiores.</small>
+                    </div>
                 </div>
             `);
             $levelsList.append(levelDiv);
@@ -624,12 +712,17 @@
         }
         
         setTimeout(() => {
-            // Load level configurations
             if (config.levels && config.field_names) {
                 panel.find('.nm-level-enabled').each(function() {
                     const levelCode = $(this).val();
                     const isEnabled = config.levels.includes(levelCode);
                     $(this).prop('checked', isEnabled);
+                    const $fixedWrapper = panel.find(`.nm-fixed-parent[data-fixed-for="${levelCode}"]`);
+                    if (!isEnabled) {
+                        $fixedWrapper.show();
+                    } else {
+                        $fixedWrapper.hide();
+                    }
                 });
 
                 panel.find('.nm-level-label').each(function() {
@@ -637,6 +730,19 @@
                     const customName = config.field_names[levelCode];
                     if (customName) {
                         $(this).val(customName);
+                    }
+                });
+            }
+            if (config.fixed_values) {
+                Object.keys(config.fixed_values).forEach(levelCode => {
+                    const data = config.fixed_values[levelCode];
+                    const $select = panel.find(`.nm-fixed-value-select[data-level="${levelCode}"]`);
+                    if ($select.length) {
+                        if ($select.find('option').length <= 1) {
+                            $select.append(`<option value="${data.name}" data-geoname-id="${data.geonameId}" selected>${data.name}</option>`);
+                        } else {
+                            $select.val(data.name);
+                        }
                     }
                 });
             }
@@ -666,6 +772,7 @@
         const levels = [];
         const fieldNames = {};
 
+        // Recolectar niveles activados
         panel.find('.nm-level-enabled:checked').each(function() {
             const levelCode = $(this).val();
             const customLabel = panel.find(`.nm-level-label[data-level="${levelCode}"]`).val().trim();
@@ -675,6 +782,25 @@
                 fieldNames[levelCode] = customLabel;
             }
         });
+
+        // Recolectar valores fijos para niveles desactivados
+        const fixedValues = {};
+        panel.find('.nm-level-enabled').not(':checked').each(function() {
+            const levelCode = $(this).val();
+            const $fixedSelect = panel.find(`.nm-fixed-value-select[data-level="${levelCode}"]`);
+            const selectedOption = $fixedSelect.find('option:selected');
+            const fixedGeoId = selectedOption.data('geoname-id');
+            const fixedName = selectedOption.text();
+            if ($fixedSelect.val() && fixedGeoId) {
+                fixedValues[levelCode] = { geonameId: String(fixedGeoId), name: fixedName };
+            }
+        });
+
+        // Validación: si el primer nivel mostrado no es admin1 y no existe valor fijo admin1
+        if (levels.length > 0 && levels[0] !== 'admin1' && !fixedValues['admin1']) {
+            alert('Has desactivado el nivel superior (admin1) pero no has fijado un valor. Selecciona un valor fijo para la Comunidad Autónoma o activa el nivel.');
+            return;
+        }
 
         if (levels.length === 0) {
             alert('Por favor, seleccione al menos un nivel administrativo');
@@ -692,7 +818,8 @@
                 country: country,
                 language: language,
                 levels: levels,
-                field_names: fieldNames
+                field_names: fieldNames,
+                fixed_values: fixedValues
             }
         };
 
@@ -724,20 +851,24 @@
     function updatePreview($field, config) {
         const preview = $field.find('.nm-geo-preview');
         preview.empty();
-
-        if (config.levels && config.levels.length > 0) {
-            config.levels.forEach(level => {
-                const fieldName = config.field_names[level] || level;
+        const activeLevels = (config.levels||[]);
+        if (activeLevels.length > 0) {
+            activeLevels.forEach(level => {
+                const fieldName = (config.field_names && config.field_names[level]) || level;
                 const levelDiv = $(`
                     <div class="nm-geo-level">
                         <label>${fieldName}:</label>
                         <select disabled>
                             <option>Seleccionar ${fieldName.toLowerCase()}...</option>
                         </select>
-                    </div>
-                `);
+                    </div>`);
                 preview.append(levelDiv);
             });
+            // Mostrar resumen de valores fijos
+            if (config.fixed_values && Object.keys(config.fixed_values).length) {
+                const list = Object.keys(config.fixed_values).map(k => `${k}: ${config.fixed_values[k].name}`).join(', ');
+                preview.append(`<div class="nm-geo-fixed-summary" style="margin-top:8px;font-size:11px;color:#555;">Valores fijos: ${list}</div>`);
+            }
         } else {
             preview.html('<p class="nm-geo-placeholder">Configure el selector geográfico para ver la vista previa</p>');
         }

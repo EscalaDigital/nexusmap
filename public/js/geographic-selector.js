@@ -135,7 +135,37 @@
                 return JSON.parse(configData);
             }
             
-            // Si ya es un objeto, devolverlo directamente
+            // Si ya es un objeto, intentar normalizar si viene anidado dentro de config
+            if (configData && typeof configData === 'object' && configData.config && typeof configData.config === 'object') {
+                if (!Array.isArray(configData.levels) && Array.isArray(configData.config.levels)) {
+                    console.debug('NM GeoSelector: normalizando config anidada (sin levels en raíz)', configData);
+                    configData = configData.config;
+                } else if (Object.keys(configData).length <= 3 && configData.config.levels) { // estructura muy pequeña que probablemente es wrapper
+                    console.debug('NM GeoSelector: normalizando config anidada (wrapper ligero)', configData);
+                    configData = configData.config;
+                }
+            }
+
+            // Asegurar que fixed_values esté presente aunque sea vacío
+            if (configData) {
+                if (!configData.fixed_values && configData.config && configData.config.fixed_values) {
+                    configData.fixed_values = configData.config.fixed_values;
+                }
+                if (!configData.fixed_values) {
+                    const dataFixed = $container.attr('data-fixed-values');
+                    if (dataFixed) {
+                        try {
+                            const parsedFixed = JSON.parse(dataFixed);
+                            if (parsedFixed && typeof parsedFixed === 'object') {
+                                console.debug('NM GeoSelector: fixed_values recuperado de data-fixed-values attribute');
+                                configData.fixed_values = parsedFixed;
+                            }
+                        } catch(e){ console.warn('NM GeoSelector: error parseando data-fixed-values', e); }
+                    }
+                }
+            }
+
+            console.debug('NM GeoSelector: config final obtenida', configData);
             return configData;
         } catch (e) {
             console.error('Error parsing geographic selector config:', e);
@@ -151,9 +181,12 @@
             return null;
         }
     }    function setupCascadingSelects($container, config) {
+        console.debug('NM GeoSelector: iniciando setupCascadingSelects', { id: $container.attr('id'), config });
         const levels = config.levels || [];
         const fieldNames = config.field_names || {};
         const country = config.country;
+        const fixedValues = (config.fixed_values) || (config.config && config.config.fixed_values) || {};
+        console.debug('NM GeoSelector: fixedValues detectados', fixedValues);
 
         // Check if GeoNames is configured via AJAX (secure way)
         checkGeonamesConfig(function(isConfigured) {
@@ -162,63 +195,48 @@
                 showError($container, 'Usuario GeoNames no configurado');
                 return;
             }
-
-            // Continue with setup if configured
             continueSetup();
-        });        function continueSetup() {
-            // Create select elements
+        });
+
+        function continueSetup() {
             const $selectorsContainer = $container.find('.nm-geo-selectors-container');
             const $targetContainer = $selectorsContainer.length > 0 ? $selectorsContainer : $container;
-            
             levels.forEach((level, index) => {
                 const fieldName = fieldNames[level] || level;
                 const selectId = `${$container.attr('id')}_${level}`;
                 const isRequired = $container.data('required') || false;
-                
                 const selectHtml = `
                     <div class="nm-geo-level" data-level="${level}">
                         <label for="${selectId}">${fieldName}:</label>
-                        <select 
-                            id="${selectId}" 
-                            name="${level}" 
-                            class="nm-geo-select" 
-                            data-level="${level}"
-                            data-field-name="${fieldName}"
-                            ${isRequired ? 'required' : ''}
-                            ${index > 0 ? 'disabled' : ''}
-                        >
+                        <select id="${selectId}" name="${level}" class="nm-geo-select" data-level="${level}" data-field-name="${fieldName}" ${isRequired ? 'required' : ''} ${index > 0 ? 'disabled' : ''}>
                             <option value="">Seleccionar ${fieldName.toLowerCase()}...</option>
                         </select>
-                        <div class="nm-geo-loading" style="display: none;">
-                            <span>Cargando...</span>
-                        </div>
-                        <div class="nm-geo-error" style="display: none; color: red;">
-                            <span></span>
-                            <button type="button" class="nm-retry-btn">Reintentar</button>
-                        </div>
-                    </div>
-                `;
-                
+                        <div class="nm-geo-loading" style="display:none;"><span>Cargando...</span></div>
+                        <div class="nm-geo-error" style="display:none;color:red;"><span></span><button type="button" class="nm-retry-btn">Reintentar</button></div>
+                    </div>`;
                 $targetContainer.append(selectHtml);
             });
-
-            // Load first level (admin1 for the country)
             if (levels.length > 0) {
-                loadGeoDataSecure($container, country, null, levels[0]);
+                const firstLevel = levels[0];
+                if (firstLevel !== 'admin1') {
+                    if (fixedValues['admin1']) {
+                        loadGeoDataSecure($container, country, fixedValues['admin1'].geonameId, firstLevel);
+                    } else {
+                        // Mostrar aviso y no intentar cargar admin1 (evita aparecer comunidad autonoma)
+                        const warn = '<div class="nm-geo-general-error" style="color:#b45309;background:#fff4e5;border:1px solid #f7c775;padding:8px;margin:6px 0;font-size:12px;">Configuración incompleta: falta valor fijo de nivel superior (admin1). Edite el formulario.</div>';
+                        if ($container.find('.nm-geo-general-error').length === 0) {
+                            $container.prepend(warn);
+                        }
+                        return;
+                    }
+                } else {
+                    loadGeoDataSecure($container, country, null, firstLevel);
+                }
             }
-
-            // Setup change handlers
-            $container.on('change', '.nm-geo-select', function() {
-                handleSelectChange($container, $(this), config);
-            });
-
-            // Setup retry handlers
+            $container.on('change', '.nm-geo-select', function() { handleSelectChange($container, $(this), config); });
             $container.on('click', '.nm-retry-btn', function() {
                 const $level = $(this).closest('.nm-geo-level');
                 const level = $level.data('level');
-                const $select = $level.find('.nm-geo-select');
-                
-                // Find parent value
                 const parentValue = getParentValue($container, level, config.levels);
                 loadGeoDataSecure($container, country, parentValue, level);
             });
@@ -352,6 +370,19 @@
                 }
             }
         });
+
+        // Incluir valor fijo admin1 si existe y no se muestra como nivel
+        const fixedValues = (config.fixed_values) || (config.config && config.config.fixed_values) || {};
+        if (fixedValues['admin1'] && (!config.levels || config.levels.indexOf('admin1') === -1)) {
+            const name = fixedValues['admin1'].name;
+            const geonameId = fixedValues['admin1'].geonameId;
+            if (name) {
+                values['admin1'] = name;
+            }
+            if (geonameId) {
+                values['admin1_id'] = geonameId;
+            }
+        }
         
         return values;
     }
@@ -411,56 +442,35 @@
         const $select = $levelContainer.find('.nm-geo-select');
         const $loading = $levelContainer.find('.nm-geo-loading');
         const $error = $levelContainer.find('.nm-geo-error');
-
-        // Get language from container config
         const config = getFieldConfig($container);
-        const language = config && config.config && config.config.language ? config.config.language : 'es';
-
-        // Show loading state
+        const language = (config && config.language) ? config.language : (config && config.config && config.config.language ? config.config.language : 'es');
+        const fixedValues = (config && config.fixed_values) || (config && config.config && config.config.fixed_values) || {};
+        if (!parentCode && level !== 'admin1' && fixedValues['admin1']) {
+            parentCode = fixedValues['admin1'].geonameId;
+        }
         $loading.show();
         $error.hide();
         $select.prop('disabled', true);
-
         $.ajax({
             url: nmGeoSelector.ajax_url,
             type: 'POST',
-            data: {
-                action: 'nm_get_geo_data',
-                nonce: nmGeoSelector.nonce,
-                country: country,
-                parent_code: parentCode,
-                level: level,
-                language: language
-            },
+            data: { action: 'nm_get_geo_data', nonce: nmGeoSelector.nonce, country: country, parent_code: parentCode, level: level, language: language },
             timeout: 15000,
             success: function(response) {
                 $loading.hide();
-                
                 if (response.success && response.data && response.data.length > 0) {
-                    // Clear existing options
                     $select.empty().append('<option value="">Seleccionar...</option>');
-                    
-                    // Add new options
-                    response.data.forEach(function(item) {
-                        $select.append(`<option value="${item.name}" data-geoname-id="${item.geonameId}">${item.name}</option>`);
-                    });
-                    
-                    $select.prop('disabled', false);
-                    hideError($levelContainer);
+                    response.data.forEach(function(item) { $select.append(`<option value="${item.name}" data-geoname-id="${item.geonameId}">${item.name}</option>`); });
+                    $select.prop('disabled', false); hideError($levelContainer);
                 } else {
                     showError($levelContainer, response.data && response.data.message ? response.data.message : 'Error al cargar datos');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function(xhr, status) {
                 $loading.hide();
                 let errorMessage = 'Error de conexión';
-                
-                if (status === 'timeout') {
-                    errorMessage = 'Tiempo de espera agotado';
-                } else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
-                    errorMessage = xhr.responseJSON.data.message;
-                }
-                
+                if (status === 'timeout') errorMessage = 'Tiempo de espera agotado';
+                else if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) errorMessage = xhr.responseJSON.data.message;
                 showError($levelContainer, errorMessage);
             }
         });

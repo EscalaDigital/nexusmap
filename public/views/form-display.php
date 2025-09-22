@@ -194,10 +194,12 @@
                             // También crear un ID único para almacenar la config por separado
                             $config_id = 'nm_geo_config_' . md5($field_id . time());
                     ?>
+                        <?php $fixed_values_attr = isset($field_config['fixed_values']) ? esc_attr(json_encode($field_config['fixed_values'], JSON_HEX_QUOT | JSON_HEX_APOS)) : ''; ?>
                         <div class="nm-form-field nm-geographic-selector" 
                              data-type="geographic-selector" 
                              data-config='<?php echo esc_attr($config_json); ?>'
                              data-config-id="<?php echo esc_attr($config_id); ?>"
+                             <?php if($fixed_values_attr){ ?>data-fixed-values="<?php echo $fixed_values_attr; ?>"<?php } ?>
                              id="<?php echo esc_attr($field_id); ?>">
                             <label><?php echo esc_html($field['label']); ?></label>
                             <!-- Los selectores se generarán dinámicamente via JavaScript -->
