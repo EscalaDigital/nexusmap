@@ -54,7 +54,7 @@
                 
                 setupCascadingSelects($container, config);
             } else {
-                console.error('No valid config found for geographic selector', $container.attr('id'));
+                console.error('No valid config for geographic selector', $container.attr('id'));
                 // Mostrar mensaje de error al usuario
                 $container.html('<div style="color: red; padding: 10px; border: 1px solid red;">Error: Configuración del selector geográfico no válida</div>');
             }
@@ -71,7 +71,7 @@
                     return window.nmGeoConfigs[configId];
                 }
                 
-                console.error('No config data found in container');
+                // Config no encontrada en el contenedor ni alternativa
                 return null;
             }
             
@@ -120,7 +120,7 @@
                 if (jsonEnd > -1) {
                     configData = configData.substring(0, jsonEnd + 1);
                 } else {
-                    console.error('Could not find valid JSON end, trying fallback config');
+                    // No se detectó final de JSON válido
                     
                     // Intentar usar la configuración alternativa
                     const configId = $container.data('config-id');
@@ -138,10 +138,10 @@
             // Si ya es un objeto, intentar normalizar si viene anidado dentro de config
             if (configData && typeof configData === 'object' && configData.config && typeof configData.config === 'object') {
                 if (!Array.isArray(configData.levels) && Array.isArray(configData.config.levels)) {
-                    console.debug('NM GeoSelector: normalizando config anidada (sin levels en raíz)', configData);
+                    // Normalizando config anidada (sin levels en raíz)
                     configData = configData.config;
                 } else if (Object.keys(configData).length <= 3 && configData.config.levels) { // estructura muy pequeña que probablemente es wrapper
-                    console.debug('NM GeoSelector: normalizando config anidada (wrapper ligero)', configData);
+                    // Normalizando config anidada (wrapper ligero)
                     configData = configData.config;
                 }
             }
@@ -157,19 +157,18 @@
                         try {
                             const parsedFixed = JSON.parse(dataFixed);
                             if (parsedFixed && typeof parsedFixed === 'object') {
-                                console.debug('NM GeoSelector: fixed_values recuperado de data-fixed-values attribute');
+                                // fixed_values recuperado de data-fixed-values
                                 configData.fixed_values = parsedFixed;
                             }
-                        } catch(e){ console.warn('NM GeoSelector: error parseando data-fixed-values', e); }
+                        } catch(e){ /* error parseando data-fixed-values */ }
                     }
                 }
             }
 
-            console.debug('NM GeoSelector: config final obtenida', configData);
+            // Config final obtenida
             return configData;
         } catch (e) {
-            console.error('Error parsing geographic selector config:', e);
-            console.error('Config data was:', $container.data('config'));
+            console.error('Error parsing geographic selector config');
             
             // Intentar usar la configuración alternativa como último recurso
             const configId = $container.data('config-id');
@@ -181,12 +180,12 @@
             return null;
         }
     }    function setupCascadingSelects($container, config) {
-        console.debug('NM GeoSelector: iniciando setupCascadingSelects', { id: $container.attr('id'), config });
+    // Iniciando setupCascadingSelects
         const levels = config.levels || [];
         const fieldNames = config.field_names || {};
         const country = config.country;
         const fixedValues = (config.fixed_values) || (config.config && config.config.fixed_values) || {};
-        console.debug('NM GeoSelector: fixedValues detectados', fixedValues);
+    // fixedValues detectados
 
         // Check if GeoNames is configured via AJAX (secure way)
         checkGeonamesConfig(function(isConfigured) {
@@ -279,7 +278,7 @@
     function loadGeoData($container, country, parentCode, level, username) {
         // This function is deprecated and replaced by loadGeoDataSecure
         // to avoid exposing GeoNames username to frontend
-        console.warn('loadGeoData is deprecated, use loadGeoDataSecure instead');
+    // Deprecated loadGeoData
         loadGeoDataSecure($container, country, parentCode, level);
     }
     */function populateSelect($select, data) {
@@ -301,7 +300,7 @@
     function hideLoading($levelContainer) {
         $levelContainer.find('.nm-geo-loading').hide();
     }    function showError($container, message) {
-        console.error('Geographic Selector Error:', message);
+    console.error('Geographic Selector Error:', message);
         
         // Si $container es el nivel específico, buscar el error ahí
         let $error = $container.find('.nm-geo-error');
