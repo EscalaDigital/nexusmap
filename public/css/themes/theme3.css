@@ -239,7 +239,7 @@
     min-height: 100vh;
     display: flex; 
     flex-direction: column; 
-    background: linear-gradient(180deg,#001a2b 0%, #052338 140px, #f5fbff 140px, #ffffff 100%); 
+   background: linear-gradient(180deg,#C0D9E1 0%, #1E5887 100%); 
     color: #1d3c4f; 
     position: relative; 
   }
@@ -256,8 +256,8 @@
     content: ""; 
     position: sticky; 
     top: 0; 
-    height: 140px; 
-    background: linear-gradient(180deg,rgba(0,0,0,.75) 0%, rgba(5,35,56,.85) 70%, rgba(5,35,56,0) 100%); 
+   /* height: 140px;*/ 
+    background: linear-gradient(180deg,#C0D9E1 0%, #1E5887 100%); 
     z-index: 1; 
     pointer-events: none; 
   }
