@@ -41,8 +41,23 @@
 #nm-top-controls .nm-control-button i, #nm-top-controls .nm-control-button span { color:#fff; }
 #nm-top-controls .nm-control-button:focus { outline:3px solid var(--nm-color-sec2); outline-offset:2px; }
 
-/* Leyenda flotante clara con acentos (similar theme2) */
-.legend-panel { background:#fff; color:var(--nm-color-text-dark); border:2px solid var(--nm-color-primary); box-shadow:var(--nm-shadow-soft); }
+/* Leyenda: adaptar a layout tipo drawer izquierdo (como theme2) */
+.legend-panel {
+  position: absolute;
+  left: 60px; /* alineado con barra lateral */
+  top: 0;
+  height: 100%;
+  margin: 0;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 999;
+  width: 300px;
+  overflow-y: auto;
+  display: none; /* visible sólo con .visible */
+  border-radius: 0;
+  border-left: 4px solid var(--nm-color-primary);
+}
 .legend-panel h4 { color:var(--nm-color-primary); margin-top:0; }
 .legend-item .legend-label { color:var(--nm-color-text-dark); font-weight:500; }
 .legend-color { border:1px solid var(--nm-color-primary); box-shadow:0 0 0 2px rgba(68,149,209,.15); }
@@ -50,8 +65,25 @@
 .legend-panel::-webkit-scrollbar-track { background:rgba(0,0,0,.05); }
 .legend-panel::-webkit-scrollbar-thumb { background:var(--nm-gradient-primary); border-radius:6px; }
 
-/* Panel filtros overlay full-height tipo drawer (estética mixta: shell oscuro + bloques claros) */
-.nm-filters-panel { background:var(--nm-color-bg-panel) !important; color:var(--nm-color-text-light); border-left:5px solid var(--nm-color-primary); box-shadow:4px 0 14px -4px rgba(0,0,0,.4); }
+/* Panel de filtros: drawer izquierdo a pantalla completa (como theme2) */
+.nm-filters-panel {
+  position: absolute !important;
+  left: 60px !important; /* alineado con nm-top-controls */
+  top: 0 !important;
+  height: 100% !important;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+  padding: 20px;
+  width: 350px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  overflow-y: auto;
+  z-index: 999;
+  display: none; /* visible sólo si NO está colapsado */
+  border-left: 4px solid var(--nm-color-primary);
+}
+.nm-filters-panel:not(.collapsed) { display: block; }
+.nm-filters-panel.collapsed { display: none; }
 .nm-filters-header { background:var(--nm-gradient-primary) !important; border-bottom:0 !important; box-shadow:0 4px 12px -4px rgba(0,0,0,.6); }
 .nm-filters-title { color:#fff !important; text-shadow:0 2px 4px rgba(0,0,0,.35); letter-spacing:.5px; }
 .nm-clear-filters { background:#dc3545 !important; box-shadow:0 3px 8px -2px rgba(0,0,0,.5); }
@@ -97,7 +129,29 @@
 .nm-expand-all:hover,.nm-collapse-all:hover { background:var(--nm-gradient-accent); color:#123; transform:translateY(-2px); }
 
 /* Leyenda / panel visible */
-.legend-panel.visible { animation:panelFadeIn .45s ease; }
+.legend-panel.visible { display: block; animation:panelFadeIn .45s ease; }
+
+/* Scrollbars coherentes */
+.nm-filters-panel::-webkit-scrollbar { width: 10px; }
+.nm-filters-panel::-webkit-scrollbar-track { background: #f1f3f4; border-radius: 5px; }
+.nm-filters-panel::-webkit-scrollbar-thumb { background: var(--nm-gradient-primary); border-radius: 5px; }
+.nm-filters-panel::-webkit-scrollbar-thumb:hover { background: var(--nm-gradient-accent); }
+
+/* Ajustes móviles como theme2 */
+@media screen and (max-width: 768px) {
+  .nm-filters-panel,
+  .legend-panel {
+    left: 60px !important;
+    width: 280px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .nm-filters-panel,
+  .legend-panel {
+    width: calc(100% - 60px);
+  }
+}
 @keyframes panelFadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
 /* ========================= */
