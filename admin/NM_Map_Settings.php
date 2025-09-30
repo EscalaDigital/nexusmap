@@ -49,6 +49,8 @@ class NM_Map_Settings
         register_setting('nm_map_settings_group', 'nm_enable_geojson_download'); // Opción para habilitar la descarga de GeoJSON
         register_setting('nm_map_settings_group', 'nm_enable_search'); // Opción para habilitar la búsqueda en el mapa
         register_setting('nm_map_settings_group', 'nm_enable_user_wms'); // Opción para permitir al usuario agregar capas WMS
+        // Mensaje para usuarios no logueados en el shortcode [nm_form]
+        register_setting('nm_map_settings_group', 'nm_form_login_message');
     register_setting('nm_map_settings_group', 'nm_enable_map_tour'); // Opción para habilitar el tour de ayuda
     register_setting('nm_map_settings_group', 'nm_enable_clustering'); // Opción para habilitar agrupación simple de puntos
 
@@ -71,6 +73,15 @@ class NM_Map_Settings
             'nm_enable_search',
             __('Enable Map Search', 'nexusmap'),
             array($this, 'render_map_search_field'),
+            'nm_map_settings',
+            'nm_map_settings_section'
+        );
+
+        // Campo: Mensaje al no estar logueado (para [nm_form])
+        add_settings_field(
+            'nm_form_login_message',
+            __('Form login-required message', 'nexusmap'),
+            array($this, 'render_form_login_message_field'),
             'nm_map_settings',
             'nm_map_settings_section'
         );
@@ -128,6 +139,26 @@ class NM_Map_Settings
         <input type="checkbox" name="nm_enable_user_wms" value="1" <?php checked(1, $option); ?> />
         <label for="nm_enable_user_wms"><?php esc_html_e('Allow users to add WMS layers to the map.', 'nexusmap'); ?></label>
         <?php
+    }
+
+    // Campo: mensaje para no logueados (permite enlaces y shortcodes)
+    public function render_form_login_message_field()
+    {
+        $default = __('You must be logged in to view this form.', 'nexusmap');
+        $content = get_option('nm_form_login_message', $default);
+        // Editor con soporte de shortcodes; WordPress sanitiza según capacidades del usuario al guardar
+        $settings = array(
+            'textarea_name' => 'nm_form_login_message',
+            'textarea_rows' => 5,
+            'media_buttons' => false,
+            'teeny' => true,
+            'quicktags' => true,
+        );
+        echo '<p class="description">' . esc_html__(
+            'Shown instead of the form when the user is not logged in. You can include links and WordPress shortcodes.',
+            'nexusmap'
+        ) . '</p>';
+        wp_editor($content, 'nm_form_login_message_editor', $settings);
     }
 
     // Campo para habilitar el tour de ayuda

@@ -292,7 +292,11 @@ class NM_Public
     public function display_custom_form()
     {
         if (!is_user_logged_in()) {
-            return 'You must be logged in to view this form.';
+            $default = __('You must be logged in to view this form.', 'nexusmap');
+            $raw = get_option('nm_form_login_message', $default);
+            // Permitir shortcodes en el mensaje
+            $content = do_shortcode($raw);
+            return wp_kses_post($content);
         }
 
         // Limpiar cualquier output buffer previo
