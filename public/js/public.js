@@ -775,52 +775,112 @@ jQuery(document).ready(function ($) {
                 // Si hay configuración de capas
                 if (Array.isArray(response.layer_settings) && response.layer_settings.length > 0) {
 
-
                     // Crear un grupo de capa para cada campo configurado (excepto texto)
                     response.layer_settings.forEach(function (layerConfig) {
                         if (layerConfig.type !== 'text') {
                             layerGroups[layerConfig.field] = L.layerGroup();
                         }
-                    });                    // Procesar cada feature
-                    response.features.forEach(function (feature) {
+                    });
 
-                        // Si el feature tiene capas de texto o textarea
-                        if (feature.properties && feature.properties.text_layers) {
-                            feature.properties.text_layers.forEach(function (textLayer) {
-                                var marker = L.circleMarker([
-                                    feature.geometry.coordinates[1],
-                                    feature.geometry.coordinates[0]
-                                ], {
-                                   
-                                    radius: 5,
-                                    fillColor: textLayer.color,
-                                    color: "#000",
-                                    weight: 1,
-                                    opacity: 1,
-                                    fillOpacity: 0.8
-                                });
-
-                                marker.feature = feature;
-                                marker.on('click', function () {
-                                    showModal(feature.properties);
-                                });
-
-                                textLayerGroup.addLayer(marker);
-                                marker.originalLayerGroup = textLayerGroup;
-                                allMarkers.push(marker);
+                    if (nmMapData.enable_clustering) {
+                        // ═══════════════════════════════════════════════════════════════
+                        // MODO CLUSTERING: Crear marcadores únicos por coordenada
+                        // ═══════════════════════════════════════════════════════════════
+                        // Solución al problema de puntos duplicados en clustering:
+                        // En lugar de crear un marcador por cada capa/campo, agrupamos
+                        // todos los features con las mismas coordenadas en un solo marcador.
+                        // Esto evita que Leaflet.markercluster trate las mismas coordenadas
+                        // como puntos diferentes solo porque tienen diferentes colores/capas.
+                        // ═══════════════════════════════════════════════════════════════
+                        
+                        var uniqueFeatures = {}; // Clave: "lat,lng" -> Valor: feature combinado
+                        
+                        // Primero, agrupar features por coordenadas
+                        response.features.forEach(function (feature) {
+                            var coords = feature.geometry.coordinates;
+                            var key = coords[1] + ',' + coords[0]; // lat,lng como clave
+                            
+                            if (!uniqueFeatures[key]) {
+                                // Primera vez que vemos esta coordenada
+                                uniqueFeatures[key] = {
+                                    geometry: feature.geometry,
+                                    properties: JSON.parse(JSON.stringify(feature.properties)), // copia profunda
+                                    allLayers: [], // todas las capas de este punto
+                                    textLayers: [], // capas de texto específicamente
+                                    coords: coords
+                                };
+                            }
+                            
+                            // Combinar capas de texto
+                            if (feature.properties && feature.properties.text_layers) {
+                                uniqueFeatures[key].textLayers = uniqueFeatures[key].textLayers.concat(feature.properties.text_layers);
+                            }
+                            
+                            // Combinar otras capas
+                            if (feature.properties && Array.isArray(feature.properties.layers)) {
+                                uniqueFeatures[key].allLayers = uniqueFeatures[key].allLayers.concat(feature.properties.layers);
+                            }
+                        });
+                        
+                        // Crear un marcador único por coordenada
+                        Object.keys(uniqueFeatures).forEach(function(coordKey) {
+                            var uniqueFeature = uniqueFeatures[coordKey];
+                            
+                            // Determinar el color del marcador (priorizar capas normales, luego texto)
+                            var markerColor = '#080cf1ff'; // color por defecto
+                            var hasNormalLayers = uniqueFeature.allLayers.length > 0;
+                            var hasTextLayers = uniqueFeature.textLayers.length > 0;
+                            
+                            if (hasNormalLayers) {
+                                // Usar color de la primera capa normal
+                                markerColor = uniqueFeature.allLayers[0].layer_color;
+                            } else if (hasTextLayers) {
+                                // Si solo hay capas de texto, usar color de la primera
+                                markerColor = uniqueFeature.textLayers[0].color;
+                            }
+                            
+                            var marker = L.circleMarker([
+                                uniqueFeature.coords[1],
+                                uniqueFeature.coords[0]
+                            ], {
+                                radius: 6,
+                                fillColor: markerColor,
+                                color: "#000",
+                                weight: 1,
+                                opacity: 1,
+                                fillOpacity: 0.8
                             });
-                        }
 
-                        // Procesar otras capas (select/radio/checkbox)
-                        if (feature.properties && Array.isArray(feature.properties.layers)) {
-                            feature.properties.layers.forEach(function (layerDef) {
-                                if (layerDef.layer_type === 'select') {
+                            // Asignar el feature combinado al marcador
+                            marker.feature = {
+                                type: 'Feature',
+                                geometry: uniqueFeature.geometry,
+                                properties: uniqueFeature.properties
+                            };
+                            
+                            marker.on('click', function () {
+                                showModal(uniqueFeature.properties);
+                            });
+
+                            // En modo clustering, añadir directamente al cluster
+                            clusterGroup.addLayer(marker);
+                            allMarkers.push(marker);
+                        });
+                        
+                    } else {
+                        // MODO ORIGINAL (sin clustering): Crear marcadores individuales por capa
+                        response.features.forEach(function (feature) {
+
+                            // Si el feature tiene capas de texto o textarea
+                            if (feature.properties && feature.properties.text_layers) {
+                                feature.properties.text_layers.forEach(function (textLayer) {
                                     var marker = L.circleMarker([
                                         feature.geometry.coordinates[1],
                                         feature.geometry.coordinates[0]
                                     ], {
+                                       
                                         radius: 5,
-                                        fillColor: layerDef.layer_color,
+                                        fillColor: textLayer.color,
                                         color: "#000",
                                         weight: 1,
                                         opacity: 1,
@@ -832,18 +892,43 @@ jQuery(document).ready(function ($) {
                                         showModal(feature.properties);
                                     });
 
-                                    if (layerGroups[layerDef.layer_field]) {
-                                        layerGroups[layerDef.layer_field].addLayer(marker);
-                                        marker.originalLayerGroup = layerGroups[layerDef.layer_field];
-                                    }
-                                    if (nmMapData.enable_clustering && clusterGroup) {
-                                        clusterGroup.addLayer(marker);
-                                    }
+                                    textLayerGroup.addLayer(marker);
+                                    marker.originalLayerGroup = textLayerGroup;
                                     allMarkers.push(marker);
-                                }
-                            });
-                        }
-                    });
+                                });
+                            }
+
+                            // Procesar otras capas (select/radio/checkbox)
+                            if (feature.properties && Array.isArray(feature.properties.layers)) {
+                                feature.properties.layers.forEach(function (layerDef) {
+                                    if (layerDef.layer_type === 'select') {
+                                        var marker = L.circleMarker([
+                                            feature.geometry.coordinates[1],
+                                            feature.geometry.coordinates[0]
+                                        ], {
+                                            radius: 5,
+                                            fillColor: layerDef.layer_color,
+                                            color: "#000",
+                                            weight: 1,
+                                            opacity: 1,
+                                            fillOpacity: 0.8
+                                        });
+
+                                        marker.feature = feature;
+                                        marker.on('click', function () {
+                                            showModal(feature.properties);
+                                        });
+
+                                        if (layerGroups[layerDef.layer_field]) {
+                                            layerGroups[layerDef.layer_field].addLayer(marker);
+                                            marker.originalLayerGroup = layerGroups[layerDef.layer_field];
+                                        }
+                                        allMarkers.push(marker);
+                                    }
+                                });
+                            }
+                        });
+                    }
 
                     // Añadir grupos de capas al control y al mapa
                     var isFirstLayer = true;
@@ -917,30 +1002,66 @@ jQuery(document).ready(function ($) {
                     }
                 } else {
                     // Si no hay capas configuradas, añadir todos los marcadores a un solo grupo
-                    response.features.forEach(function (feature) {
-                        var marker = L.circleMarker([
-                            feature.geometry.coordinates[1],
-                            feature.geometry.coordinates[0]
-                        ], {
-                            radius: 7,
-                            fillColor: '#080cf1ff',
-                            color: "#ffffffff",
-                            weight: 1.5,
-                            opacity: 1,
-                            fillOpacity: 0.8
+                    if (nmMapData.enable_clustering) {
+                        // MODO CLUSTERING SIN CAPAS: Crear marcadores únicos por coordenada
+                        var uniqueFeatures = {}; // Clave: "lat,lng" -> Valor: feature
+                        
+                        response.features.forEach(function (feature) {
+                            var coords = feature.geometry.coordinates;
+                            var key = coords[1] + ',' + coords[0]; // lat,lng como clave
+                            
+                            if (!uniqueFeatures[key]) {
+                                uniqueFeatures[key] = feature;
+                            }
                         });
+                        
+                        Object.keys(uniqueFeatures).forEach(function(coordKey) {
+                            var feature = uniqueFeatures[coordKey];
+                            
+                            var marker = L.circleMarker([
+                                feature.geometry.coordinates[1],
+                                feature.geometry.coordinates[0]
+                            ], {
+                                radius: 7,
+                                fillColor: '#080cf1ff',
+                                color: "#ffffffff",
+                                weight: 1.5,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            });
 
-                        marker.feature = feature;
-                        marker.on('click', function () {
-                            showModal(feature.properties);
-                        });
-                        if (nmMapData.enable_clustering && clusterGroup) {
+                            marker.feature = feature;
+                            marker.on('click', function () {
+                                showModal(feature.properties);
+                            });
+                            
                             clusterGroup.addLayer(marker);
-                        } else {
+                            allMarkers.push(marker);
+                        });
+                        
+                    } else {
+                        // MODO ORIGINAL: marcador individual por feature
+                        response.features.forEach(function (feature) {
+                            var marker = L.circleMarker([
+                                feature.geometry.coordinates[1],
+                                feature.geometry.coordinates[0]
+                            ], {
+                                radius: 7,
+                                fillColor: '#080cf1ff',
+                                color: "#ffffffff",
+                                weight: 1.5,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            });
+
+                            marker.feature = feature;
+                            marker.on('click', function () {
+                                showModal(feature.properties);
+                            });
                             markersLayer.addLayer(marker);
-                        }
-                        allMarkers.push(marker);
-                    });
+                            allMarkers.push(marker);
+                        });
+                    }
                 }
 
                 // Inicializar el contador de puntos con features únicos
