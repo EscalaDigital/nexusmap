@@ -1,7 +1,7 @@
 <div class="nm-form-field" data-type="select">
     <label>Dropdown Menu</label>
     <input type="text" class="field-label" placeholder="Field Label" value="<?php echo esc_attr( $field_label ); ?>">
-    <input type="text" class="field-name" placeholder="Field Name" value="<?php echo esc_attr( $field_name ); ?>">
+    <input type="hidden" class="field-name" value="<?php echo esc_attr( $field_name ); ?>">
     <div class="select-options">
         <?php
         if ( isset( $field['options'] ) && is_array( $field['options'] ) ) {
@@ -26,4 +26,5 @@
     </div>
     <button type="button" class="add-select-option">Add Option</button>
     <span class="nm-remove-field">Remove Field</span>
+    <div class="nm-field-restricted"><label style="font-size:11px;display:inline-block;margin-top:4px;"><input type="checkbox" class="field-restricted-toggle" <?php echo !empty($field['restricted']) ? 'checked' : ''; ?>> Solo usuarios privilegiados</label></div>
 </div>

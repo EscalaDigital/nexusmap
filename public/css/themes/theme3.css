@@ -1,0 +1,411 @@
+/* Theme 3 - Audioguía (optimizado móvil)
+   Refactor: Integración de nueva paleta (primary:#4495D1, secondary:#8EC152 / #FADC32) + apariencia cercana a theme2 manteniendo el ADN "audio/hero" oscuro. */
+
+/* ========================= */
+/* Paleta y variables base   */
+/* ========================= */
+:root {
+  --nm-color-primary:#1E5887; /* Azul complementario (oscuro) */
+  --nm-color-sec1:#1E5887;    /* Usado en gradientes -> se hace sólido */
+  --nm-color-sec2:#C0D9E1;    /* Azul claro */
+  --nm-color-bg-dark:#052338; /* Fondo hero/modal móvil */
+  --nm-color-bg-panel:#ffffff; /* Paneles claros como theme2 */
+  --nm-color-bg-soft:#f7fafc; /* Fondo suave */
+  --nm-color-border:#d7e6ec;  /* Bordes suaves */
+  --nm-color-text-dark:#163a50;
+  --nm-color-text-light:#ffffff;
+  /* Dejamos variables de gradiente, pero al ser mismo color resultan planas */
+  --nm-gradient-primary:linear-gradient(135deg,var(--nm-color-primary),var(--nm-color-sec1));
+  --nm-gradient-accent:linear-gradient(135deg,var(--nm-color-sec2),var(--nm-color-sec2));
+  --nm-shadow-soft:0 4px 10px -2px rgba(0,0,0,.10),0 2px 4px -1px rgba(0,0,0,.08);
+  --nm-shadow-strong:0 10px 30px -8px rgba(0,0,0,.25);
+}
+
+/* Asegurar que el contenedor soporte posicionamiento absoluto de paneles */
+#nm-main-map { position: relative; }
+
+/* Barra lateral / controles (look similar a theme2 pero en clave compacta dark + acentos) */
+#nm-top-controls { 
+  position:absolute; top:0; left:0; width:60px; height:100%;
+  background:#ffffff;
+  box-shadow:2px 0 6px rgba(0,0,0,.1);
+  display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:15px; z-index:1000;
+}
+#nm-top-controls::after { content:""; position:absolute; top:0; right:-3px; width:3px; height:100%; background:transparent; box-shadow:none; }
+#nm-top-controls .nm-control-button { width:40px; height:40px; border-radius:8px; background:var(--nm-color-primary); border:1px solid var(--nm-color-primary); color:#fff; transition:.2s; box-shadow:0 2px 4px rgba(0,0,0,.1); display:flex; align-items:center; justify-content:center; }
+#nm-top-controls .nm-control-button:hover { background:#174867; transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.15); }
+#nm-top-controls .nm-control-button:active { transform:translateY(0); }
+#nm-top-controls .nm-control-button:focus-visible { box-shadow:0 0 0 3px var(--nm-color-sec2); }
+#nm-top-controls .nm-control-button::before, #nm-top-controls .nm-control-button::after { display:none; }
+#nm-top-controls .nm-control-button i, #nm-top-controls .nm-control-button span { color:#fff; }
+#nm-top-controls .nm-control-button:focus { outline:3px solid var(--nm-color-sec2); outline-offset:2px; }
+
+/* Leyenda: adaptar a layout tipo drawer izquierdo (como theme2) */
+.legend-panel {
+  position: absolute;
+  left: 60px; /* alineado con barra lateral */
+  top: 0;
+  height: 100%;
+  margin: 0;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 1500 !important;
+  width: 300px;
+  overflow-y: auto;
+  display: none; /* visible sólo con .visible */
+  border-radius: 0;
+  border-left: 4px solid var(--nm-color-primary);
+}
+.legend-panel h4 { color:var(--nm-color-primary); margin-top:0; }
+.legend-item .legend-label { color:var(--nm-color-text-dark); font-weight:500; }
+.legend-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.legend-color { width:20px; height:20px; display:inline-block; border:1px solid #ccc; border-radius:3px; margin-right:8px; box-shadow:none; }
+.legend-panel::-webkit-scrollbar { width:10px; }
+.legend-panel::-webkit-scrollbar-track { background:rgba(0,0,0,.05); }
+.legend-panel::-webkit-scrollbar-thumb { background:var(--nm-color-primary); border-radius:6px; }
+
+/* Panel de filtros: drawer izquierdo a pantalla completa (como theme2) */
+.nm-filters-panel {
+  position: absolute !important;
+  left: 60px !important; /* alineado con nm-top-controls */
+  top: 0 !important;
+  height: 100% !important;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+  padding: 20px;
+  width: 350px;
+  background: #ffffff;
+  overflow-y: auto;
+  z-index: 1500 !important;
+  display: none; /* visible sólo si NO está colapsado */
+  border-left: 4px solid var(--nm-color-primary);
+}
+.nm-filters-panel:not(.collapsed) { display: block !important; }
+.nm-filters-panel.collapsed { display: none; }
+.nm-filters-header { background:var(--nm-color-primary) !important; border-bottom:3px solid #123e63 !important; box-shadow:none; }
+.nm-filters-title { color:#fff !important; text-shadow:none; letter-spacing:.2px; }
+.nm-clear-filters { background:#dc3545 !important; box-shadow:none; }
+.nm-clear-filters:hover { filter:brightness(1.1); }
+.nm-filter-group { border:2px solid var(--nm-color-border) !important; background:#fff !important; border-radius:8px !important; margin-bottom:20px !important; box-shadow:0 3px 10px rgba(0,0,0,.08); transition:.3s; }
+.nm-filter-group:hover { border-color:var(--nm-color-primary) !important; box-shadow:0 5px 15px rgba(0,0,0,0.12); }
+.nm-filter-header { background:#f1f5f9 !important; border-bottom:2px solid var(--nm-color-primary) !important; padding:12px 15px !important; cursor:pointer; }
+.nm-filter-label { color:var(--nm-color-primary) !important; font-weight:600; font-size:14px; }
+.nm-filter-options { background:#fff !important; padding:15px !important; display:flex; flex-wrap:wrap; gap:8px; }
+.nm-filter-button { 
+  border:2px solid var(--nm-color-primary) !important; background:#fff !important; color:var(--nm-color-primary) !important; 
+  padding:8px 14px !important; border-radius:25px !important; font-size:13px !important; font-weight:600; letter-spacing:.2px; position:relative; overflow:hidden; 
+  box-shadow:0 2px 6px -2px rgba(0,0,0,.12); transition:.3s; display:flex; align-items:center; gap:6px;
+}
+.nm-filter-button::before { content:""; display:none; }
+.nm-filter-button:hover { transform:translateY(-3px); box-shadow:0 6px 15px rgba(0,0,0,0.15); background:#f8fafc; }
+.nm-filter-button.active { background:var(--nm-color-primary) !important; color:#fff !important; border-color:#123e63 !important; transform:scale(1.06); box-shadow:0 6px 18px rgba(0,0,0,0.2); }
+.nm-filter-button.active::after { content:'✓'; position:absolute; top:-3px; right:-3px; background:var(--nm-color-sec2); color:#123; border:2px solid #fff; border-radius:50%; width:20px; height:20px; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+.nm-button-count { background:rgba(30,88,135,0.08) !important; border:1px solid rgba(30,88,135,0.25); padding:2px 6px; border-radius:10px; font-size:10px; font-weight:700; }
+.nm-filter-button.active .nm-button-count { background:rgba(255,255,255,0.3) !important; border-color:rgba(255,255,255,0.4); }
+.nm-filter-group.collapsed .nm-filter-options { display:none !important; }
+.nm-filter-toggle { color:var(--nm-color-primary); font-weight:700; transition:.35s; }
+.nm-filter-group.collapsed .nm-filter-toggle { transform:rotate(-90deg); }
+.nm-filter-badge { background:var(--nm-color-primary); color:#fff; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700; box-shadow:none; }
+.nm-filter-badge.active { background:var(--nm-color-sec2); color:#123; }
+@keyframes pulseTheme3 { 0%{transform:scale(1);} 50%{transform:scale(1.12);} 100%{transform:scale(1);} }
+
+/* Tags activos */
+.nm-active-tag { background:var(--nm-color-sec2); color:#123; border:1px solid rgba(0,0,0,.08); }
+.nm-active-tag .nm-remove-tag { background:rgba(0,0,0,.15); }
+.nm-active-tag:hover { filter:brightness(1.05); }
+
+/* Scroll panel filtros */
+.nm-filters-panel::-webkit-scrollbar { width:11px; }
+.nm-filters-panel::-webkit-scrollbar-track { background:#f1f3f4; }
+.nm-filters-panel::-webkit-scrollbar-thumb { background:var(--nm-color-primary); border-radius:6px; border:2px solid #e6eef2; }
+.nm-filters-panel::-webkit-scrollbar-thumb:hover { background:#174867; }
+
+/* Controles expandir/colapsar */
+.nm-filter-count { background:#f1f5f9; border-top:2px solid var(--nm-color-primary); display:flex; gap:12px; justify-content:center; padding:14px 12px; }
+.nm-expand-all,.nm-collapse-all { background:var(--nm-color-primary); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,0.15); transition:.3s; }
+.nm-expand-all:hover,.nm-collapse-all:hover { background:#174867; }
+
+/* Leyenda / panel visible */
+.legend-panel.visible { display: block !important; animation:panelFadeIn .45s ease; }
+
+/* Scrollbars coherentes */
+.nm-filters-panel::-webkit-scrollbar { width: 10px; }
+.nm-filters-panel::-webkit-scrollbar-track { background: #f1f3f4; border-radius: 5px; }
+.nm-filters-panel::-webkit-scrollbar-thumb { background: var(--nm-gradient-primary); border-radius: 5px; }
+.nm-filters-panel::-webkit-scrollbar-thumb:hover { background: var(--nm-gradient-accent); }
+
+/* Ajustes móviles como theme2 */
+@media screen and (max-width: 768px) {
+  .nm-filters-panel,
+  .legend-panel {
+    left: 60px !important;
+    width: 280px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .nm-filters-panel,
+  .legend-panel {
+    width: calc(100% - 60px);
+  }
+}
+@keyframes panelFadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+/* ========================= */
+/* Control de zoom (reubicado al lado de barra lateral) */
+/* ========================= */
+.leaflet-control-zoom { 
+  position:absolute !important; 
+  left:66px !important; /* 56px barra + 10px separación */
+  top:12px !important; 
+  display:flex !important; flex-direction:column; gap:8px; 
+  background:transparent !important; box-shadow:none !important; border:none !important;
+  z-index:1200; /* por encima de barra */
+}
+.leaflet-control-zoom-in, .leaflet-control-zoom-out { 
+  width:40px !important; height:40px !important; line-height:40px !important; padding:0 !important; 
+  background:var(--nm-color-primary) !important; 
+  color:#fff !important; font-size:20px !important; font-weight:600; 
+  border:2px solid #ffffff !important; border-radius:50% !important; 
+  box-shadow:0 2px 4px rgba(0,0,0,0.1) !important; cursor:pointer; transition:.2s !important; 
+}
+.leaflet-control-zoom-in:hover, .leaflet-control-zoom-out:hover { 
+  transform:translateY(-2px); background:#174867 !important; 
+  box-shadow:0 4px 8px rgba(0,0,0,0.15) !important; 
+}
+.leaflet-control-zoom-in:active, .leaflet-control-zoom-out:active { transform:translateY(0) scale(.95) !important; }
+.leaflet-control-zoom-in:focus-visible, .leaflet-control-zoom-out:focus-visible { outline:3px solid var(--nm-color-sec2) !important; outline-offset:2px; }
+
+@media (max-width: 768px){
+  .leaflet-control-zoom { left:60px !important; top:auto !important; bottom:14px !important; flex-direction:row !important; }
+  .leaflet-control-zoom-in, .leaflet-control-zoom-out { width:48px !important; height:48px !important; line-height:48px !important; border-radius:18px !important; }
+}
+
+/* ========================= */
+/* Modal Audioguía Desktop   */
+/* ========================= */
+/* .nm-modal hereda estilos base del plugin; no redefinimos aquí para mantener compatibilidad */
+
+/* Título destacado del modal (PC + móvil) */
+.nm-modal-title {
+  margin: 18px 20px 10px;
+  color: var(--nm-color-primary);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .2px;
+  text-wrap: balance;
+}
+.nm-modal-title::after {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 4px;
+  margin-top: 8px;
+  background: var(--nm-gradient-accent);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px -2px rgba(0,0,0,.35);
+}
+
+/* ========================= */
+/* Versión móvil fullscreen  */
+/* ========================= */
+@media (max-width: 768px) {
+  /* Modal que aparece desde la parte superior del mapa y se mueve con scroll */
+  .nm-modal { 
+    position: absolute !important; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    width: 100% !important; 
+    height: 100% !important; 
+    min-height: 100vh;
+    transform: translateY(100%); 
+    transition: transform .35s ease; 
+    background: var(--nm-color-bg-dark); 
+    border: none; 
+    box-shadow: none; 
+    z-index: 99999 !important;
+  }
+  .nm-modal.active { 
+    transform: translateY(0); 
+  }
+  .nm-modal-content { 
+    padding: 0 !important; 
+    overflow-y: auto; 
+    height: 100%; 
+    min-height: 100vh;
+    display: flex; 
+    flex-direction: column; 
+   background: linear-gradient(180deg,#C0D9E1 0%, #1E5887 100%); 
+    color: #1d3c4f; 
+    position: relative; 
+  }
+  /* Título por encima del hero y del overlay sticky */
+  .nm-modal-title {
+    margin: 16px 16px 10px;
+    color: var(--nm-color-text-light);
+    position: relative;
+    z-index: 2; /* por encima de ::before sticky */
+    text-shadow: 0 2px 6px rgba(0,0,0,.45);
+  }
+  .nm-modal-title::after { opacity: .9; }
+  .nm-modal-content::before { 
+    content: ""; 
+    position: sticky; 
+    top: 0; 
+   /* height: 140px;*/ 
+    background: linear-gradient(180deg,#C0D9E1 0%, #1E5887 100%); 
+    z-index: 1; 
+    pointer-events: none; 
+  }
+  .nm-modal-close { 
+    top: 14px !important; 
+    right: 14px !important; 
+    background: rgba(0,0,0,.45); 
+    position: absolute !important;
+    z-index: 99999 !important;
+  }
+
+  /* Hero multimedia */
+  .nm-audio-hero { position:relative; background:#000; width:100%; aspect-ratio:16/10; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .nm-audio-hero-slider { position:absolute; inset:0; display:flex; transition:transform .5s ease; }
+  .nm-audio-hero-slide { min-width:100%; height:100%; position:relative; }
+  .nm-audio-hero-slide img { width:100%; height:100%; object-fit:cover; }
+  .nm-audio-hero-nav { position:absolute; top:50%; left:0; right:0; display:flex; justify-content:space-between; transform:translateY(-50%); z-index:5; }
+  .nm-audio-hero-nav button { background:rgba(0,0,0,.35); backdrop-filter:blur(4px); border:none; width:44px; height:44px; border-radius:50%; color:#fff; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .nm-audio-hero-nav button:active { transform:scale(.92); }
+
+  /* Play central circular */
+  .nm-audio-play-wrapper { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(5,35,56,.85) 70%); padding:18px 18px 28px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .nm-audio-play-btn { width:86px; height:86px; border-radius:50%; background:var(--nm-gradient-primary); border:4px solid rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; color:#fff; font-size:34px; box-shadow:0 8px 30px -8px rgba(68,149,209,.7),0 4px 12px -4px rgba(0,0,0,.6); transition:.4s; }
+  .nm-audio-play-btn.paused { background:var(--nm-gradient-accent); color:#123; }
+  .nm-audio-play-btn:active { transform:scale(.94); }
+  .nm-audio-timeline { width:100%; max-width:600px; display:flex; align-items:center; gap:10px; font-size:12px; font-family:monospace; color:#cbd5e1; }
+  .nm-audio-progress { -webkit-appearance:none; appearance:none; width:100%; height:6px; background:#1e3a55; border-radius:4px; overflow:hidden; cursor:pointer; }
+  .nm-audio-progress::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:0; height:0; }
+  .nm-audio-progress::-webkit-slider-runnable-track { background:linear-gradient(90deg,var(--nm-color-primary),var(--nm-color-sec2)); height:6px; }
+
+  .nm-modal-sections-wrapper { padding:24px 20px 60px; display:flex; flex-direction:column; gap:32px; }
+  .nm-modal-section { background:linear-gradient(145deg,#ffffff,#f0faff); border:2px solid var(--nm-color-primary); border-radius:22px; padding:22px 20px; box-shadow:0 8px 22px -8px rgba(0,0,0,.25); color:#123146; backdrop-filter:saturate(160%); }
+  .nm-modal-section:not(:first-child) { border-top:3px solid var(--nm-color-sec2); }
+  .nm-modal-section h3.nm-modal-header { margin:0 0 16px; padding:0; font-size:18px; color:var(--nm-color-primary); border:none; border-left:8px solid var(--nm-color-sec2); padding-left:12px; background:linear-gradient(90deg,rgba(68,149,209,.15),rgba(142,193,82,.15)); border-radius:0 30px 30px 0; }
+  .nm-modal-field { background:transparent !important; border:none !important; color:#17384d; margin:6px 0 10px; padding:0; font-size:14px; }
+  .nm-modal-field strong { color:var(--nm-color-primary); margin-bottom:4px; font-size:11px; letter-spacing:1px; opacity:.95; display:block; text-transform:uppercase; }
+  .nm-modal-field a { color:var(--nm-color-primary); font-weight:600; text-decoration:none; position:relative; }
+  .nm-modal-field a::after { content:""; position:absolute; left:0; bottom:-2px; width:100%; height:2px; background:linear-gradient(90deg,var(--nm-color-primary),var(--nm-color-sec1)); transform:scaleX(.4); transform-origin:left; transition:.35s; }
+  .nm-modal-field a:hover::after { transform:scaleX(1); }
+  .nm-modal-section img { box-shadow:0 6px 18px -6px rgba(0,0,0,.3); border:3px solid #fff; }
+  .nm-modal-field img { border-radius:12px; box-shadow:0 4px 16px -4px rgba(0,0,0,.5); }
+
+  /* Ocultar estilos base de p wrapper */
+  .nm-modal-content p { background:none; padding:0; border:none; }
+}
+
+/* Indicador mini etiqueta de sección en desktop para coherencia */
+.nm-modal-header { background:linear-gradient(90deg,var(--nm-color-primary),var(--nm-color-sec1)); color:#fff; padding:10px 14px; border-radius:8px; border:none; font-weight:600; box-shadow:0 4px 14px -6px rgba(0,0,0,.5); }
+
+/* Accesibilidad focus */
+.nm-audio-play-btn:focus { outline:3px solid var(--nm-color-sec2); outline-offset:3px; }
+
+/* Animaciones */
+@media (max-width:768px){
+  .nm-audio-hero-slide { animation:fadeSlide .6s ease; }
+  @keyframes fadeSlide { from{opacity:0; transform:scale(1.04);} to{opacity:1; transform:scale(1);} }
+}
+
+/* ========================= */
+/* Leaflet Popups & Tooltips */
+/* ========================= */
+.leaflet-popup-content-wrapper { background:#ffffff; color:#123; border:2px solid var(--nm-color-primary); border-radius:18px; box-shadow:0 10px 24px -10px rgba(0,0,0,.25); position:relative; overflow:hidden; }
+.leaflet-popup-content-wrapper::before { content:""; position:absolute; top:0; left:0; right:0; height:6px; background:var(--nm-color-primary); }
+.leaflet-popup-content { margin:16px 18px 18px; line-height:1.45; font-size:14px; }
+.leaflet-popup-tip { background:#eef8ff; border:2px solid var(--nm-color-primary); }
+.leaflet-container a.leaflet-popup-close-button { color:var(--nm-color-primary); font-weight:700; background:rgba(68,149,209,.08); border-radius:50%; width:28px; height:28px; line-height:26px; transition:.25s; }
+.leaflet-container a.leaflet-popup-close-button:hover { color:#123; background:var(--nm-gradient-accent); box-shadow:0 0 0 2px #fff,0 0 0 5px rgba(68,149,209,.35); }
+/* (Se removieron definiciones duplicadas de close-button para evitar conflictos) */
+.leaflet-tooltip { background:#003656; color:#fff; border:1px solid var(--nm-color-primary); box-shadow:0 4px 12px -4px rgba(0,0,0,.5); }
+
+/* ========================= */
+/* Mejoras markers (genéricas) */
+/* ========================= */
+.nm-marker-highlight { outline:3px solid var(--nm-color-sec2); outline-offset:3px; border-radius:50%; animation:markerPulse 2s infinite; }
+@keyframes markerPulse { 0%{box-shadow:0 0 0 0 rgba(250,220,50,.6);} 70%{box-shadow:0 0 0 15px rgba(250,220,50,0);} 100%{box-shadow:0 0 0 0 rgba(250,220,50,0);} }
+
+/* ========================= */
+/* Utilidades / helpers      */
+/* ========================= */
+.nm-text-primary { color:var(--nm-color-primary)!important; }
+.nm-bg-primary { background:var(--nm-color-primary)!important; }
+.nm-gradient-primary { background:var(--nm-gradient-primary)!important; }
+.nm-gradient-accent { background:var(--nm-gradient-accent)!important; }
+
+/* ========================= */
+/* Dark mode overlays tweaks */
+/* ========================= */
+.nm-modal-section { position:relative; }
+.nm-modal-section::before { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0)); pointer-events:none; border-radius:18px; }
+
+/* ========================= */
+/* Responsivo ajustes leves  */
+/* ========================= */
+@media (max-width:480px){
+  .nm-filter-button { padding:6px 12px !important; font-size:12px !important; }
+  #nm-top-controls { width:52px; }
+}
+
+/* ===================================================== */
+/* Popup override final (asegura versión clara y vibrante)*/
+/* ===================================================== */
+/* Mayor especificidad + !important por posibles overrides globales previos */
+body .leaflet-popup-content-wrapper { 
+  background:#ffffff !important;
+  border:2px solid var(--nm-color-primary) !important;
+  color:#15394d !important;
+  box-shadow:0 12px 30px -12px rgba(0,0,0,.35) !important;
+}
+body .leaflet-popup-content-wrapper::before { 
+  content:""; position:absolute; top:0; left:0; right:0; height:5px; 
+  background:var(--nm-color-primary);
+}
+body .leaflet-popup-tip { background:#f6fbff !important; border:2px solid var(--nm-color-primary) !important; }
+body .leaflet-popup-content { font-size:14px; line-height:1.5; }
+body .leaflet-popup-content h1, 
+body .leaflet-popup-content h2, 
+body .leaflet-popup-content h3, 
+body .leaflet-popup-content h4 { color:var(--nm-color-primary) !important; margin-top:0; }
+body .leaflet-popup-content a { color:var(--nm-color-primary) !important; font-weight:600; text-decoration:none; position:relative; }
+body .leaflet-popup-content a::after { content:""; position:absolute; left:0; bottom:-2px; width:100%; height:2px; background:linear-gradient(90deg,var(--nm-color-primary),var(--nm-color-sec1)); transform:scaleX(.4); transform-origin:left; transition:.35s; }
+body .leaflet-popup-content a:hover::after { transform:scaleX(1); }
+body .leaflet-container a.leaflet-popup-close-button { color:var(--nm-color-primary) !important; background:rgba(68,149,209,.12) !important; }
+body .leaflet-container a.leaflet-popup-close-button:hover { background:var(--nm-gradient-accent) !important; color:#123 !important; }
+
+/* ========================= */
+/* Popup móvil (ajustes)     */
+/* ========================= */
+@media (max-width: 768px){
+  /* Aseguramos versión muy clara y con mayor contraste cromático */
+  body .leaflet-popup-content-wrapper { 
+    background:linear-gradient(160deg,#ffffff 0%, #f2fbff 45%, #e6fbd3 100%) !important;
+    color:#103445 !important;
+    border:2px solid var(--nm-color-primary) !important;
+    border-radius:20px !important;
+    box-shadow:0 10px 34px -12px rgba(0,0,0,.55),0 4px 14px -4px rgba(68,149,209,.45) !important;
+  }
+  body .leaflet-popup-content-wrapper::before { height:4px; }
+  body .leaflet-popup-tip { background:#f2fbff !important; border-color:var(--nm-color-primary) !important; }
+  body .leaflet-popup-content { font-size:15px; }
+  body .leaflet-popup-content a { text-decoration:none; }
+  body .leaflet-container a.leaflet-popup-close-button { 
+    background:rgba(68,149,209,.18) !important; 
+    color:var(--nm-color-primary)!important; 
+    backdrop-filter:blur(4px) saturate(140%);
+  }
+  body .leaflet-container a.leaflet-popup-close-button:hover { background:var(--nm-gradient-primary)!important; color:#fff!important; }
+  /* Clase helper opcional para forzar fondo claro en bloques internos del popup */
+  .nm-popup-light-block { background:#ffffffd9; border:1px solid rgba(68,149,209,.25); padding:10px 12px; border-radius:14px; box-shadow:0 4px 12px -6px rgba(0,0,0,.25); }
+}
+
+

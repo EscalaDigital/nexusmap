@@ -7,6 +7,7 @@ class NM_Activator {
         $model = new NM_Model();
         $model->create_forms_table();
         $model->create_entries_table();
+        $model->create_conditional_fields_table();
 
         flush_rewrite_rules();
     }

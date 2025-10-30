@@ -61,15 +61,53 @@ class NM_Chart_Manager
          * Si la estructura de $form_data es diferente, ajusta la lógica.
          */
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
+            global $wpdb;
             foreach ($form_data['fields'] as $field) {
-                if (isset($field['type'])) {
-                    // Campos que pueden ser contados o usados como categoría
-                    if (in_array($field['type'], ['select', 'radio', 'checkbox', 'text', 'textarea', 'number'])) {
-                        $category_fields[] = $field;
-                    }
-                    // Campos numéricos para sumas
-                    if ($field['type'] === 'number') {
-                        $numeric_fields[] = $field;
+                if (!isset($field['type'])) continue;
+
+                if (in_array($field['type'], ['select','radio','checkbox','text','textarea','number','conditional-select'])) {
+                    $category_fields[] = $field;
+                }
+                if ($field['type'] === 'number') {
+                    $numeric_fields[] = $field;
+                }
+
+                if ($field['type'] === 'conditional-select' && !empty($field['select_id'])) {
+                    $table = $wpdb->prefix . 'nm_conditional_fields';
+                    $rows = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT option_id, fields_json FROM {$table} WHERE select_id = %s",
+                            $field['select_id']
+                        ),
+                        ARRAY_A
+                    );
+                    if ($rows) {
+                        foreach ($rows as $row) {
+                            $subfields = json_decode($row['fields_json'], true);
+                            if (!is_array($subfields)) continue;
+                            foreach ($subfields as $sub) {
+                                if (!is_array($sub) || !isset($sub['type']) || !isset($sub['name'])) continue;
+                                // Evitar duplicados por nombre
+                                $alreadyCategory = false;
+                                foreach ($category_fields as $cf) { if (isset($cf['name']) && $cf['name'] === $sub['name']) { $alreadyCategory = true; break; } }
+                                if (in_array($sub['type'], ['select','radio','checkbox','text','textarea','number']) && !$alreadyCategory) {
+                                    $sub_copy = $sub;
+                                    $sub_copy['is_conditional'] = true;
+                                    $sub_copy['parent_field'] = $field['name'];
+                                    $category_fields[] = $sub_copy;
+                                }
+                                if ($sub['type'] === 'number') {
+                                    $alreadyNumeric = false;
+                                    foreach ($numeric_fields as $nf) { if (isset($nf['name']) && $nf['name'] === $sub['name']) { $alreadyNumeric = true; break; } }
+                                    if (!$alreadyNumeric) {
+                                        $sub_num = $sub;
+                                        $sub_num['is_conditional'] = true;
+                                        $sub_num['parent_field'] = $field['name'];
+                                        $numeric_fields[] = $sub_num;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -121,6 +159,9 @@ class NM_Chart_Manager
                 $category_field = isset($chart['category_field']) ? sanitize_text_field($chart['category_field']) : '';
                 $category_field_2 = isset($chart['category_field_2']) ? sanitize_text_field($chart['category_field_2']) : '';
                 $chart_type     = isset($chart['chart_type'])     ? sanitize_text_field($chart['chart_type'])     : '';
+                $stacked        = isset($chart['stacked']) ? sanitize_text_field($chart['stacked']) : 'auto';
+                $value_labels_mode = isset($chart['value_labels_mode']) ? sanitize_text_field($chart['value_labels_mode']) : 'auto';
+                $bar_orientation   = isset($chart['bar_orientation']) ? sanitize_text_field($chart['bar_orientation']) : 'auto';
 
                 if (!empty($title) && !empty($category_field) && !empty($chart_type)) {
                     $charts[] = array(
@@ -130,7 +171,10 @@ class NM_Chart_Manager
                         'numeric_field2' => $numeric_field2,
                         'category_field' => $category_field,
                         'category_field_2' => $category_field_2,
-                        'chart_type'     => $chart_type
+                        'chart_type'     => $chart_type,
+                        'stacked'        => $stacked,
+                        'value_labels_mode' => $value_labels_mode,
+                        'bar_orientation'   => $bar_orientation
                     );
                 }
             }

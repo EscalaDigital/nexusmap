@@ -1,72 +1,401 @@
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
 }
 
 .modal-content {
     background-color: #fff;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
+    margin: 2% auto;
+    padding: 0;
+    border: none;
+    width: 95%;
+    max-width: 1200px;
+    max-height: 95vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #0073aa, #005a87);
+    color: white;
+    padding: 20px 30px;
+    position: relative;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    gap: 0;
+}
+
+.map-section {
+    flex: 1;
+    min-height: 400px;
+    background: #f8f9fa;
+    border-right: 1px solid #e1e1e1;
+}
+
+.data-section {
+    flex: 1;
+    padding: 30px;
+    background: white;
+    overflow-y: auto;
+    max-height: calc(95vh - 100px);
 }
 
 .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: none;
+    border: none;
+    padding: 5px;
+    border-radius: 50%;
 }
 
 .close:hover,
 .close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-50%) scale(1.1);
 }
 
 .property-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
+    flex-direction: column;
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.property-item:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 .property-item strong {
-    flex: 0 0 150px;
-    font-weight: bold;
-    color: #333;
+    font-weight: 700;
+    color: #0073aa;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e1e1e1;
 }
 
 .property-item span {
-    flex: 1;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    color: #555;
+    color: #333;
+    font-size: 16px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
 .property-item img {
-    max-width: 200px;
+    max-width: 100%;
     height: auto;
-    margin-left: 15px;
+    margin-top: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.property-item img:hover {
+    transform: scale(1.02);
 }
 
 .property-item a {
     color: #0073aa;
     text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #e3f2fd, #ffffff);
+    border: 1px solid #0073aa;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 8px;
+    transition: all 0.3s ease;
 }
 
 .property-item a:hover {
-    text-decoration: underline;
+    background: linear-gradient(135deg, #0073aa, #005a87);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 115, 170, 0.3);
+}
+
+.data-section-title {
+    color: #0073aa;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0073aa;
+}
+
+.property-grid {
+    display: grid;
+    gap: 15px;
+}
+
+/* Responsive design para el modal */
+@media (max-width: 1024px) {
+    .modal-body {
+        flex-direction: column;
+    }
+    
+    .map-section {
+        min-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid #e1e1e1;
+    }
+    
+    .data-section {
+        max-height: none;
+    }
+    
+    .modal-content {
+        width: 98%;
+        margin: 1% auto;
+        max-height: 98vh;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-header {
+        padding: 15px 20px;
+    }
+    
+    .modal-header h2 {
+        font-size: 20px;
+    }
+    
+    .data-section {
+        padding: 20px;
+    }
+    
+    .property-item {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .close {
+        font-size: 28px;
+        right: 15px;
+    }
+}
+
+/* Estilos para las secciones de entradas */
+.nm-entries-section {
+    margin-bottom: 40px;
+}
+
+.nm-entries-section h2 {
+    color: #0073aa;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Estilos para el modal de edición */
+#editEntryModal .modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#editEntryModal h2 {
+    color: #0073aa;
+    margin-top: 0;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.edit-field-group {
+    margin-bottom: 15px;
+}
+
+.edit-field-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.edit-field-group input,
+.edit-field-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-field-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.edit-field-group input:focus,
+.edit-field-group textarea:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+/* Botones mejorados */
+.button.edit-entry {
+    background-color: #0073aa;
+    color: white;
+    border-color: #0073aa;
+}
+
+.button.edit-entry:hover {
+    background-color: #005a87;
+    border-color: #005a87;
+}
+
+.button.delete-entry {
+    background-color: #d63638;
+    color: white;
+    border-color: #d63638;
+}
+
+.button.delete-entry:hover {
+    background-color: #b32d2e;
+    border-color: #b32d2e;
+}
+
+/* Estilos adicionales para elementos interactivos */
+.toggle-content {
+    background: linear-gradient(135deg, #f1f3f4, #ffffff);
+    border: 1px solid #dadce0;
+    color: #0073aa;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-content:hover {
+    background: linear-gradient(135deg, #0073aa, #005a87);
+    color: white;
+    border-color: #0073aa;
+}
+
+/* Estilos para textos largos */
+.short-content, .full-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Animaciones suaves */
+.modal {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Scrollbar personalizado para la sección de datos */
+.data-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.data-section::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.data-section::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.data-section::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Indicador de carga */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.loading-indicator::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e1e1e1;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 

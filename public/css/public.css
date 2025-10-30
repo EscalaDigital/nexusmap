@@ -3,6 +3,122 @@
     position: relative !important;
 }
 
+/* Título del listado de capas Leaflet */
+.nm-layers-title{
+    font-weight:600;
+    font-size:13px;
+    padding:4px 6px 6px;
+    margin:0 0 4px;
+    border-bottom:1px solid #ddd;
+    font-family: system-ui, Arial, sans-serif;
+    background:#f7f7f7;
+    border-radius:4px 4px 0 0;
+}
+
+/* ========================================= */
+/* BOTÓN DE AYUDA / TOUR                     */
+/* ========================================= */
+.nm-help-button {
+    position: relative;
+    font-weight: bold;
+}
+.nm-help-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 50%;
+    background: #0073aa;
+    color: #fff;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 0 0 2px #fff;
+}
+.nm-help-button:hover .nm-help-icon {
+    background: #005a87;
+}
+
+/* Variante por tema (usamos atributo data-theme en overlay para cambiar paleta) */
+[data-theme="theme1"] .nm-help-icon { background:#4CAF50; }
+[data-theme="theme1"] .nm-help-button:hover .nm-help-icon { background:#3d8b41; }
+[data-theme="theme2"] .nm-help-icon { background:#9C27B0; }
+[data-theme="theme2"] .nm-help-button:hover .nm-help-icon { background:#7b1d88; }
+
+/* ========================================= */
+/* TOUR / ONBOARDING                         */
+/* ========================================= */
+.nm-tour-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99998;
+    --nm-tour-top: 0px;
+    --nm-tour-left: 0px;
+    --nm-tour-width: 0px;
+    --nm-tour-height: 0px;
+}
+.nm-tour-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+}
+.nm-tour-overlay::after {
+    content: '';
+    position: absolute;
+    top: var(--nm-tour-top);
+    left: var(--nm-tour-left);
+    width: var(--nm-tour-width);
+    height: var(--nm-tour-height);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+    border: 2px solid #fff;
+    border-radius: 8px;
+    transition: all .35s ease;
+    pointer-events: auto;
+    background: rgba(255,255,255,0.05);
+}
+.nm-tour-tooltip {
+    position: fixed;
+    z-index: 99999;
+    max-width: 340px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+    padding: 16px 18px 14px;
+    font-family: system-ui, Arial, sans-serif;
+    color: #222;
+    animation: nmTourFadeIn .35s ease;
+}
+.nm-tour-tooltip:focus { outline: none; }
+.nm-tour-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.nm-tour-title { font-size:16px; margin:0; line-height:1.2; font-weight:600; }
+.nm-tour-close { background:none; border:none; font-size:20px; cursor:pointer; line-height:1; color:#666; }
+.nm-tour-close:hover { color:#000; }
+.nm-tour-body { font-size:14px; line-height:1.45; margin-bottom:12px; }
+.nm-tour-footer { display:flex; gap:8px; justify-content:flex-end; }
+.nm-tour-footer button { border:none; cursor:pointer; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:500; }
+.nm-tour-prev { background:#e0e0e0; }
+.nm-tour-prev:disabled { opacity:.4; cursor:not-allowed; }
+.nm-tour-next { background:#0073aa; color:#fff; }
+.nm-tour-skip { background:#f5f5f5; }
+.nm-tour-next:hover { background:#005a87; }
+.nm-tour-prev:not(:disabled):hover { background:#cacaca; }
+.nm-tour-skip:hover { background:#e2e2e2; }
+
+/* Temas (simple variación) */
+.nm-tour-overlay[data-theme="theme1"] ~ .nm-tour-tooltip .nm-tour-next { background:#4CAF50; }
+.nm-tour-overlay[data-theme="theme1"] ~ .nm-tour-tooltip .nm-tour-next:hover { background:#3d8b41; }
+.nm-tour-overlay[data-theme="theme2"] ~ .nm-tour-tooltip .nm-tour-next { background:#9C27B0; }
+.nm-tour-overlay[data-theme="theme2"] ~ .nm-tour-tooltip .nm-tour-next:hover { background:#7b1d88; }
+
+@keyframes nmTourFadeIn { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
+
+@media (max-width: 480px){
+    .nm-tour-tooltip { max-width: 90vw; }
+}
+
 #nm-custom-form-container {
     width: 100%;
     max-width: 600px;
@@ -16,98 +132,6 @@
 #nm-map-canvas {
     height: 400px;
 }
-
-/*estilos para el control de capas*/
-/* Estilo general para la sección principal */
-.leaflet-control-layers-list {
-    font-family: Arial, sans-serif; /* Fuente básica */
-    background-color: #f9f9f9; /* Fondo claro */
-    border: 1px solid #ccc; /* Borde gris claro */
-    border-radius: 8px; /* Esquinas redondeadas */
-    padding: 10px; /* Espaciado interno */
-    max-width: 300px; /* Ancho máximo */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
-    overflow: auto; /* Scroll automático si el contenido excede el tamaño */
-  }
-  
-  /* Div que contiene las capas base */
-  .leaflet-control-layers-base {
-    margin-bottom: 10px; /* Margen inferior */
-  }
-  
-  /* Estilo para el separador */
-  .leaflet-control-layers-separator {
-    height: 1px; /* Línea separadora */
-    background-color: #e0e0e0; /* Color de fondo del separador */
-    margin: 10px 0; /* Margen superior e inferior */
-  }
-  
-  /* Div que contiene las superposiciones */
-  .leaflet-control-layers-overlays {
-    margin-top: 10px; /* Margen superior */
-  }
-  
-  /* Estilo para el label que contiene el checkbox y el texto */
-  .leaflet-control-layers-overlays label {
-    display: flex !important;
-    align-items: center;
-    padding: 5px;
-    margin: 0;
-  }
-  
-  /* Ocultar los indicadores de color */
-  .layer-color-indicator {
-    display: none !important;
-  }
-
-  /* Mostrar el texto de las capas */
-  .leaflet-control-layers-overlays label span {
-    display: inline-block !important;
-    font-size: 14px; /* Tamaño de fuente */
-    color: #333; /* Color del texto */
-    margin-left: 8px;
-  }
-  
-  /* Estilo para el checkbox */
-  .leaflet-control-layers-selector {
-    margin-right: 8px; /* Separación entre el checkbox y el texto */
-    vertical-align: middle; /* Alinear el checkbox con el texto */
-  }
-  
-  /* Efecto hover para el label */
-  .leaflet-control-layers-overlays label:hover {
-    background-color: #e6e6e6; /* Fondo gris claro al pasar el cursor */
-  }
-  
-  /* Efecto para cuando el checkbox está activo */
-  .leaflet-control-layers-selector:checked + span {
-    font-weight: bold; /* Negrita para el texto cuando está seleccionado */
-  }
-
-  .leaflet-control-layers-expanded {
-    padding: 15px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  }
-
-  /* Estilo para los grupos de capas */
-  .layer-group-title {
-    font-weight: bold;
-    margin: 10px 0 5px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #eee;
-    color: #333;
-  }
-  
-  /* Ajustes para pantallas pequeñas */
-  @media (max-width: 600px) {
-    .leaflet-control-layers-list {
-      max-width: 100%; /* Hacer que la sección ocupe todo el ancho disponible */
-      font-size: 12px; /* Reducir el tamaño de la fuente en pantallas pequeñas */
-    }
-  }
-  
 
 /* Estilos para el modal lateral */
 .nm-modal {
@@ -202,6 +226,27 @@
   background: #555;
 }
 
+/* Estilos para los campos secccion (headers del formulario)*/
+.nm-modal-section {
+    margin-bottom: 25px;
+}
+
+.nm-modal-header {
+    border-bottom: 15px solid #198754;
+    padding-bottom: 10px;
+    margin: 20px 0 15px;
+    color: #333;
+    font-size: 1.2em;
+}
+
+.nm-modal-field {
+    margin: 10px 0;
+    padding-left: 15px;
+}
+
+.nm-modal-field:last-child {
+    margin-bottom: 20px;
+}
 /* Botón de cierre mejorado */
 .nm-modal-close {
   position: absolute;
@@ -261,12 +306,27 @@
 
 /* Contenedor de gráficos con scroll horizontal */
 #nm-charts-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-  gap: 30px;
-  padding: 20px;
-  height: calc(100% - 40px);
-  overflow-y: auto;
+    display: grid;
+    gap: 30px;
+    padding: 20px;
+    max-height: calc(100% - 20px); /* scroll interno en modal */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 2 columnas en pantallas grandes */
+@media (min-width: 1024px) {
+    #nm-charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 1 columna en pantallas pequeñas */
+@media (max-width: 1023.98px) {
+    #nm-charts-container {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
 }
 /* Contenedor individual de cada gráfico */
 #nm-charts-container > div {
@@ -342,12 +402,8 @@
     transform: translateY(0);
   }
 
-  #nm-charts-container {
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 15px;
-  }
+    /* Ajustes en móviles */
+    #nm-charts-container { grid-template-columns: 1fr; }
 
   #nm-charts-container > div {
     min-width: 100%;
@@ -359,290 +415,625 @@
     height: 400px !important;
   }
 
-  #nm-charts-container {
-    grid-template-columns: 1fr;
+    #nm-charts-container > div { min-height: 300px; }
 }
 
-#nm-charts-container > div {
-    min-height: 300px;
-}
-}
-
-
-/* Contenedor de los controles superiores */
-
-#nm-top-controls {
-    position: absolute;
-    top: 10px; /* Ajusta según sea necesario */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
+/* Estilos para el campo de audio */
+.nm-audio-field {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    margin-top: 10px;
 }
 
-/* Estilos para los botones */
-.nm-control-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 36px;
-    height: 36px;
-    margin: 0 5px;
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    outline: none;
-}
-
-.nm-control-button:hover {
-    background-color: #f0f0f0;
-}
-
-.nm-control-button i {
-    font-size: 18px;
-    color: #333;
-}
-
-/* Estilos para el buscador */
-
-.nm-search-container {
-    display: flex;
-    align-items: center;
-}
-
-.nm-search-input {
-    position: absolute;
-    top: 50px; /* Ajusta según sea necesario */
-    left: 40%;
-    margin-left: 5px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 150px; /* Ajusta el ancho según tus necesidades */
-}
-
-.nm-search-input:focus {
-    outline: none;
-    border-color: #aaa;
-}
-
-/* Estilos para el panel de filtros flotante */
-/* Estilos para el panel de filtros */
-.nm-filters-container {
-  position: relative;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-  z-index: 1000;
-}
-
-.nm-filters-toggle {
-  background: white;
-  padding: 8px 12px;
-  border-radius: 4px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-  cursor: pointer;
-  margin: 10px;
-  z-index: 998;
-}
-
-/* Estilos para el panel de filtros */
-.nm-filters-panel {
-  position: absolute;
-  left: 50px;
-  top: 10px;
-  background: white;
-  padding: 15px;
-  border-radius: 4px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-  width: 280px;
-  max-height: 60vh; /* Altura máxima del 80% del viewport */
-  overflow-y: auto; /* Habilita el scroll vertical */
-  z-index: 9999;
-}
-
-/* Estilos para el scroll */
-.nm-filters-panel::-webkit-scrollbar {
-  width: 8px;
-}
-
-.nm-filters-panel::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.nm-filters-panel::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.nm-filters-panel::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.nm-filters-panel.collapsed {
-  display: none;
-}
-
-.nm-filters-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eee;
-}
-
-.nm-filters-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.nm-close-filters {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 5px;
-}
-
-.nm-filter-group {
-  margin-bottom: 15px;
-  padding: 8px;
-  background: #f9f9f9;
-  border-radius: 4px;
-}
-
-.nm-filter-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.nm-filter-button {
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: white;
-}
-
-.nm-filter-button.active {
-  background: #007bff;
-  color: white;
-  border-color: #0056b3;
-}
-
-/* Estilos para el botón y el panel de la leyenda */
-.map-legend-control {
-    background-color: white;
-    padding: 8px 10px;
-    border: 2px solid rgba(0,0,0,0.2);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.map-legend-control:hover {
-    background-color: #f4f4f4;
-}
-
-.map-legend-control:active {
-    background-color: #e6e6e6;
-}
-
-.map-legend-panel {
-    display: none;
-    position: absolute;
-    bottom: 30px;
-    right: 10px;
-    background-color: white;
-    padding: 15px;
-    border-radius: 4px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-    z-index: 1000;
-    max-width: 250px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.map-legend-panel.visible {
-    display: block;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.legend-color {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #ccc;
-    margin-right: 8px;
-    border-radius: 3px;
-}
-
-.legend-label {
-    font-size: 14px;
-    color: #333;
-}
-
-/* Estilos para el nuevo botón de leyenda personalizado */
-.legend-button {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: white;
-    padding: 8px 12px;
-    border: 2px solid rgba(0,0,0,0.2);
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 99999; /* Aumentar el z-index para estar por encima de los controles de Leaflet */
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: bold;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-}
-
-.legend-button:hover {
-    background-color: #f4f4f4;
-}
-
-.legend-panel {
-    display: none;
-    position: absolute;
-    bottom: 70px;
-    right: 20px;
-    background: white;
-    padding: 15px;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1500; /* Mismo z-index que el botón */
-    max-width: 250px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.legend-panel.visible {
-    display: block;
-}
-
-.legend-group {
+.nm-audio-upload {
     margin-bottom: 15px;
 }
 
-.legend-group strong {
+.nm-audio-upload label {
     display: block;
     margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
 }
 
+.nm-audio-upload-input {
+    width: 100%;
+    padding: 8px;
+    border: 2px dashed #007cba;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
 
+.nm-audio-upload-input:hover {
+    border-color: #005a87;
+}
+
+.nm-audio-preview {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.nm-audio-preview audio {
+    margin-bottom: 10px;
+}
+
+.nm-recorder-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.nm-record-btn, .nm-stop-btn {
+    background-color: #007cba;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.nm-record-btn:hover, .nm-stop-btn:hover {
+    background-color: #005a87;
+}
+
+.nm-record-btn.recording {
+    background-color: #dc3545;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.nm-recording-time {
+    font-family: monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: #dc3545;
+}
+
+.nm-recording-preview {
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.nm-recording-preview audio {
+    margin-bottom: 10px;
+}
+
+.nm-remove-audio, .nm-remove-recording {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nm-remove-audio:hover, .nm-remove-recording:hover {
+    background-color: #c82333;
+}
+
+.nm-audio-field .nm-audio-upload + .nm-audio-recorder {
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+/* Indicador de error */
+.nm-audio-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Indicador de éxito */
+.nm-audio-success {
+    color: #28a745;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* ========================================= */
+/* ESTILOS PARA REPRODUCTOR DE AUDIO EN MODAL */
+/* ========================================= */
+
+.nm-audio-player {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.nm-audio-element {
+    width: 100%;
+    height: 40px;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    outline: none;
+    margin-bottom: 10px;
+}
+
+.nm-audio-element:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Personalización de controles de audio para navegadores webkit */
+.nm-audio-element::-webkit-media-controls-panel {
+    background-color: #ffffff;
+    border-radius: 6px;
+}
+
+.nm-audio-element::-webkit-media-controls-play-button,
+.nm-audio-element::-webkit-media-controls-pause-button {
+    background-color: #007bff;
+    border-radius: 50%;
+    margin-left: 8px;
+}
+
+.nm-audio-element::-webkit-media-controls-timeline {
+    background-color: #e9ecef;
+    border-radius: 3px;
+    margin: 0 10px;
+}
+
+.nm-audio-element::-webkit-media-controls-current-time-display,
+.nm-audio-element::-webkit-media-controls-time-remaining-display {
+    color: #495057;
+    font-size: 12px;
+}
+
+.nm-audio-element::-webkit-media-controls-volume-slider {
+    background-color: #e9ecef;
+    border-radius: 3px;
+}
+
+.nm-audio-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+}
+
+.nm-audio-filename {
+    font-size: 13px;
+    color: #6c757d;
+    font-style: italic;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Estilos responsivos para el reproductor */
+@media (max-width: 768px) {
+    .nm-audio-player {
+        padding: 12px;
+    }
+    
+    .nm-audio-element {
+        height: 35px;
+    }
+    
+    .nm-audio-filename {
+        font-size: 12px;
+    }
+}
+
+/* Animación suave para mostrar el reproductor */
+.nm-audio-player {
+    animation: fadeInAudio 0.3s ease-in-out;
+}
+
+@keyframes fadeInAudio {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para estado de carga */
+.nm-audio-element[data-loading="true"] {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.nm-audio-element[data-loading="true"]::after {
+    content: "Cargando audio...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.9);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Estilos específicos para el modal de WMS */
+#nm-wms-form,
+.nm-wms-modal {
+    display: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(0,0,0,0.5) !important;
+    z-index: 99999 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    transform: none !important;
+    right: auto !important;
+    box-shadow: none !important;
+    transition: none !important;
+    max-height: none !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+#nm-wms-form.show,
+.nm-wms-modal.show {
+    display: flex !important;
+}
+
+#nm-wms-form[style*="flex"],
+.nm-wms-modal[style*="flex"] {
+    display: flex !important;
+}
+
+#nm-wms-form .nm-modal-content,
+.nm-wms-modal .nm-modal-content {
+    background-color: #fff !important;
+    padding: 20px !important;
+    border-radius: 5px !important;
+    width: 400px !important;
+    max-width: 90% !important;
+    max-height: 90vh !important;
+    position: relative !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    overflow-y: auto !important;
+    margin: auto !important;
+}
+
+#nm-wms-form .nm-modal-close,
+.nm-wms-modal .nm-modal-close {
+    position: absolute !important;
+    top: 10px !important;
+    right: 15px !important;
+    font-size: 24px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    color: #aaa !important;
+    line-height: 1 !important;
+}
+
+#nm-wms-form .nm-modal-close:hover,
+.nm-wms-modal .nm-modal-close:hover {
+    color: #000 !important;
+}
+
+#nm-wms-form h3,
+.nm-wms-modal h3 {
+    margin-top: 0 !important;
+    margin-bottom: 15px !important;
+    color: #333 !important;
+}
+
+#nm-wms-form label,
+.nm-wms-modal label {
+    display: block !important;
+    margin-top: 10px !important;
+    margin-bottom: 5px !important;
+    font-weight: bold !important;
+    color: #333 !important;
+}
+
+#nm-wms-form input[type="text"],
+.nm-wms-modal input[type="text"] {
+    width: 100% !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+    border: 1px solid #ccc !important;
+    border-radius: 3px !important;
+    font-size: 14px !important;
+}
+
+#nm-wms-form button,
+.nm-wms-modal button {
+    background-color: #0073aa !important;
+    color: white !important;
+    padding: 10px 20px !important;
+    border: none !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    margin-top: 15px !important;
+    margin-right: 10px !important;
+    font-size: 14px !important;
+}
+
+#nm-wms-form button:hover,
+.nm-wms-modal button:hover {
+    background-color: #005a87 !important;
+}
+
+#nm-wms-form #nm-wms-cancel-button,
+.nm-wms-modal #nm-wms-cancel-button {
+    background-color: #666 !important;
+}
+
+#nm-wms-form #nm-wms-cancel-button:hover,
+.nm-wms-modal #nm-wms-cancel-button:hover {
+    background-color: #444 !important;
+}
+
+#nm-wms-form #nm-wms-loading,
+.nm-wms-modal #nm-wms-loading {
+    text-align: center !important;
+    margin-top: 15px !important;
+}
+
+#nm-wms-form #nm-wms-loading img,
+.nm-wms-modal #nm-wms-loading img {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+#nm-wms-form button:hover {
+    background-color: #005a87 !important;
+}
+
+#nm-wms-form #nm-wms-cancel-button {
+    background-color: #666 !important;
+}
+
+#nm-wms-form #nm-wms-cancel-button:hover {
+    background-color: #444 !important;
+}
+
+/* Media query para pantallas pequeñas */
+@media (max-height: 600px) {
+    #nm-wms-form .nm-modal-content,
+    .nm-wms-modal .nm-modal-content {
+        max-height: 95vh !important;
+        padding: 15px !important;
+    }
+    
+    #nm-wms-form,
+    .nm-wms-modal {
+        padding: 10px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #nm-wms-form .nm-modal-content,
+    .nm-wms-modal .nm-modal-content {
+        width: 95% !important;
+        padding: 15px !important;
+    }
+}
+
+/* ========================================= */
+/* ESTILOS BASE PARA FILTROS MEJORADOS */
+/* ========================================= */
+
+/* Animaciones base para los filtros */
+@keyframes filterSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes filterFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Animación para badges de filtros activos */
+@keyframes badgePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Responsive para filtros en móviles */
+@media (max-width: 768px) {
+    .nm-filters-panel {
+        width: 280px !important;
+        left: 10px !important;
+        font-size: 14px;
+    }
+    
+    .nm-filter-button {
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+    }
+    
+    .nm-filters-stats {
+        padding: 8px !important;
+    }
+    
+    .nm-stats-item {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nm-filters-panel {
+        width: 250px !important;
+        padding: 10px !important;
+    }
+    
+    .nm-filters-header {
+        padding: 10px !important;
+    }
+    
+    .nm-filter-options {
+        gap: 4px !important;
+    }
+}
+
+/* ========================================= */
+/* ESTILOS PARA FILTROS CONDICIONALES */
+/* ========================================= */
+
+/* Filtros condicionales - estilos base */
+.nm-conditional-filter {
+    position: relative;
+    border-left: 3px solid #28a745;
+    margin-left: 10px;
+    padding-left: 10px;
+    background: rgba(40, 167, 69, 0.05);
+    border-radius: 0 8px 8px 0;
+    margin-top: 8px;
+}
+
+.nm-conditional-filter .nm-filter-header {
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.nm-conditional-filter .nm-filter-label {
+    font-size: 13px;
+    color: #1e6f23;
+    font-weight: 500;
+}
+
+.nm-conditional-info {
+    display: block;
+    font-size: 10px;
+    color: #28a745;
+    font-weight: normal;
+    margin-top: 2px;
+}
+
+/* Indicador visual para filtros condicionales */
+.nm-conditional-filter::before {
+    content: '🔗';
+    position: absolute;
+    left: -8px;
+    top: 8px;
+    font-size: 12px;
+    color: #28a745;
+}
+
+/* Animación suave para mostrar/ocultar filtros condicionales */
+.nm-conditional-filter {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+/* Estados de los filtros condicionales */
+.nm-conditional-filter[style*="display: none"] {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Botones de filtros condicionales con estilo diferente */
+.nm-conditional-filter .nm-filter-button {
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    position: relative;
+    background: rgba(40, 167, 69, 0.05) !important;
+}
+
+.nm-conditional-filter .nm-filter-button::after {
+    content: '◦';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    color: #28a745;
+    opacity: 0.7;
+}
+
+.nm-conditional-filter .nm-filter-button.active {
+    background: rgba(40, 167, 69, 0.2) !important;
+    border-color: #28a745 !important;
+}
+
+.nm-conditional-filter .nm-filter-button.active::after {
+    content: '✓';
+    color: #28a745;
+    opacity: 1;
+}
+
+/* Mejoras para la legibilidad en filtros condicionales */
+.nm-conditional-filter .nm-filter-options {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+/* Tooltip para explicar los filtros condicionales */
+.nm-conditional-filter .nm-filter-header {
+    position: relative;
+}
+
+.nm-conditional-filter .nm-filter-header:hover::after {
+    content: 'Este filtro depende de la selección del campo padre';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #333;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1001;
+    opacity: 0.9;
+}
+
+/* Responsive para filtros condicionales */
+@media (max-width: 768px) {
+    .nm-conditional-filter {
+        margin-left: 5px;
+        padding-left: 8px;
+    }
+    
+    .nm-conditional-info {
+        font-size: 9px;
+    }
+    
+    .nm-conditional-filter .nm-filter-button::after {
+        font-size: 7px;
+    }
+}

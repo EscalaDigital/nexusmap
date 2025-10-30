@@ -23,7 +23,13 @@
                             $is_active = isset($saved_settings[$field_key]['active']) && $saved_settings[$field_key]['active'] === 'on';
                         ?>
                             <tr>
-                                <td><?php echo esc_html($field['label']); ?></td>
+                                <td>
+                                    <?php echo esc_html($field['label']); ?>
+                                    <?php if (!empty($field['is_conditional'])): ?>
+                                        <span style="display:inline-block;margin-left:8px;padding:2px 6px;border-radius:4px;background:#eef6ff;color:#1d4ed8;font-size:11px;">Subcampo condicional</span>
+                                        <div style="color:#6b7280;font-size:11px;">Padre: <?php echo esc_html($field['parent_field'] ?? ''); ?> · Opción: <?php echo esc_html($field['parent_option'] ?? ''); ?></div>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo esc_html($field['type']); ?></td>
                                 <td>
                                     <input type="hidden" name="layers[<?php echo esc_attr($field_key); ?>][active]" value="off">
@@ -36,16 +42,17 @@
                                     <?php if (isset($field['options']) && is_array($field['options'])): ?>
                                         <?php foreach ($field['options'] as $index => $option): ?>
                                             <?php
-                                            $label = is_array($option) ? $option['label'] : $option;
-                                            $value = is_array($option) ? $option['value'] : $index;
+                                            $label = is_array($option) ? ($option['label'] ?? $option['value'] ?? $option) : $option;
+                                            $value = is_array($option) ? ($option['value'] ?? $label) : (is_string($option) ? $option : $index);
+                                            // Mantener compatibilidad: si ya existía por label, úsala; si no, por value
                                             $saved_color = isset($saved_settings[$field_key]['colors'][$label]) 
                                                 ? $saved_settings[$field_key]['colors'][$label] 
-                                                : '#' . substr(md5($value), 0, 6);
+                                                : (isset($saved_settings[$field_key]['colors'][$value]) ? $saved_settings[$field_key]['colors'][$value] : '#' . substr(md5($value), 0, 6));
                                             ?>
                                             <div class="color-row">
                                                 <input type="hidden" 
                                                        name="layers[<?php echo esc_attr($field_key); ?>][labels][]" 
-                                                       value="<?php echo esc_attr($label); ?>">
+                                                       value="<?php echo esc_attr($value); ?>">
                                                 <label>
                                                     <?php echo esc_html($label); ?>:
                                                     <input type="color"

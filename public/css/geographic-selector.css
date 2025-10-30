@@ -1,0 +1,205 @@
+/**
+ * Geographic Selector Styles
+ */
+
+.nm-geographic-selector {
+    margin-bottom: 20px;
+}
+
+.nm-geographic-selector-error {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fef7f7;
+    border: 1px solid #d63638;
+    border-radius: 4px;
+}
+
+.nm-geographic-selector-error p {
+    margin: 5px 0 0 0;
+}
+
+.nm-geo-level {
+    margin-bottom: 15px;
+}
+
+.nm-geo-level label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.nm-geo-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.nm-geo-select:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+.nm-geo-select:disabled {
+    background-color: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.nm-geo-loading {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
+    color: #666;
+    font-size: 13px;
+}
+
+.nm-geo-loading:before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: nm-spin 1s linear infinite;
+}
+
+@keyframes nm-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.nm-geo-error {
+    margin-top: 5px;
+    padding: 8px 12px;
+    background-color: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.nm-geo-error span {
+    display: block;
+    margin-bottom: 5px;
+    color: #c33;
+}
+
+.nm-retry-btn {
+    background: #0073aa;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nm-retry-btn:hover {
+    background: #005a87;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nm-geo-select {
+        padding: 8px 10px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* Theme compatibility - inherit from form theme */
+.nm-form-theme-1 .nm-geo-select {
+    border-radius: 8px;
+    border-width: 1px;
+}
+
+.nm-form-theme-2 .nm-geo-select {
+    border-radius: 0;
+    border-color: #333;
+}
+
+.nm-form-theme-2 .nm-geo-select:focus {
+    border-color: #666;
+    box-shadow: none;
+}
+
+/* Error states */
+.nm-geo-select.error {
+    border-color: #d63638;
+}
+
+.nm-geo-select.error:focus {
+    border-color: #d63638;
+    box-shadow: 0 0 0 1px #d63638;
+}
+
+/* Success states */
+.nm-geo-select.success {
+    border-color: #00a32a;
+}
+
+/* Loading state for select */
+.nm-geo-select.loading {
+    background-image: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"%3E%3Cpath fill="%23666" d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/%3E%3Cpath fill="%230073aa" d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z"%3E%3CanimateTransform attributeName="transform" dur="0.75s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/%3E%3C/path%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+/* Custom validation messages */
+.nm-geo-validation-message {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #d63638;
+}
+
+/* Admin styles for form builder */
+.nm-form-builder .nm-geographic-field {
+    position: relative;
+}
+
+.nm-form-builder .nm-geo-config-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.nm-form-builder .nm-field-controls {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.nm-form-builder .nm-geographic-field:hover .nm-field-controls {
+    opacity: 1;
+}
+
+/* Compact layout option */
+.nm-geo-compact .nm-geo-level {
+    display: inline-block;
+    width: calc(50% - 10px);
+    margin-right: 20px;
+    vertical-align: top;
+}
+
+.nm-geo-compact .nm-geo-level:nth-child(even) {
+    margin-right: 0;
+}
+
+@media (max-width: 768px) {
+    .nm-geo-compact .nm-geo-level {
+        width: 100%;
+        margin-right: 0;
+    }
+}

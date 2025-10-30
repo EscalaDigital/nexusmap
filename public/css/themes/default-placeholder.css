@@ -1,0 +1,13 @@
+/* Imagen placeholder CSS cuando no se puede cargar la imagen real */
+.nm-entry-image.no-image {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 48px;
+}
+
+.nm-entry-image.no-image::before {
+    content: "📷";
+}
