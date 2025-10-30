@@ -24,28 +24,17 @@ class NM_Ajax_Handler {
         $form_data = $_POST['form_data'];
         $this->model->save_form($form_data);
         wp_send_json_success('Form saved successfully');
-    }    public function get_field_template() {
+    }
+
+    public function get_field_template() {
         check_ajax_referer('nm_admin_nonce', 'nonce');
         $field_type = sanitize_text_field($_POST['field_type']);
 
-        if ($field_type) {
-            $template_path = dirname(__DIR__) . '/admin/views/field-templates/' . $field_type . '.php';
-            
-            if (file_exists($template_path)) {
-                // Initialize variables that templates expect
-                $field_label = '';
-                $field_name = '';
-                
-                ob_start();
-                include $template_path;
-                $field_html = ob_get_clean();
-                wp_send_json_success($field_html);
-            } else {
-                wp_send_json_error('Field template not found: ' . $field_type);
-            }
-        } else {
-            wp_send_json_error('Field type is missing');
-        }
+        ob_start();
+        include 'views/field-templates/' . $field_type . '.php';
+        $field_html = ob_get_clean();
+
+        wp_send_json_success($field_html);
     }
 
     public function get_entries() {

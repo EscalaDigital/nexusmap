@@ -1,0 +1,943 @@
+/*estilos para el control de capas*/
+/* Estilo general para la sección principal */
+.leaflet-control-layers-list {
+    font-family: Arial, sans-serif; /* Fuente básica */
+    background-color: #f9f9f9; /* Fondo claro */
+    border: 1px solid #ccc; /* Borde gris claro */
+    border-radius: 8px; /* Esquinas redondeadas */
+    padding: 10px; /* Espaciado interno */
+    max-width: 300px; /* Ancho máximo */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    overflow: auto; /* Scroll automático si el contenido excede el tamaño */
+  }
+
+/* Div que contiene las capas base */
+  .leaflet-control-layers-base {
+    margin-bottom: 10px; /* Margen inferior */
+  }
+  
+  /* Estilo para el separador */
+  .leaflet-control-layers-separator {
+    height: 1px; /* Línea separadora */
+    background-color: #e0e0e0; /* Color de fondo del separador */
+    margin: 10px 0; /* Margen superior e inferior */
+  }
+  
+  /* Div que contiene las superposiciones */
+  .leaflet-control-layers-overlays {
+    margin-top: 10px; /* Margen superior */
+  }
+  
+  /* Estilo para el label que contiene el checkbox y el texto */
+  .leaflet-control-layers-overlays label {
+    display: flex !important;
+    align-items: center;
+    padding: 5px;
+    margin: 0;
+  }
+  
+  /* Ocultar los indicadores de color */
+  .layer-color-indicator {
+    display: none !important;
+  }
+
+  /* Mostrar el texto de las capas */
+  .leaflet-control-layers-overlays label span {
+    display: inline-block !important;
+    font-size: 14px; /* Tamaño de fuente */
+    color: #333; /* Color del texto */
+    margin-left: 8px;
+  }
+  
+  /* Estilo para el checkbox */
+  .leaflet-control-layers-selector {
+    margin-right: 8px; /* Separación entre el checkbox y el texto */
+    vertical-align: middle; /* Alinear el checkbox con el texto */
+  }
+  
+  /* Efecto hover para el label */
+  .leaflet-control-layers-overlays label:hover {
+    background-color: #e6e6e6; /* Fondo gris claro al pasar el cursor */
+  }
+  
+  /* Efecto para cuando el checkbox está activo */
+  .leaflet-control-layers-selector:checked + span {
+    font-weight: bold; /* Negrita para el texto cuando está seleccionado */
+  }
+
+  .leaflet-control-layers-expanded {
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  /* Estilo para los grupos de capas */
+  .layer-group-title {
+    font-weight: bold;
+    margin: 10px 0 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+  }
+  
+  /* Ajustes para pantallas pequeñas */
+  @media (max-width: 600px) {
+    .leaflet-control-layers-list {
+      max-width: 100%; /* Hacer que la sección ocupe todo el ancho disponible */
+      font-size: 12px; /* Reducir el tamaño de la fuente en pantallas pequeñas */
+    }
+  }
+  
+  /* Contenedor principal del mapa */
+.leaflet-container {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+
+
+/* Ajuste del mapa */
+.leaflet-map-pane {
+    position: absolute;
+    left: 60px;
+    width: calc(100% - 60px);
+    height: 100%;
+}
+
+/* Contenedor de los controles superiores */
+
+/* Estilos para los botones */
+.nm-control-button {
+    width: 40px;
+    height: 40px;
+    margin: 5px 0;
+    background-color: #0E6F6C;
+    border: 1px solid #0E6F6C;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.nm-control-button:hover {
+    background-color: #0a5452;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(14, 111, 108, 0.3);
+}
+
+.nm-control-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nm-control-button i {
+    font-size: 20px;
+    color: white;
+}
+
+/* Estilos para el buscador */
+
+.nm-search-container {
+    display: flex;
+    align-items: center;
+}
+
+.nm-search-input {
+    position: absolute;
+    top: 50px; /* Ajusta según sea necesario */
+    left: 40%;
+    margin-left: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 150px; /* Ajusta el ancho según tus necesidades */
+}
+
+.nm-search-input:focus {
+    outline: none;
+    border-color: #aaa;
+}
+
+
+/* Estilos para el panel de filtros flotante */
+/* Estilos para el panel de filtros */
+.nm-filters-container {
+  position: relative;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  z-index: 1000;
+}
+
+.nm-filters-toggle {
+  background: #0E6F6C;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(14, 111, 108, 0.3);
+  cursor: pointer;
+  margin: 10px;
+  z-index: 998;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.nm-filters-toggle:hover {
+  background: #0a5855;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 111, 108, 0.4);
+}
+
+/* Estilos para el panel de filtros */
+.nm-filters-panel {
+  position: absolute !important;
+  left: 60px !important; /* Alineado con nm-top-controls */
+  top: 0 !important;
+  height: 100% !important;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+  padding: 20px;
+  width: 350px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  overflow-y: auto;
+  z-index: 999;
+  display: none;
+  border-left: 4px solid #0E6F6C;
+}
+
+.nm-filters-panel:not(.collapsed) {
+  display: block;
+}
+
+/* Estilos para el nuevo panel de leyenda */
+.legend-panel {
+  position: absolute;
+  left: 60px;
+  top: 0;
+  height: 100%;
+  margin: 0;
+  background: white;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 999;
+  width: 300px;
+  overflow-y: auto;
+  display: none;
+  border-radius: 0;
+}
+
+.legend-panel.visible {
+  display: block;
+}
+
+/* Estilos para el scroll */
+.nm-filters-panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-track {
+  background: #f1f3f4;
+  border-radius: 5px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #0E6F6C, #0a5855);
+  border-radius: 5px;
+}
+
+.nm-filters-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #0a5855, #083e3c);
+}
+
+.nm-filters-panel.collapsed {
+  display: none;
+}
+
+/* Header mejorado para tema 2 */
+.nm-filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #0E6F6C 0%, #0a5855 100%);
+  margin: -20px -20px 20px -20px;
+  color: white;
+  border-bottom: 3px solid #083e3c;
+}
+
+.nm-filters-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.nm-filters-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.nm-clear-filters {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.nm-clear-filters:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.nm-close-filters {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: all 0.3s;
+}
+
+.nm-close-filters:hover {
+  background: rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+/* Estadísticas y contadores para tema 2 */
+.nm-filters-stats {
+  background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+  border: 2px solid #0E6F6C;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 10px rgba(14, 111, 108, 0.1);
+}
+
+.nm-stats-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.nm-stats-label {
+  font-weight: bold;
+  color: #0E6F6C;
+  font-size: 14px;
+}
+
+.nm-stats-value {
+  background: linear-gradient(135deg, #0E6F6C, #0a5855);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  min-width: 25px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(14, 111, 108, 0.3);
+}
+
+.nm-stats-total {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.nm-active-filters {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid #0E6F6C;
+}
+
+.nm-active-label {
+  font-size: 13px;
+  color: #0E6F6C;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.nm-active-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nm-active-tag {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
+  transition: all 0.3s ease;
+}
+
+.nm-active-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(23, 162, 184, 0.4);
+}
+
+.nm-remove-tag {
+  cursor: pointer;
+  font-weight: bold;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.nm-remove-tag:hover {
+  background: rgba(255,255,255,0.5);
+  transform: scale(1.2);
+}
+
+/* Grupos de filtros mejorados para tema 2 */
+.nm-filter-group {
+  margin-bottom: 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.nm-filter-group:hover {
+  border-color: #0E6F6C;
+  box-shadow: 0 5px 15px rgba(14, 111, 108, 0.15);
+}
+
+.nm-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #0E6F6C;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.nm-filter-header:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.nm-filter-label {
+  font-weight: bold;
+  color: #0E6F6C;
+  flex-grow: 1;
+  font-size: 14px;
+}
+
+.nm-filter-toggle {
+  color: #0E6F6C;
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 10px;
+  transition: transform 0.3s;
+}
+
+.nm-filter-group.collapsed .nm-filter-toggle {
+  transform: rotate(-90deg);
+}
+
+.nm-filter-badge {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.nm-filter-badge.active {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.nm-filter-options {
+  padding: 15px;
+  background: white;
+  display: block;
+}
+
+.nm-filter-group.collapsed .nm-filter-options {
+  display: none;
+}
+
+.nm-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Botones de filtro mejorados para tema 2 */
+.nm-filter-button {
+  padding: 8px 14px;
+  border: 2px solid #0E6F6C;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  color: #0E6F6C;
+}
+
+.nm-filter-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(14, 111, 108, 0.1), transparent);
+  transition: left 0.6s;
+}
+
+.nm-filter-button:hover::before {
+  left: 100%;
+}
+
+.nm-filter-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(14, 111, 108, 0.2);
+  background: #f8f9fa;
+}
+
+.nm-filter-button.active {
+  background: linear-gradient(135deg, #0E6F6C, #0a5855);
+  color: white;
+  border-color: #083e3c;
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(14, 111, 108, 0.4);
+}
+
+.nm-filter-button.active::after {
+  content: '✓';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.4);
+}
+
+.nm-button-text {
+  flex-grow: 1;
+}
+
+.nm-button-count {
+  background: rgba(14, 111, 108, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  color: inherit;
+  font-weight: bold;
+  border: 1px solid rgba(14, 111, 108, 0.2);
+}
+
+.nm-filter-button.active .nm-button-count {
+  background: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.4);
+}
+
+/* Controles de expansión para tema 2 */
+.nm-filter-count {
+  padding: 15px;
+  border-top: 2px solid #0E6F6C;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.nm-expand-all,
+.nm-collapse-all {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #0E6F6C, #0a5855);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  transition: all 0.3s;
+  box-shadow: 0 3px 8px rgba(14, 111, 108, 0.3);
+}
+
+.nm-expand-all:hover,
+.nm-collapse-all:hover {
+  background: linear-gradient(135deg, #0a5855, #083e3c);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(14, 111, 108, 0.4);
+}
+
+/* Animaciones específicas del tema 2 */
+.nm-filter-group {
+  animation: filterSlideIn 0.4s ease-out;
+}
+
+.nm-filter-button:active {
+  transform: scale(0.92);
+}
+
+.nm-filters-panel {
+  animation: filterFadeIn 0.5s ease-out;
+}
+
+/* Estados de hover mejorados para tema 2 */
+.nm-filter-group:hover {
+  transform: translateY(-3px);
+  transition: all 0.4s ease;
+}
+
+/* Efectos de glassmorphism para tema 2 */
+.nm-filters-stats {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Indicadores de carga para tema 2 */
+.nm-filter-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.nm-filter-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 3px solid rgba(14, 111, 108, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #0E6F6C;
+  animation: spinTheme2 1.2s linear infinite;
+}
+
+@keyframes spinTheme2 {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Efectos adicionales de interactividad */
+.nm-filter-button:focus {
+  outline: 3px solid rgba(14, 111, 108, 0.3);
+  outline-offset: 2px;
+}
+
+.nm-active-tag:hover {
+  transform: translateY(-1px) scale(1.05);
+}
+
+
+/* Estilos para el botón y el panel de la leyenda */
+.map-legend-control {
+    background-color: white;
+    padding: 8px 10px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.map-legend-control:hover {
+    background-color: #f4f4f4;
+}
+
+.map-legend-control:active {
+    background-color: #e6e6e6;
+}
+
+.map-legend-panel {
+    display: none;
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    z-index: 1000;
+    max-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.map-legend-panel.visible {
+    display: block;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+
+.legend-label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Estilos para el nuevo botón de leyenda personalizado */
+.legend-button {
+    display: none;
+}
+
+/* Media queries para dispositivos móviles */
+@media screen and (max-width: 768px) {
+    #nm-top-controls {
+        width: 50px;
+    }
+
+    .leaflet-map-pane {
+        left: 50px;
+        width: calc(100% - 50px);
+    }
+
+    .nm-filters-panel,
+    .leaflet-control-layers-list,
+    .legend-panel {
+        left: 60px !important;
+        width: 280px;
+    }
+
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+        width: 35px !important;
+        height: 35px !important;
+        line-height: 35px !important;
+    }
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media screen and (max-width: 480px) {
+    .nm-filters-panel,
+    .legend-panel {
+        width: calc(100% - 60px);
+    }
+}
+
+.legend-group {
+    margin-bottom: 15px;
+}
+
+.legend-group strong {
+    display: block;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+}
+
+.nm-conditional-group {
+    border-left: 3px solid #198754;
+    margin: 15px 0;
+    padding: 10px 0 10px 15px;
+}
+
+.nm-conditional-fields {
+    margin-left: 20px;
+    padding-top: 10px;
+}
+
+.nm-conditional-field {
+    color: #666;
+    font-size: 0.95em;
+}
+
+/* Ajustes específicos de Leaflet */
+.leaflet-left {
+    left: 0;
+}
+
+/* Ajustes del control de zoom */
+.leaflet-control-container .leaflet-left {    
+  position: static;
+}
+
+.leaflet-control-container .leaflet-top {
+    position: static;
+}
+
+.leaflet-control-zoom {
+    position: absolute !important;
+    right: 10px !important;
+   bottom: 10px ;
+ 
+    margin: 5px 0 ;  
+    border: none ;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    background-color: #0E6F6C !important;
+    border: 2px solid #ffffff !important;
+    border-radius: 50% !important;
+    color: white !important;
+    cursor: pointer;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    font-size: 20px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+    background-color: #0a5452 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(14, 111, 108, 0.3) !important;
+}
+
+.leaflet-control-zoom-in:active,
+.leaflet-control-zoom-out:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Contenedor de los controles superiores */
+#nm-top-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 100%;
+    background-color: white;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 15px;
+    gap: 10px;
+}
+
+/* Media queries para dispositivos móviles */
+@media screen and (max-width: 768px) {
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+        width: 35px !important;
+        height: 35px !important;
+        line-height: 35px !important;
+    }
+}
+
+/* Posicionamiento de los controles de Leaflet */
+.leaflet-top.leaflet-right {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.leaflet-control-layers {
+    margin: 0 !important;
+}
+
+.leaflet-control-layers-toggle {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    background-color: #0E6F6C !important;
+    border: 2px solid #ffffff !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.leaflet-control-layers-toggle:hover {
+    background-color: #0a5452 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(14, 111, 108, 0.3) !important;
+}
+
+.leaflet-control-layers-expanded {
+    position: relative;
+    right: 0;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    opacity: 1;
+    z-index: 1000;
+}
+
+/* Ajustes responsivos para controles de Leaflet */
+@media screen and (max-width: 768px) {
+    .leaflet-top.leaflet-right {
+        top: 5px;
+        right: 5px;
+    }
+
+    .leaflet-control-layers-expanded {
+        padding: 10px;
+    }
+}

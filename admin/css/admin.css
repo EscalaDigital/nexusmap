@@ -114,17 +114,6 @@
     box-sizing: border-box;
 }
 
-/* Hide field name inputs since they are now auto-generated */
-.nm-form-field .field-name {
-    display: none;
-}
-
-/* Style the field label input to take full width */
-.nm-form-field .field-label {
-    width: 100% !important;
-    margin-bottom: 10px;
-}
-
 /* Botones de acción dentro del formulario */
 .nm-form-field button,
 .nm-remove-field,
@@ -267,44 +256,285 @@
     display: block;
 }
 
-/* Estilos para la gestión de capas */
-.nm-file-upload-info {
-    background: #e7f3ff;
-    border: 1px solid #bee5eb;
-    border-radius: 4px;
+/* Estilo para ventana de filtros*/
+
+.filter-settings {
     padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
     margin-top: 10px;
-    font-size: 14px;
-    color: #31708f;
 }
 
-.nm-file-upload-info ul {
-    margin: 5px 0 0 20px;
-    padding: 0;
+.filter-settings p {
+    margin: 5px 0;
 }
 
-.nm-file-upload-info li {
-    margin: 3px 0;
+.filter-settings label {
+    display: block;
+    margin-bottom: 5px;
 }
 
-.nm-layer-url-truncated {
+.filter-settings input[type="text"],
+.filter-settings input[type="number"] {
+    width: 100%;
     max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: inline-block;
 }
 
-/* Mejoras para la tabla de capas */
-.wp-list-table .nm-layer-actions {
-    white-space: nowrap;
+.filter-config {
+    min-width: 300px;
 }
 
-.wp-list-table .nm-layer-actions a {
+/* Estilos para pantalla de gráficos */
+
+
+.chart-box {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.chart-box select,
+.chart-box input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.chart-box h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.remove-chart {
+    color: #dc3232;
+    margin-top: 10px;
+}
+
+#add-chart {
+    margin-bottom: 20px;
     margin-right: 10px;
-    text-decoration: none;
 }
 
-.wp-list-table .nm-layer-actions a:hover {
-    text-decoration: underline;
+/* Estilos para campos condicionales */
+
+.conditional-containers {
+    margin-top: 20px;
 }
+
+.conditional-container {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    background: #f9f9f9;
+}
+
+.conditional-container h4 {
+    margin: 0 0 10px 0;
+}
+
+.conditional-fields .nm-form-field{
+    width: 100% !important;
+    height: auto !important;   
+}
+
+.conditional-fields {
+    min-height: 100px;
+    border: 2px dashed #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    background: #f9f9f9;
+}
+
+.field-placeholder {
+    border: 2px dashed #666;
+    margin: 5px 0;
+    height: 30px;
+    background: #f0f0f0;
+}
+
+.conditional-fields-menu-active {
+    min-width: 150px;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.conditional-fields-menu-active li {
+    padding: 8px;
+    margin: 4px 0;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    cursor: move;
+}
+
+.conditional-container {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    background: #fff;
+}
+
+.conditional-fields-menu {
+    float: right;
+    width: 150px;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.conditional-fields-menu ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.conditional-fields-menu li {
+    padding: 5px;
+    margin: 2px 0;
+    cursor: move;
+    background: #f1f1f1;
+}
+
+/* Estilos específicos para el campo de audio */
+.nm-form-field[data-type="audio"] .audio-options {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.nm-form-field[data-type="audio"] .audio-options label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.nm-form-field[data-type="audio"] .audio-options input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.nm-form-field[data-type="audio"] .audio-options input[type="number"],
+.nm-form-field[data-type="audio"] .audio-options input[type="text"] {
+    width: 100%;
+    max-width: 200px;
+    padding: 5px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.nm-form-field[data-type="audio"] .audio-options input[type="number"]:focus,
+.nm-form-field[data-type="audio"] .audio-options input[type="text"]:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+}
+
+/* Información de tipos de archivo en el constructor de formularios */
+.file-type-info {
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 3px;
+}
+
+.file-type-info small {
+    color: #0073aa;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Iconos para los tipos de campo en el constructor */
+#nm-form-elements li[data-type="header"]::before {
+    content: "🏷️ ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="text"]::before {
+    content: "✏️ ";
+    margin-right: 5px;
+}
+
+/* Fix para el icono de textarea */
+#nm-form-elements li[data-type="textarea"]::before {
+    content: "■ " !important;
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="checkbox"]::before {
+    content: "☑️ ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="radio"]::before {
+    content: "🔘 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="select"]::before {
+    content: "📋 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="image"]::before {
+    content: "📷 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="file"]::before {
+    content: "📄 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="number"]::before {
+    content: "🔢 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="date"]::before {
+    content: "📅 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="url"]::before {
+    content: "🔗 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="audio"]::before {
+    content: "🎵 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="conditional-select"]::before {
+    content: "🔄 ";
+    margin-right: 5px;
+}
+
+#nm-form-elements li[data-type="geographic-selector"]::before {
+    content: "🌍 ";
+    margin-right: 5px;
+}
+
+/* Auto-generated field names should be hidden */
+.nm-form-field .field-name[type="hidden"] {
+    display: none !important;
+}
+
+/* For better UX, add a subtle indicator that field names are auto-generated */
+.nm-form-field .field-label {
+    position: relative;
+}
+
+.nm-form-field .field-label::after {
+    content: " (ID auto)";
+    font-size: 10px;
+    color: #999;
+    font-style: italic;
+    margin-left: 5px;
+}
+

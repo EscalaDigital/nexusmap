@@ -15,11 +15,11 @@ class NM_Entries
     public function add_entries_submenu()
     {
         add_submenu_page('nm', 'Form Entries', 'Entries', 'manage_options', 'nm-entries', array($this, 'display_entries_page'));
-    }
-
-    public function display_entries_page()
+    }    public function display_entries_page()
     {
-        $entries = $this->model->get_entries();
+        // Obtener entradas pendientes y aceptadas
+        $pending_entries = $this->model->get_entries('pending');
+        $approved_entries = $this->model->get_entries('approved');
         include_once 'views/entries-list.php';
     }
 }

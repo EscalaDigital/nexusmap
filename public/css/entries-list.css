@@ -1,0 +1,1137 @@
+/* Estilos para el listado de entradas de NexusMap */
+
+.nm-entries-list-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.nm-entries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+    align-items: start; /* Permite que las tarjetas tengan diferentes alturas */
+}
+
+.nm-entry-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e1e5e9;
+    height: fit-content; /* Permite que la altura se adapte al contenido */
+    display: flex;
+    flex-direction: column;
+}
+
+.nm-entry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.nm-entry-image {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.nm-entry-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.nm-entry-card:hover .nm-entry-image img {
+    transform: scale(1.05);
+}
+
+.nm-entry-image.no-image {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.nm-placeholder-icon {
+    font-size: 48px;
+    opacity: 0.7;
+}
+
+.nm-entry-content {
+    padding: 16px;
+    flex-grow: 1; /* Permite que el contenido se expanda */
+    display: flex;
+    flex-direction: column;
+}
+
+.nm-entry-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+    /* Removido min-height para permitir altura variable */
+    display: -webkit-box;
+    -webkit-line-clamp: unset; /* Permite múltiples líneas */
+    line-clamp: unset;
+    -webkit-box-orient: vertical;
+    overflow: visible; /* Permite mostrar todo el texto */
+}
+
+.nm-entry-category {
+    margin-bottom: 8px;
+}
+
+.nm-category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Colores para diferentes categorías */
+.nm-category-badge {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+/* Colores específicos basados en el contenido */
+.nm-entry-card[data-category*="contaminación"] .nm-category-badge,
+.nm-entry-card[data-category*="Contaminación"] .nm-category-badge {
+    background-color: #3f51b5;
+    color: white;
+}
+
+.nm-entry-card[data-category*="regulación"] .nm-category-badge,
+.nm-entry-card[data-category*="alteración"] .nm-category-badge,
+.nm-entry-card[data-category*="morfológicas"] .nm-category-badge {
+    background-color: #4caf50;
+    color: white;
+}
+
+.nm-entry-card[data-category*="abastecimiento"] .nm-category-badge,
+.nm-entry-card[data-category*="servicios"] .nm-category-badge {
+    background-color: #ff9800;
+    color: white;
+}
+
+.nm-entry-card[data-category*="suelo"] .nm-category-badge {
+    background-color: #795548;
+    color: white;
+}
+
+.nm-entry-date {
+    font-size: 12px;
+    color: #666;
+    margin-top: auto; /* Empuja la fecha hacia el final de la tarjeta */
+    padding-top: 8px;
+    flex-shrink: 0; /* Evita que se comprima */
+}
+
+/* Paginación */
+.nm-entries-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.nm-page-link {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 2px;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.nm-page-link:hover {
+    background-color: #f5f5f5;
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.nm-page-link.nm-current {
+    background-color: #0073aa;
+    color: white;
+    border-color: #0073aa;
+    font-weight: 600;
+}
+
+.nm-page-link.nm-prev,
+.nm-page-link.nm-next {
+    font-weight: 600;
+}
+
+.nm-page-dots {
+    display: inline-block;
+    padding: 8px 4px;
+    color: #999;
+    font-weight: bold;
+}
+
+/* Mensaje cuando no hay entradas */
+.nm-no-entries {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.nm-no-entries p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Mensaje cuando no hay configuración de galería */
+.nm-no-config-message {
+    text-align: center;
+    padding: 20px;
+    background: #f0f8ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    color: #0073aa;
+}
+
+.nm-no-config-message p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.nm-no-config-message p:last-child {
+    margin-bottom: 0;
+}
+
+.nm-no-config-message strong {
+    color: #005a87;
+}
+
+.nm-entry-description {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+    margin: 8px 0;
+    flex-grow: 1; /* Permite que la descripción ocupe el espacio disponible */
+}
+
+.nm-entry-audio {
+    margin: 12px 0;
+    flex-shrink: 0; /* Evita que se comprima */
+}
+
+.nm-entry-audio audio {
+    width: 100%;
+    max-width: 100%;
+    height: 32px;
+}
+
+.nm-entry-file {
+    margin: 12px 0;
+    flex-shrink: 0; /* Evita que se comprima */
+}
+
+.nm-download-btn {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #0073aa;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: background-color 0.3s ease;
+}
+
+.nm-download-btn:hover {
+    background: #005a87;
+    color: white;
+    text-decoration: none;
+}
+
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nm-entries-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    .nm-entry-card {
+        margin-bottom: 15px;
+    }
+    
+    .nm-entry-content {
+        padding: 12px;
+    }
+    
+    .nm-entry-title {
+        font-size: 15px;
+    }
+    
+    .nm-entries-pagination {
+        gap: 4px;
+    }
+    
+    .nm-page-link {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+    
+    .nm-page-link {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .nm-entry-audio audio {
+        height: 28px;
+    }
+    
+    .nm-download-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+
+@media (max-width: 480px) {
+    .nm-entries-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .nm-entries-list-container {
+        padding: 15px 10px;
+    }
+}
+
+/* Animaciones de carga específicas para tarjetas de entradas */
+@keyframes nm-cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efectos hover mejorados */
+.nm-entry-card {
+    animation: nm-cardFadeIn 0.5s ease-out;
+    cursor: pointer;
+    position: relative;
+}
+
+.nm-entry-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+    pointer-events: none;
+}
+
+.nm-entry-card:hover::before {
+    left: 100%;
+}
+
+/* Modal específico para mostrar detalles de entrada - No interfiere con otros modales */
+#nm-entries-modal.nm-entry-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 10000;
+    overflow-y: auto;
+    animation: nm-fadeIn 0.3s ease-out;
+}
+
+#nm-entries-modal .nm-modal-content {
+    position: relative;
+    background: #fff;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 12px;
+    max-width: 1200px;
+    width: 95%;
+    max-height: 95vh;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: nm-slideInUp 0.4s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes nm-slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes nm-fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes nm-fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+#nm-entries-modal .nm-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    position: relative;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+#nm-entries-modal .nm-modal-close {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    font-size: 32px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#nm-entries-modal .nm-modal-close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-50%) scale(1.1);
+}
+
+#nm-entries-modal .nm-modal-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    padding-right: 60px;
+    line-height: 1.3;
+}
+
+#nm-entries-modal .nm-modal-body {
+    padding: 0;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    gap: 0;
+}
+
+#nm-entries-modal .nm-modal-map-section {
+    flex: 1;
+    min-height: 400px;
+    background: #f8f9fa;
+    border-right: 1px solid #e1e1e1;
+    position: relative;
+    overflow: hidden;
+}
+
+#nm-entries-modal .nm-modal-data-section {
+    flex: 1;
+    padding: 30px;
+    background: white;
+    overflow-y: auto;
+    max-height: calc(95vh - 100px);
+}
+
+#nm-entries-modal #nm-modal-map {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    background: #f5f5f5;
+    position: relative;
+}
+
+/* Estilos para el mapa Leaflet dentro del modal */
+#nm-entries-modal .leaflet-container {
+    height: 100% !important;
+    width: 100% !important;
+    background: #f8f9fa;
+}
+
+#nm-entries-modal .leaflet-control-attribution {
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+#nm-entries-modal .nm-modal-image {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #f5f5f5;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#nm-entries-modal .nm-modal-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#nm-entries-modal .nm-modal-image.no-image {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 48px;
+    opacity: 0.7;
+}
+
+#nm-entries-modal .nm-data-section-title {
+    color: #667eea;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+}
+
+#nm-entries-modal .nm-modal-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#nm-entries-modal .nm-modal-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+#nm-entries-modal .nm-modal-section:last-child {
+    margin-bottom: 0;
+}
+
+#nm-entries-modal .nm-modal-section h3 {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e1e1e1;
+}
+
+#nm-entries-modal .nm-modal-section p,
+#nm-entries-modal .nm-modal-section div {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+#nm-entries-modal .nm-modal-audio {
+    margin: 15px 0;
+}
+
+#nm-entries-modal .nm-modal-audio audio {
+    width: 100%;
+    height: 40px;
+    border-radius: 8px;
+}
+
+#nm-entries-modal .nm-modal-file {
+    margin: 15px 0;
+}
+
+#nm-entries-modal .nm-modal-download-btn {
+    display: inline-block;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid #667eea;
+}
+
+#nm-entries-modal .nm-modal-download-btn:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+#nm-entries-modal .nm-modal-date {
+    font-size: 13px;
+    color: #999;
+    font-style: italic;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e1e1e1;
+}
+
+/* Estilos adicionales para elementos interactivos del modal */
+#nm-entries-modal .nm-toggle-content {
+    background: linear-gradient(135deg, #f1f3f4, #ffffff);
+    border: 1px solid #dadce0;
+    color: #667eea;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+}
+
+#nm-entries-modal .nm-toggle-content:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-color: #667eea;
+}
+
+/* Estilos para textos largos */
+#nm-entries-modal .short-content, 
+#nm-entries-modal .full-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Scrollbar personalizado para la sección de datos */
+#nm-entries-modal .nm-modal-data-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+#nm-entries-modal .nm-modal-data-section::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#nm-entries-modal .nm-modal-data-section::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#nm-entries-modal .nm-modal-data-section::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Estilos mejorados para imágenes dentro del modal */
+#nm-entries-modal .nm-modal-section img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+#nm-entries-modal .nm-modal-section img:hover {
+    transform: scale(1.02);
+}
+
+/* Estilos para enlaces dentro del modal */
+#nm-entries-modal .nm-modal-section a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #e3f2fd, #ffffff);
+    border: 1px solid #667eea;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 8px;
+    transition: all 0.3s ease;
+}
+
+#nm-entries-modal .nm-modal-section a:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    text-decoration: none;
+}
+
+/* Indicador de carga para el modal */
+#nm-entries-modal .nm-modal-loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 16px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#nm-entries-modal .nm-modal-loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #667eea;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    margin-left: 10px;
+    animation: nm-spin 1s linear infinite;
+}
+
+@keyframes nm-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive del modal específico para entradas - No interfiere con otros modales */
+@media (max-width: 1024px) {
+    #nm-entries-modal .nm-modal-body {
+        flex-direction: column;
+    }
+    
+    #nm-entries-modal .nm-modal-map-section {
+        min-height: 350px;
+        max-height: 350px;
+        border-right: none;
+        border-bottom: 1px solid #e1e1e1;
+        flex: none;
+    }
+    
+    #nm-entries-modal #nm-modal-map {
+        min-height: 350px;
+        height: 350px;
+    }
+    
+    #nm-entries-modal .nm-modal-data-section {
+        max-height: calc(95vh - 450px);
+        flex: 1;
+    }
+    
+    #nm-entries-modal .nm-modal-content {
+        width: 98%;
+        margin: 1% auto;
+        max-height: 98vh;
+    }
+}
+
+@media (max-width: 768px) {
+    #nm-entries-modal .nm-modal-content {
+        margin: 2% auto;
+        width: 96%;
+        max-height: 96vh;
+    }
+    
+    #nm-entries-modal .nm-modal-header {
+        padding: 15px 20px;
+    }
+    
+    #nm-entries-modal .nm-modal-title {
+        font-size: 20px;
+        padding-right: 50px;
+    }
+    
+    #nm-entries-modal .nm-modal-data-section {
+        padding: 20px;
+        max-height: calc(96vh - 400px);
+    }
+    
+    #nm-entries-modal .nm-modal-map-section {
+        min-height: 300px;
+        max-height: 300px;
+    }
+    
+    #nm-entries-modal #nm-modal-map {
+        min-height: 300px;
+        height: 300px;
+    }
+    
+    #nm-entries-modal .nm-modal-section {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    #nm-entries-modal .nm-modal-section h3 {
+        font-size: 13px;
+    }
+    
+    #nm-entries-modal .nm-modal-close {
+        font-size: 28px;
+        right: 15px;
+    }
+    
+    /* Ajustar controles de Leaflet en móviles */
+    #nm-entries-modal .leaflet-control-zoom {
+        transform: scale(0.8);
+    }
+    
+    #nm-entries-modal .leaflet-control-attribution {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    #nm-entries-modal .nm-modal-content {
+        margin: 1% auto;
+        width: 98%;
+        max-height: 98vh;
+    }
+    
+    #nm-entries-modal .nm-modal-data-section {
+        padding: 15px;
+        max-height: calc(98vh - 350px);
+    }
+    
+    #nm-entries-modal .nm-modal-map-section {
+        min-height: 250px;
+        max-height: 250px;
+    }
+    
+    #nm-entries-modal #nm-modal-map {
+        min-height: 250px;
+        height: 250px;
+    }
+    
+    #nm-entries-modal .nm-modal-header {
+        padding: 12px 15px;
+    }
+    
+    #nm-entries-modal .nm-modal-title {
+        font-size: 18px;
+    }
+    
+    #nm-entries-modal .nm-modal-section {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+    
+    #nm-entries-modal .nm-modal-section h3 {
+        font-size: 12px;
+    }
+    
+    /* Controles de Leaflet más pequeños en pantallas muy pequeñas */
+    #nm-entries-modal .leaflet-control-zoom {
+        transform: scale(0.7);
+    }
+    
+    #nm-entries-modal .leaflet-control-attribution {
+        font-size: 8px;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* Efecto de hover en las tarjetas para indicar que son clickeables */
+.nm-entry-card {
+    cursor: pointer;
+}
+
+.nm-entry-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.nm-entry-card::after {
+    content: '👁️ Ver detalles';
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.nm-entry-card:hover::after {
+    opacity: 1;
+    bottom: -35px;
+}
+
+/* Estilos adicionales para el contenido alternativo del modal */
+#nm-entries-modal .nm-alternative-content {
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+#nm-entries-modal .nm-alternative-content .location-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 6px 0;
+    border-left: 3px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+#nm-entries-modal .nm-alternative-content .location-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+#nm-entries-modal .nm-fallback-indicator {
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+#nm-entries-modal .nm-fallback-indicator:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    transform: scale(1.05);
+}
+
+/* Estilos para el contenido sin mapa */
+#nm-entries-modal .nm-no-map {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+#nm-entries-modal .nm-no-map::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: nm-subtle-float 8s ease-in-out infinite;
+}
+
+@keyframes nm-subtle-float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-20px, -10px) rotate(1deg); }
+}
+
+/* Mejorar la visualización de ubicaciones */
+#nm-entries-modal .location-detail {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#nm-entries-modal .location-detail::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+#nm-entries-modal .location-detail:hover::before {
+    left: 100%;
+}
+
+#nm-entries-modal .location-detail:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+/* Estilos para preview de descripción */
+#nm-entries-modal .description-preview {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+#nm-entries-modal .description-preview:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: scale(1.02);
+}
+
+/* Estilos para mensaje de sin datos */
+#nm-entries-modal .no-data-message {
+    transition: all 0.3s ease;
+    animation: nm-gentle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes nm-gentle-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+#nm-entries-modal .no-data-message:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    transform: scale(1.05);
+}
+
+/* Mejorar el control personalizado de Leaflet para "sin datos geográficos" */
+#nm-entries-modal .leaflet-control-no-geo {
+    transition: all 0.3s ease;
+    animation: nm-slide-in-right 0.5s ease-out;
+}
+
+@keyframes nm-slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+#nm-entries-modal .leaflet-control-no-geo:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Mejorar la superposición de imagen */
+#nm-entries-modal .nm-image-overlay {
+    backdrop-filter: blur(1px);
+    transition: all 0.3s ease;
+}
+
+#nm-entries-modal .nm-image-container:hover .nm-image-overlay {
+    background: linear-gradient(transparent, rgba(0,0,0,0.9)) !important;
+}
+
+/* Animaciones suaves para elementos interactivos */
+#nm-entries-modal .location-info > div,
+#nm-entries-modal .description-preview > div:last-child {
+    transition: all 0.3s ease;
+}
+
+/* Efecto de brillo sutil en elementos importantes */
+#nm-entries-modal .nm-fallback-header h3 {
+    background: linear-gradient(45deg, #ffffff, #e8f4f8, #ffffff);
+    background-size: 200% 200%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: nm-text-shine 3s ease-in-out infinite;
+}
+
+@keyframes nm-text-shine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Mejorar la accesibilidad y UX */
+#nm-entries-modal .nm-alternative-content *:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
+/* Indicadores visuales mejorados */
+#nm-entries-modal .nm-fallback-footer {
+    animation: nm-fade-in-up 1s ease-out 0.5s both;
+}
+
+@keyframes nm-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive específico para el contenido alternativo */
+@media (max-width: 768px) {
+    #nm-entries-modal .nm-alternative-content {
+        padding: 20px !important;
+    }
+    
+    #nm-entries-modal .nm-fallback-header div:first-child {
+        font-size: 56px !important;
+    }
+    
+    #nm-entries-modal .nm-fallback-header h3 {
+        font-size: 18px !important;
+    }
+    
+    #nm-entries-modal .location-detail {
+        padding: 10px !important;
+        margin: 6px 0 !important;
+    }
+    
+    #nm-entries-modal .description-preview {
+        padding: 12px !important;
+        margin: 12px 0 !important;
+    }
+    
+    #nm-entries-modal .no-data-message {
+        padding: 16px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #nm-entries-modal .nm-alternative-content {
+        padding: 15px !important;
+    }
+    
+    #nm-entries-modal .nm-fallback-header div:first-child {
+        font-size: 48px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    #nm-entries-modal .nm-fallback-header h3 {
+        font-size: 16px !important;
+    }
+    
+    #nm-entries-modal .nm-fallback-header p {
+        font-size: 12px !important;
+    }
+}

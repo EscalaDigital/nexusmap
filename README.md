@@ -27,18 +27,72 @@ Un plugin de WordPress para crear mapas colaborativos utilizando Leaflet.js. Per
 
 ## Uso
 
-### Shortcode Básico
+### Shortcodes Disponibles
 
-#### Insertar mapa
+#### 🗺️ Insertar mapa - `[nm_map]`
 
-```php
-[nm_map lat="0" lng="0" zoom="2" width="100%" height="400px"]
+Muestra el mapa interactivo principal con todas las funcionalidades.
+
+**Sintaxis:**
+```
+[nm_map width="100%" height="500px" lat="0" lng="0" zoom="2"]
 ```
 
-#### Insertar formulario
+**Parámetros:**
+- `width`: Ancho del mapa (por defecto: "100%")
+- `height`: Alto del mapa (por defecto: "500px")
+- `lat`: Latitud inicial del centro del mapa (por defecto: "0")
+- `lng`: Longitud inicial del centro del mapa (por defecto: "0")
+- `zoom`: Nivel de zoom inicial (1-18, por defecto: "2")
+
+**Ejemplos:**
+```php
+// Mapa básico
+[nm_map]
+
+// Mapa centrado en Madrid
+[nm_map lat="40.4168" lng="-3.7038" zoom="10" height="600px"]
+
+// Mapa de tamaño fijo
+[nm_map width="800px" height="400px"]
+```
+
+#### 📝 Insertar formulario - `[nm_form]`
+
+Muestra el formulario para que los usuarios envíen datos geográficos.
 
 ```php
 [nm_form]
+```
+
+**Características:**
+- **Autenticación requerida**: Solo usuarios logueados pueden ver el formulario
+- **Modo A/B Testing**: Soporta dos formularios alternativos si está configurado
+- **Validación automática**: Validación de campos en tiempo real
+- **Subida de archivos**: Soporte para imágenes, audio y documentos
+
+#### 📊 Lista de entradas - `[nm_entries_list]`
+
+Muestra una galería con las entradas enviadas y aprobadas.
+
+```php
+[nm_entries_list per_page="10" show_pagination="true"]
+```
+
+**Parámetros:**
+- `per_page`: Número de entradas por página (por defecto: 10)
+- `show_pagination`: Mostrar controles de paginación (por defecto: "true")
+
+**Ejemplos:**
+```php
+// Lista básica
+[nm_entries_list]
+
+// 20 entradas por página
+[nm_entries_list per_page="20"]
+
+// Sin paginación
+[nm_entries_list show_pagination="false"]
 ```
 
 ### Panel de Administración
@@ -65,8 +119,3 @@ Un plugin de WordPress para crear mapas colaborativos utilizando Leaflet.js. Per
 ## Licencia
 
 GPLv2 o posterior
-
-## Créditos
-
-- Leaflet.js para la visualización de mapas
-- jQuery UI para la funcionalidad drag & drop
