@@ -1,5 +1,5 @@
 <div class="wrap">
-    <h1>Form Entries</h1>
+    <h1>Entradas del Formulario</h1>
 
     <!-- Sección de entradas pendientes -->
     <div class="nm-entries-section">
@@ -9,11 +9,11 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>User</th>
-                        <th>Data</th>
-                        <th>Status</th>
-                        <th>Date Submitted</th>
-                        <th>Actions</th>
+                        <th>Usuario</th>
+                        <th>Datos</th>
+                        <th>Estado</th>
+                        <th>Fecha de Envío</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -26,14 +26,14 @@
                                 <button class="button view-data"
                                     data-id="<?php echo esc_attr($entry->id); ?>"
                                     data-json='<?php echo wp_json_encode(maybe_unserialize($entry->entry_data)); ?>'>
-                                    View data
+                                    Ver datos
                                 </button>
                             </td>
                             <td><?php echo esc_html($entry->status); ?></td>
                             <td><?php echo esc_html($entry->date_submitted); ?></td>
                             <td>
-                                <button class="button approve-entry" data-id="<?php echo esc_attr($entry->id); ?>">Approve</button>
-                                <button class="button reject-entry" data-id="<?php echo esc_attr($entry->id); ?>">Reject</button>
+                                <button class="button approve-entry" data-id="<?php echo esc_attr($entry->id); ?>">Aprobar</button>
+                                <button class="button reject-entry" data-id="<?php echo esc_attr($entry->id); ?>">Rechazar</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -55,11 +55,11 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>User</th>
-                        <th>Data</th>
-                        <th>Status</th>
-                        <th>Date Submitted</th>
-                        <th>Actions</th>
+                        <th>Usuario</th>
+                        <th>Datos</th>
+                        <th>Estado</th>
+                        <th>Fecha de Envío</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,14 +72,14 @@
                                 <button class="button view-data"
                                     data-id="<?php echo esc_attr($entry->id); ?>"
                                     data-json='<?php echo wp_json_encode(maybe_unserialize($entry->entry_data)); ?>'>
-                                    View data
+                                    Ver datos
                                 </button>
                             </td>
                             <td><?php echo esc_html($entry->status); ?></td>
                             <td><?php echo esc_html($entry->date_submitted); ?></td>
                             <td>
-                                <button class="button edit-entry" data-id="<?php echo esc_attr($entry->id); ?>">Edit</button>
-                                <button class="button button-secondary delete-entry" data-id="<?php echo esc_attr($entry->id); ?>">Delete</button>
+                                <button class="button edit-entry" data-id="<?php echo esc_attr($entry->id); ?>">Editar</button>
+                                <button class="button button-secondary delete-entry" data-id="<?php echo esc_attr($entry->id); ?>">Eliminar</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>

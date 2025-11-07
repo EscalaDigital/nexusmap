@@ -23,8 +23,8 @@ class NM_Manage_Layers
     {
         add_submenu_page(
             'nm',
-            __('Manage Layers', 'nexusmap'),
-            __('Manage Layers', 'nexusmap'),
+            'Capa base / overlay',
+            'Capa base / overlay',
             'manage_options',
             'nm_manage_layers',
             array($this, 'display_manage_layers_page')
@@ -41,7 +41,7 @@ class NM_Manage_Layers
     public function handle_add_base_layer()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You are not allowed to access this page.', 'nexusmap'));
+            wp_die('No tienes permisos para acceder a esta página.');
         }
 
         check_admin_referer('nm_add_base_layer', 'nm_nonce');
@@ -78,7 +78,7 @@ class NM_Manage_Layers
     public function handle_delete_base_layer()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You are not allowed to access this page.', 'nexusmap'));
+            wp_die('No tienes permisos para acceder a esta página.');
         }
 
         $index = isset($_GET['index']) ? intval($_GET['index']) : -1;
@@ -100,7 +100,7 @@ class NM_Manage_Layers
     public function handle_add_overlay_layer()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You are not allowed to access this page.', 'nexusmap'));
+            wp_die('No tienes permisos para acceder a esta página.');
         }
 
         check_admin_referer('nm_add_overlay_layer', 'nm_nonce');
@@ -137,7 +137,7 @@ class NM_Manage_Layers
     public function handle_delete_overlay_layer()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You are not allowed to access this page.', 'nexusmap'));
+            wp_die('No tienes permisos para acceder a esta página.');
         }
 
         $index = isset($_GET['index']) ? intval($_GET['index']) : -1;
@@ -159,7 +159,7 @@ class NM_Manage_Layers
     public function handle_add_predefined_base_layer()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You are not allowed to access this page.', 'nexusmap'));
+            wp_die('No tienes permisos para acceder a esta página.');
         }
 
         check_admin_referer('nm_add_predefined_base_layer', 'nm_nonce');

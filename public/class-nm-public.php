@@ -292,7 +292,7 @@ class NM_Public
     public function display_custom_form()
     {
         if (!is_user_logged_in()) {
-            $default = __('You must be logged in to view this form.', 'nexusmap');
+            $default = 'Debes estar logueado para ver este formulario.';
             $raw = get_option('nm_form_login_message', $default);
             // Permitir shortcodes en el mensaje
             $content = do_shortcode($raw);

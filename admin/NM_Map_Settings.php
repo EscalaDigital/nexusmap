@@ -18,8 +18,8 @@ class NM_Map_Settings
     {
         add_submenu_page(
             'nm',
-            __('Map Settings', 'nexusmap'),
-            __('Map Settings', 'nexusmap'),
+            'Configuración del Mapa',
+            'Configuración del Mapa',
             'manage_options',
             'nm_map_settings',
             array($this, 'display_map_settings_page')
@@ -31,7 +31,7 @@ class NM_Map_Settings
     {
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('Map Settings', 'nexusmap'); ?></h1>
+            <h1>Configuración del Mapa</h1>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('nm_map_settings_group');
@@ -56,14 +56,14 @@ class NM_Map_Settings
 
         add_settings_section(
             'nm_map_settings_section',
-            __('Map Options', 'nexusmap'),
+            'Opciones del Mapa',
             null,
             'nm_map_settings'
         );
 
         add_settings_field(
             'nm_enable_geojson_download',
-            __('Enable GeoJSON Download', 'nexusmap'),
+            'Habilitar Descarga de GeoJSON',
             array($this, 'render_geojson_download_field'),
             'nm_map_settings',
             'nm_map_settings_section'
@@ -71,7 +71,7 @@ class NM_Map_Settings
 
         add_settings_field(
             'nm_enable_search',
-            __('Enable Map Search', 'nexusmap'),
+            'Habilitar Búsqueda en el Mapa',
             array($this, 'render_map_search_field'),
             'nm_map_settings',
             'nm_map_settings_section'
@@ -80,7 +80,7 @@ class NM_Map_Settings
         // Campo: Mensaje al no estar logueado (para [nm_form])
         add_settings_field(
             'nm_form_login_message',
-            __('Form login-required message', 'nexusmap'),
+            'Mensaje para usuarios no logueados',
             array($this, 'render_form_login_message_field'),
             'nm_map_settings',
             'nm_map_settings_section'
@@ -88,7 +88,7 @@ class NM_Map_Settings
 
         add_settings_field(
             'nm_enable_user_wms',
-            __('Enable User WMS Layers', 'nexusmap'),
+            'Habilitar Capas WMS de Usuario',
             array($this, 'render_user_wms_field'),
             'nm_map_settings',
             'nm_map_settings_section'
@@ -96,7 +96,7 @@ class NM_Map_Settings
 
         add_settings_field(
             'nm_enable_map_tour',
-            __('Enable Map Help Tour', 'nexusmap'),
+            'Habilitar Tour de Ayuda del Mapa',
             array($this, 'render_map_tour_field'),
             'nm_map_settings',
             'nm_map_settings_section'
@@ -104,7 +104,7 @@ class NM_Map_Settings
 
         add_settings_field(
             'nm_enable_clustering',
-            __('Enable Point Clustering', 'nexusmap'),
+            'Habilitar Agrupación de Puntos',
             array($this, 'render_clustering_field'),
             'nm_map_settings',
             'nm_map_settings_section'
@@ -117,7 +117,7 @@ class NM_Map_Settings
         $option = get_option('nm_enable_geojson_download', false);
         ?>
         <input type="checkbox" name="nm_enable_geojson_download" value="1" <?php checked(1, $option); ?> />
-        <label for="nm_enable_geojson_download"><?php esc_html_e('Enable the option to download map data as GeoJSON.', 'nexusmap'); ?></label>
+        <label for="nm_enable_geojson_download">Habilitar la opción de descargar datos del mapa como GeoJSON.</label>
         <?php
     }
 
@@ -127,7 +127,7 @@ class NM_Map_Settings
         $option = get_option('nm_enable_search', false);
         ?>
         <input type="checkbox" name="nm_enable_search" value="1" <?php checked(1, $option); ?> />
-        <label for="nm_enable_search"><?php esc_html_e('Enable the search functionality on the map.', 'nexusmap'); ?></label>
+        <label for="nm_enable_search">Habilitar la funcionalidad de búsqueda en el mapa.</label>
         <?php
     }
 
@@ -137,14 +137,14 @@ class NM_Map_Settings
         $option = get_option('nm_enable_user_wms', false);
         ?>
         <input type="checkbox" name="nm_enable_user_wms" value="1" <?php checked(1, $option); ?> />
-        <label for="nm_enable_user_wms"><?php esc_html_e('Allow users to add WMS layers to the map.', 'nexusmap'); ?></label>
+        <label for="nm_enable_user_wms">Permitir a los usuarios agregar capas WMS al mapa.</label>
         <?php
     }
 
     // Campo: mensaje para no logueados (permite enlaces y shortcodes)
     public function render_form_login_message_field()
     {
-        $default = __('You must be logged in to view this form.', 'nexusmap');
+        $default = 'Debes estar logueado para ver este formulario.';
         $content = get_option('nm_form_login_message', $default);
         // Editor con soporte de shortcodes; WordPress sanitiza según capacidades del usuario al guardar
         $settings = array(
@@ -154,10 +154,7 @@ class NM_Map_Settings
             'teeny' => true,
             'quicktags' => true,
         );
-        echo '<p class="description">' . esc_html__(
-            'Shown instead of the form when the user is not logged in. You can include links and WordPress shortcodes.',
-            'nexusmap'
-        ) . '</p>';
+        echo '<p class="description">Se muestra en lugar del formulario cuando el usuario no está logueado. Puedes incluir enlaces y shortcodes de WordPress.</p>';
         wp_editor($content, 'nm_form_login_message_editor', $settings);
     }
 
@@ -167,7 +164,7 @@ class NM_Map_Settings
         $option = get_option('nm_enable_map_tour', false);
         ?>
         <input type="checkbox" name="nm_enable_map_tour" value="1" <?php checked(1, $option); ?> />
-        <label for="nm_enable_map_tour"><?php esc_html_e('Show the contextual help tour (button ? and onboarding steps).', 'nexusmap'); ?></label>
+        <label for="nm_enable_map_tour">Mostrar el tour de ayuda contextual (botón ? y pasos de introducción).</label>
         <?php
     }
 
@@ -177,7 +174,7 @@ class NM_Map_Settings
         $option = get_option('nm_enable_clustering', false);
         ?>
         <input type="checkbox" name="nm_enable_clustering" value="1" <?php checked(1, $option); ?> />
-        <label for="nm_enable_clustering"><?php esc_html_e('Group nearby points into neutral clusters (click or zoom to view individual points).', 'nexusmap'); ?></label>
+        <label for="nm_enable_clustering">Agrupar puntos cercanos en grupos neutrales (haz clic o acerca el zoom para ver puntos individuales).</label>
         <?php
     }
 }

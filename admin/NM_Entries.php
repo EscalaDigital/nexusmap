@@ -14,7 +14,7 @@ class NM_Entries
 
     public function add_entries_submenu()
     {
-        add_submenu_page('nm', 'Form Entries', 'Entries', 'manage_options', 'nm-entries', array($this, 'display_entries_page'));
+        add_submenu_page('nm', 'Entradas del Formulario', 'Entradas', 'manage_options', 'nm-entries', array($this, 'display_entries_page'));
     }    public function display_entries_page()
     {
         // Obtener entradas pendientes y aceptadas

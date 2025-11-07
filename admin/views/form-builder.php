@@ -1,39 +1,39 @@
 <div class="wrap">
-    <h1>Form Builder</h1>
+    <h1>Constructor de Formularios</h1>
     <div id="nm-form-builder">
         <div id="nm-form-elements">
-            <h2>Available Fields</h2>
+            <h2>Campos Disponibles</h2>
             <hr>
             <ul>
-                <li data-type="header">Header</li>
-                <li data-type="text">Text Field</li>
-                <li data-type="textarea">Textarea</li>                
-                <li data-type="checkbox">Checkbox</li>
-                <li data-type="radio">Radio Group</li>
-                <li data-type="select">Dropdown Menu</li>
-                <li data-type="image">Image Upload</li>
-                <li data-type="file">Document Upload</li>
-                <li data-type="number">Number Field</li>
-                <li data-type="date">Date Picker</li>                
-                <li data-type="url">URL Field</li>
-                <li data-type="audio">Audio Field</li>
-                <li data-type="conditional-select">Conditional Select</li>
+                <li data-type="header">Encabezado</li>
+                <li data-type="text">Campo de Texto</li>
+                <li data-type="textarea">Área de Texto</li>                
+                <li data-type="checkbox">Casilla de Verificación</li>
+                <li data-type="radio">Grupo de Botones de Radio</li>
+                <li data-type="select">Menú Desplegable</li>
+                <li data-type="image">Subida de Imagen</li>
+                <li data-type="file">Subida de Documento</li>
+                <li data-type="number">Campo Numérico</li>
+                <li data-type="date">Selector de Fecha</li>                
+                <li data-type="url">Campo de URL</li>
+                <li data-type="audio">Campo de Audio</li>
+                <li data-type="conditional-select">Selección Condicional</li>
                 <li data-type="geographic-selector">Selector Geográfico</li>
 
           
             </ul>
             <hr>
 
-            <h2>Special Fields</h2>
+            <h2>Campos Especiales</h2>
             <hr>
             <label>
                 <input type="checkbox" id="nm-ab-option" name="ab_option" <?php echo get_option('nm_ab_option_enabled', 0) ? 'checked' : ''; ?>>
-                Activate A/B Option
+                Activar Opción A/B
             </label>
             <span id="nm-ab-info" title="¡Atención! Si selecciona esta opción, deberá definir dos formularios y el usuario final elegirá entre uno y otro">[i]</span>
             <div id="nm-ab-options" style="display: <?php echo get_option('nm_ab_option_enabled', 0) ? 'block' : 'none'; ?>;">
-                <label>Option A Text: <input type="text" id="nm-option-a-text" name="option_a_text" value="<?php echo esc_attr(get_option('nm_option_a_text', 'Opción A')); ?>"></label>
-                <label>Option B Text: <input type="text" id="nm-option-b-text" name="option_b_text" value="<?php echo esc_attr(get_option('nm_option_b_text', 'Opción B')); ?>"></label>
+                <label>Texto Opción A: <input type="text" id="nm-option-a-text" name="option_a_text" value="<?php echo esc_attr(get_option('nm_option_a_text', 'Opción A')); ?>"></label>
+                <label>Texto Opción B: <input type="text" id="nm-option-b-text" name="option_b_text" value="<?php echo esc_attr(get_option('nm_option_b_text', 'Opción B')); ?>"></label>
                 <!-- Add the Save Button Here -->
                 <button id="nm-save-option-texts" class="button button-primary">Guardar Nombres de Opciones</button>
             </div>
@@ -78,7 +78,7 @@
 
                         if (!$has_map_field): ?>
                             <div id="mapabase" class="nm-form-field" data-type="map">
-                                <label>Map Drawing</label>
+                                <label>Dibujo en Mapa</label>
                                 <div id="nm-map-canvas"></div>
                             </div>
                         <?php endif; ?>                        <!-- Dynamic Fields -->
@@ -98,7 +98,7 @@
                                     include $template_path;
                                 } else {
                                     echo '<div class="nm-field-error" style="padding: 10px; background: #fee; border: 1px solid #fcc; margin: 5px 0;">';
-                                    echo '<strong>Error:</strong> Template no encontrado para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
+                                    echo '<strong>Error:</strong> Plantilla no encontrada para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
                                     echo '</div>';
                                     error_log("NexusMap: Missing field template: {$template_path} for field: " . print_r($field, true));
                                 }
@@ -133,7 +133,7 @@
 
                         if (!$has_map_field): ?>
                             <div id="mapabase" class="nm-form-field" data-type="map">
-                                <label>Map Drawing</label>
+                                <label>Dibujo en Mapa</label>
                                 <div id="nm-map-canvas"></div>
                             </div>
                         <?php endif; ?>                        <!-- Dynamic Fields -->
@@ -153,7 +153,7 @@
                                     include $template_path;
                                 } else {
                                     echo '<div class="nm-field-error" style="padding: 10px; background: #fee; border: 1px solid #fcc; margin: 5px 0;">';
-                                    echo '<strong>Error:</strong> Template no encontrado para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
+                                    echo '<strong>Error:</strong> Plantilla no encontrada para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
                                     echo '</div>';
                                     error_log("NexusMap: Missing field template: {$template_path} for field: " . print_r($field, true));
                                 }
@@ -189,7 +189,7 @@
 
                     if (!$has_map_field): ?>
                         <div id="mapabase" class="nm-form-field" data-type="map">
-                            <label>Map Drawing</label>
+                            <label>Dibujo en Mapa</label>
                             <div id="nm-map-canvas"></div>
                         </div>
                     <?php endif; ?>                    <!-- Dynamic Fields -->
@@ -209,7 +209,7 @@
                                 include $template_path;
                             } else {
                                 echo '<div class="nm-field-error" style="padding: 10px; background: #fee; border: 1px solid #fcc; margin: 5px 0;">';
-                                echo '<strong>Error:</strong> Template no encontrado para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
+                                echo '<strong>Error:</strong> Plantilla no encontrada para el tipo de campo: <code>' . esc_html($field_type) . '</code>';
                                 echo '<br><small>Archivo buscado: ' . esc_html($template_path) . '</small>';
                                 echo '</div>';
                                 error_log("NexusMap: Missing field template: {$template_path} for field: " . print_r($field, true));

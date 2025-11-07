@@ -504,7 +504,7 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
 
 <div class="wrap nm-admin-wrapper">
     <div class="nm-admin-header">
-        <h1><?php esc_html_e('Gestor de Capas del Mapa', 'nexusmap'); ?></h1>
+        <h1>Gestor de Capas del Mapa</h1>
         <p>Administra las capas base y overlay de tus mapas de forma visual e intuitiva</p>
     </div>
 
@@ -521,7 +521,7 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
 
     <!-- Sección de capas base predefinidas -->
     <div class="nm-section-box">
-        <h2><?php esc_html_e('Capas Base Predefinidas', 'nexusmap'); ?></h2>
+        <h2>Capas Base Predefinidas</h2>
         <p class="description">Selecciona capas base de servicios públicos sin necesidad de configurar URLs manualmente.</p>
         
         <div class="nm-predefined-layers">
@@ -678,29 +678,29 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
 
     <!-- Formulario para añadir una nueva capa base -->
     <div class="nm-section-box">
-        <h2><?php esc_html_e('Añadir Capa Base Personalizada', 'nexusmap'); ?></h2>
+        <h2>Añadir Capa Base Personalizada</h2>
         <p class="description">Añade una capa base personalizada con tu propia URL y configuración.</p>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="nm_add_base_layer_action">
             <?php wp_nonce_field('nm_add_base_layer', 'nm_nonce'); ?>
             <table class="nm-form-table">
                 <tr>
-                    <th scope="row"><label for="layer_name"><?php esc_html_e('Nombre de la Capa', 'nexusmap'); ?></label></th>
+                    <th scope="row"><label for="layer_name">Nombre de la Capa</label></th>
                     <td><input name="layer_name" type="text" id="layer_name" class="regular-text" required></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="layer_url"><?php esc_html_e('URL de la Capa', 'nexusmap'); ?></label></th>
+                    <th scope="row"><label for="layer_url">URL de la Capa</label></th>
                     <td><input name="layer_url" type="text" id="layer_url" class="regular-text" required></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="layer_attribution"><?php esc_html_e('Atribución', 'nexusmap'); ?></label></th>
+                    <th scope="row"><label for="layer_attribution">Atribución</label></th>
                     <td><textarea name="layer_attribution" id="layer_attribution" class="regular-text" rows="3"></textarea></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="layer_predefined"><?php esc_html_e('Marcar como Predefinida', 'nexusmap'); ?></label></th>
+                    <th scope="row"><label for="layer_predefined">Marcar como Predefinida</label></th>
                     <td>
                         <input type="checkbox" name="layer_predefined" id="layer_predefined" value="1">
-                        <p class="description"><?php esc_html_e('Marca esta opción si quieres que esta capa aparezca como predefinida en la lista.', 'nexusmap'); ?></p>
+                        <p class="description">Marca esta opción si quieres que esta capa aparezca como predefinida en la lista.</p>
                     </td>
                 </tr>
                 <!-- Puedes agregar más campos para opciones adicionales -->
