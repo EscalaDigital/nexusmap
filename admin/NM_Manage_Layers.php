@@ -23,8 +23,8 @@ class NM_Manage_Layers
     {
         add_submenu_page(
             'nm',
-            'Gestionar Capas',
-            'Gestionar Capas',
+            'Capa base / overlay',
+            'Capa base / overlay',
             'manage_options',
             'nm_manage_layers',
             array($this, 'display_manage_layers_page')
