@@ -57,12 +57,12 @@ jQuery(document).ready(function ($) {
             nonce: nmAdmin.nonce
         }, function (response) {
             if (response.success) {
-                alert('Option texts saved successfully.');
+                alert('Textos de opciones guardados correctamente.');
                 // Update the tab labels if necessary
                 jQuery('#tabsforms ul li a[href="#tab-a"]').text(optionAText);
                 jQuery('#tabsforms ul li a[href="#tab-b"]').text(optionBText);
             } else {
-                alert('Error saving option texts.');
+                alert('Error al guardar los textos de opciones.');
             }
         });
     });
@@ -87,7 +87,7 @@ jQuery(document).ready(function ($) {
                     
                     // Solo agregar el campo al formulario, sin generar name automáticamente
                 } else {
-                    alert('Error loading field template.');
+                    alert('Error al cargar la plantilla del campo.');
                 }
             });
         }
