@@ -20,6 +20,9 @@ class NM_Chart_Manager
 
         // Acción para manejar la llamada AJAX
         $this->loader->add_action('wp_ajax_nm_save_chart_settings', $this, 'save_chart_settings');
+        
+        // Acción para obtener datos de gráficos en el admin
+        $this->loader->add_action('wp_ajax_nm_get_chart_data_admin', $this, 'get_chart_data_admin');
     }
 
     /**
@@ -35,6 +38,16 @@ class NM_Chart_Manager
             'nm-chart-manager',            // Slug del submenu
             array($this, 'render_charts_page') // Callback que renderiza el contenido
         );
+
+        // Agregar página de visualización de gráficos privados
+        add_submenu_page(
+            'nm',                          // slug del menú principal
+            'Ver Gráficos',               // Título de la página
+            'Ver Gráficos',               // Título del menú
+            'manage_options',              // Capacidad requerida
+            'nm-charts-viewer',            // Slug del submenu
+            array($this, 'render_charts_viewer_page') // Callback que renderiza el contenido
+        );
     }
 
     /**
@@ -48,6 +61,9 @@ class NM_Chart_Manager
             echo '<div class="notice notice-warning"><p>Esta funcionalidad no está disponible cuando el modo A/B está activado.</p></div>';
             return;
         }
+
+        // Obtener configuración de visibilidad de gráficos
+        $charts_visibility = get_option('nm_charts_visibility', 'public');
 
         // Obtenemos la info del formulario desde la base de datos (ajusta 0 si corresponde)
         $form_data = $this->model->get_form(0);
@@ -143,16 +159,29 @@ class NM_Chart_Manager
         // Obtenemos la data del request
         $settings = isset($_POST['settings']) ? $_POST['settings'] : '';
         
-        // Permitir configuración vacía (eliminar todos los gráficos)
-        if (empty($settings)) {
-            // Si no hay settings, guardar array vacío
+        // Parsear todos los settings
+        $parsed_settings = array();
+        $charts_visibility = 'public'; // valor por defecto
+        
+        if (!empty($settings)) {
+            parse_str($settings, $parsed_settings);
+            
+            if (isset($parsed_settings['charts_visibility'])) {
+                $charts_visibility = sanitize_text_field($parsed_settings['charts_visibility']);
+            }
+        }
+        
+        // Si no hay gráficos configurados
+        if (empty($parsed_settings['charts'])) {
+            // Guardar array vacío pero mantener la configuración de visibilidad
             update_option('nm_chart_settings', array());
-            wp_send_json_success(array('message' => 'Todos los gráficos han sido eliminados'));
+            update_option('nm_charts_visibility', $charts_visibility);
+            wp_send_json_success(array('message' => 'Configuración de visibilidad actualizada'));
             return;
         }
 
-        // parse_str convierte la query string de "charts[...]..." en array
-        parse_str($settings, $chart_settings);
+        // Usar los settings ya parseados
+        $chart_settings = $parsed_settings;
 
         $charts = array();
         if (isset($chart_settings['charts']) && is_array($chart_settings['charts'])) {
@@ -186,12 +215,13 @@ class NM_Chart_Manager
         }
 
         // Guardamos en la base de datos (puede ser array vacío)
-        $updated = update_option('nm_chart_settings', $charts);
+        $updated_charts = update_option('nm_chart_settings', $charts);
+        $updated_visibility = update_option('nm_charts_visibility', $charts_visibility);
 
         // Envía una respuesta JSON
-        if ($updated) {
+        if ($updated_charts || $updated_visibility) {
             if (empty($charts)) {
-                wp_send_json_success(array('message' => 'Todos los gráficos han sido eliminados'));
+                wp_send_json_success(array('message' => 'Todos los gráficos han sido eliminados y configuración actualizada'));
             } else {
                 wp_send_json_success(array('message' => 'Configuración guardada exitosamente'));
             }
@@ -203,6 +233,133 @@ class NM_Chart_Manager
             } else {
                 wp_send_json_success(array('message' => 'Sin cambios o ya estaba guardado'));
             }
+        }
+    }
+
+    /**
+     * Renderiza la página de visualización de gráficos (modo privado)
+     */
+    public function render_charts_viewer_page()
+    {
+        // Verificar si la opción A/B está activa
+        $ab_option_enabled = get_option('nm_ab_option_enabled', 0);
+        if ($ab_option_enabled) {
+            echo '<div class="notice notice-warning"><p>Esta funcionalidad no está disponible cuando el modo A/B está activado.</p></div>';
+            return;
+        }
+
+        // Obtener configuración de gráficos
+        $saved_charts = get_option('nm_chart_settings', array());
+        $charts_visibility = get_option('nm_charts_visibility', 'public');
+
+        if (empty($saved_charts)) {
+            echo '<div class="wrap">';
+            echo '<h1>Ver Gráficos</h1>';
+            echo '<div class="notice notice-info"><p>No hay gráficos configurados. <a href="' . admin_url('admin.php?page=nm-chart-manager') . '">Configurar gráficos</a></p></div>';
+            echo '</div>';
+            return;
+        }
+
+        if ($charts_visibility === 'public') {
+            echo '<div class="wrap">';
+            echo '<h1>Ver Gráficos</h1>';
+            echo '<div class="notice notice-info"><p>Los gráficos están configurados como públicos y se muestran en el frontend del mapa. <a href="' . admin_url('admin.php?page=nm-chart-manager') . '">Cambiar configuración</a></p></div>';
+            echo '</div>';
+            return;
+        }
+
+        // Obtener los datos del formulario
+        $form_data = $this->model->get_form(0);
+        
+        // Incluir la vista del visor de gráficos
+        include_once 'views/charts-viewer.php';
+    }
+
+    /**
+     * Handler AJAX para obtener datos de gráficos en el administrador
+     */
+    public function get_chart_data_admin()
+    {
+        // Verificar nonce
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+
+        // Verificar permisos
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permiso denegado');
+        }
+
+        try {
+            // Obtener todas las entradas aprobadas del formulario - igual que en frontend
+            $entries_raw = $this->model->get_entries('approved');
+            $features = array();
+
+            // Procesar exactamente igual que en get_map_points del frontend
+            foreach ($entries_raw as $entry) {
+                $entry_data = maybe_unserialize($entry->entry_data);
+                
+                if (isset($entry_data['map_data'])) {
+                    $raw_json = wp_unslash($entry_data['map_data']);
+
+                    try {
+                        // Decodificar JSON igual que en frontend
+                        $map_data = json_decode($raw_json, true, 512, JSON_THROW_ON_ERROR);
+                    } catch (\JsonException $e) {
+                        error_log(sprintf(
+                            'JSON ERROR (entry_id %d): %s',
+                            $entry->id,
+                            $e->getMessage()
+                        ));
+                        continue;
+                    }
+
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($map_data)) {
+                        foreach ($map_data as $feature) {
+                            if (isset($feature['geometry']['type']) && $feature['geometry']['type'] === 'Point') {
+                                
+                                // Agregar todas las propiedades del entry_data al properties (igual que frontend)
+                                foreach ($entry_data as $key => $value) {
+                                    if ($key !== 'map_data') {
+                                        $feature['properties'][$key] = $value;
+                                    }
+                                }
+
+                                // Agregar el entry_id
+                                $feature['properties']['entry_id'] = $entry->id;
+
+                                $features[] = $feature;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Convertir features al formato que espera el JavaScript del admin
+            $entries = array();
+            foreach ($features as $feature) {
+                $entries[] = array(
+                    'id' => $feature['properties']['entry_id'],
+                    'custom_fields' => $feature['properties'], // Todas las propiedades del feature
+                );
+            }
+            
+            // Obtener configuración de gráficos
+            $chart_settings = get_option('nm_chart_settings', array());
+
+            // Debug log
+            error_log('NM Chart Manager - Features procesados: ' . count($features));
+            error_log('NM Chart Manager - Entradas para gráficos: ' . count($entries));
+            error_log('NM Chart Manager - Gráficos configurados: ' . count($chart_settings));
+            if (!empty($entries)) {
+                error_log('NM Chart Manager - Ejemplo de custom_fields: ' . print_r(array_keys($entries[0]['custom_fields']), true));
+            }
+
+            wp_send_json_success(array(
+                'entries' => $entries,
+                'charts' => $chart_settings
+            ));
+        } catch (Exception $e) {
+            error_log('NM Chart Manager - Error: ' . $e->getMessage());
+            wp_send_json_error('Error al obtener los datos: ' . $e->getMessage());
         }
     }
 }

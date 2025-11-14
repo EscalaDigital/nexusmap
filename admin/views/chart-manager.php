@@ -221,6 +221,21 @@
     font-style: italic;
 }
 
+/* Estilos para configuración de visibilidad */
+.nm-visibility-settings input[type="radio"]:checked + div {
+    color: #1976d2;
+}
+
+.nm-visibility-settings label:has(input[type="radio"]:checked) {
+    border-color: #1976d2 !important;
+    background-color: #f3f8ff;
+}
+
+.nm-visibility-settings label:hover {
+    border-color: #d1d5db;
+    background-color: #f9fafb;
+}
+
 @media (max-width: 768px) {
     .nm-form-grid {
         grid-template-columns: 1fr;
@@ -242,7 +257,40 @@
         <p>Crea y configura gráficos personalizados para visualizar los datos de tus formularios</p>
     </div>
 
+
+
     <form id="nm-chart-settings" method="post">
+        <!-- Configuración global de visibilidad dentro del formulario -->
+        <div class="nm-visibility-settings" style="background: white; border: 1px solid #e1e5e9; border-radius: 12px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);">
+            <h2 style="margin-top: 0; color: #2c3e50; font-size: 18px; margin-bottom: 15px;">🔒 Configuración de Visibilidad</h2>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 10px;">¿Dónde deseas mostrar los gráficos?</label>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; transition: all 0.3s;">
+                        <input type="radio" name="charts_visibility" value="public" <?php checked($charts_visibility, 'public'); ?> style="margin: 0;">
+                        <div>
+                            <strong>🌐 Público (Frontend)</strong>
+                            <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">Los gráficos se mostrarán como un botón en el mapa público para todos los visitantes</div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; transition: all 0.3s;">
+                        <input type="radio" name="charts_visibility" value="private" <?php checked($charts_visibility, 'private'); ?> style="margin: 0;">
+                        <div>
+                            <strong>🔒 Privado (Solo Administrador)</strong>
+                            <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">Los gráficos solo serán visibles en la página "Ver Gráficos" del administrador</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <?php if ($charts_visibility === 'private'): ?>
+            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 12px;">
+                <p style="margin: 0; color: #0369a1; font-size: 14px;">
+                    💡 <strong>Modo privado activado:</strong> Puedes ver los gráficos en la página <a href="<?php echo admin_url('admin.php?page=nm-charts-viewer'); ?>" style="color: #0369a1;">Ver Gráficos</a>
+                </p>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <div id="chart-container">
             <?php if (!empty($saved_charts)): ?>
                 <?php foreach ($saved_charts as $index => $chart): ?>
@@ -673,6 +721,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentEmptyBtn = document.getElementById('add-chart-empty');
     if (currentEmptyBtn) {
         currentEmptyBtn.addEventListener('click', addNewChart);
+    }
+
+    // Manejar cambios en la configuración de visibilidad
+    const visibilityRadios = document.querySelectorAll('input[name="charts_visibility"]');
+    visibilityRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Mostrar mensaje dinámico basado en la selección
+            updateVisibilityMessage();
+        });
+    });
+
+    function updateVisibilityMessage() {
+        const selectedValue = document.querySelector('input[name="charts_visibility"]:checked').value;
+        console.log('Configuración de visibilidad seleccionada:', selectedValue);
     }
 });
 </script>

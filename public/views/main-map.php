@@ -10,6 +10,7 @@ $active_layers = get_option( 'nm_active_layers', array() );
 $text_layer_name = get_option( 'nm_text_layer_name', 'Text Layer' );
 $filter_settings = $this->get_filter_settings();
 $chart_settings = get_option('nm_chart_settings', array());
+$charts_visibility = get_option('nm_charts_visibility', 'public');
 ?>
 
 <div id="nm-main-map" style="width: <?php echo esc_attr( $atts['width'] ); ?>; height: <?php echo esc_attr( $atts['height'] ); ?>; position: relative;"><div id="nm-top-controls" class="nm-top-controls">
@@ -52,7 +53,7 @@ $chart_settings = get_option('nm_chart_settings', array());
         plugin_url: <?php echo json_encode(NM_PLUGIN_URL); ?>,
         layer_settings: <?php echo json_encode($active_layers); ?>,
         filter_settings: <?php echo json_encode($filter_settings); ?>,
-        charts_enabled: <?php echo !empty($chart_settings) ? 'true' : 'false'; ?>,
+        charts_enabled: <?php echo (!empty($chart_settings) && $charts_visibility === 'public') ? 'true' : 'false'; ?>,
         chart_settings: <?php echo json_encode($chart_settings); ?>,
         text_layer_name: <?php echo json_encode($text_layer_name); ?>
     ,enable_map_tour: <?php echo $enable_map_tour ? 'true':'false'; ?>
