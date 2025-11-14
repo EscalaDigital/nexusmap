@@ -142,8 +142,13 @@ class NM_Chart_Manager
 
         // Obtenemos la data del request
         $settings = isset($_POST['settings']) ? $_POST['settings'] : '';
+        
+        // Permitir configuración vacía (eliminar todos los gráficos)
         if (empty($settings)) {
-            wp_send_json_error('No se recibió información');
+            // Si no hay settings, guardar array vacío
+            update_option('nm_chart_settings', array());
+            wp_send_json_success(array('message' => 'Todos los gráficos han sido eliminados'));
+            return;
         }
 
         // parse_str convierte la query string de "charts[...]..." en array
@@ -180,16 +185,24 @@ class NM_Chart_Manager
             }
         }
 
-        // Guardamos en la base de datos
+        // Guardamos en la base de datos (puede ser array vacío)
         $updated = update_option('nm_chart_settings', $charts);
 
         // Envía una respuesta JSON
         if ($updated) {
-            wp_send_json_success(array('message' => 'Configuración guardada exitosamente'));
+            if (empty($charts)) {
+                wp_send_json_success(array('message' => 'Todos los gráficos han sido eliminados'));
+            } else {
+                wp_send_json_success(array('message' => 'Configuración guardada exitosamente'));
+            }
         } else {
             // Ojo: update_option devuelve false si la información es igual a la que ya estaba guardada.
             // Podrías manejar el caso donde no se actualice por no haber cambios.
-            wp_send_json_success(array('message' => 'Sin cambios o ya estaba guardado'));
+            if (empty($charts)) {
+                wp_send_json_success(array('message' => 'Ya no había gráficos configurados'));
+            } else {
+                wp_send_json_success(array('message' => 'Sin cambios o ya estaba guardado'));
+            }
         }
     }
 }
