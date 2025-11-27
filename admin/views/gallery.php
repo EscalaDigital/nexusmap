@@ -427,7 +427,6 @@ if (!defined('ABSPATH')) {
 <script>
 jQuery(document).ready(function($) {
     var groupImagesData = <?php echo json_encode($saved_settings['group_images'] ?? array()); ?>;
-    var mediaUploader;
     
     // Manejar cambios en los selectores
     $('.nm-field-selector').on('change', function() {
@@ -520,12 +519,8 @@ jQuery(document).ready(function($) {
         var option = $button.data('option');
         var optionClass = option.replace(/\s+/g, '-');
         
-        if (mediaUploader) {
-            mediaUploader.open();
-            return;
-        }
-        
-        mediaUploader = wp.media({
+        // Crear una nueva instancia del media uploader para cada clic
+        var currentMediaUploader = wp.media({
             title: 'Seleccionar Imagen para ' + option,
             button: {
                 text: 'Usar esta imagen'
@@ -533,8 +528,10 @@ jQuery(document).ready(function($) {
             multiple: false
         });
         
-        mediaUploader.on('select', function() {
-            var attachment = mediaUploader.state().get('selection').first().toJSON();
+        // Remover event listeners previos y agregar uno nuevo
+        currentMediaUploader.off('select');
+        currentMediaUploader.on('select', function() {
+            var attachment = currentMediaUploader.state().get('selection').first().toJSON();
             
             // Actualizar preview
             $('.group-image-preview-' + optionClass).html(
@@ -551,7 +548,7 @@ jQuery(document).ready(function($) {
             $button.siblings('.nm-remove-group-image').show();
         });
         
-        mediaUploader.open();
+        currentMediaUploader.open();
     });
     
     // Manejar eliminación de imagen

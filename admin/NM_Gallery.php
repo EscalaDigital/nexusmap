@@ -28,6 +28,9 @@ class NM_Gallery
 
     public function display_gallery_page()
     {
+        // Enqueue WordPress media uploader
+        wp_enqueue_media();
+        
         // Verificar si existe un formulario creado
         $form_data = $this->model->get_form(0); // form_type = 0
         
