@@ -484,9 +484,12 @@ class NM_Public
         // Obtener configuración de la galería
         $gallery_settings = get_option('nm_gallery_settings', array());
         
+        // Debug: mostrar configuración
+        error_log('NM Gallery Settings: ' . print_r($gallery_settings, true));
+        
         // Verificar si la agrupación está habilitada
         if (empty($gallery_settings['enable_grouping']) || empty($gallery_settings['group_by_field'])) {
-            return '<div style="border: 1px solid orange; padding: 10px;">La agrupación no está configurada. Por favor, configura la galería en el panel de administración.</div>';
+            return '<div style="border: 1px solid orange; padding: 10px;">La agrupación no está configurada. Por favor, configura la galería en el panel de administración. Enable: ' . ($gallery_settings['enable_grouping'] ?? 'no set') . ', Field: ' . ($gallery_settings['group_by_field'] ?? 'no set') . '</div>';
         }
 
         $group_by_field = $gallery_settings['group_by_field'];
@@ -505,20 +508,101 @@ class NM_Public
             // Obtener todas las entradas aprobadas
             $all_entries = $this->model->get_entries($status);
             
+            // Debug
+            error_log('NM Total entries: ' . count($all_entries));
+            error_log('NM Group by field: ' . $group_by_field);
+            
             // Obtener opciones únicas del campo select
             $group_options = array();
+            $debug_fields = array(); // Para debug
+            
+            $first_entry_debug = null;
+            
             foreach ($all_entries as $entry) {
                 $entry_data = maybe_unserialize($entry->entry_data);
                 if (!is_array($entry_data)) {
                     $entry_data = json_decode($entry->entry_data, true);
                 }
                 
-                if (isset($entry_data[$group_by_field]) && !empty($entry_data[$group_by_field])) {
-                    $option_value = $entry_data[$group_by_field];
+                // Debug: capturar el primer entry completo
+                if ($first_entry_debug === null) {
+                    $first_entry_debug = $entry_data;
+                }
+                
+                // Los datos del formulario están en map_data como JSON
+                $form_data = array();
+                if (isset($entry_data['map_data'])) {
+                    $map_data_json = $entry_data['map_data'];
+                    
+                    // El JSON puede tener slashes escapados si viene de un array serializado
+                    if (is_string($map_data_json)) {
+                        $map_data_json = stripslashes($map_data_json);
+                    }
+                    
+                    $map_data = json_decode($map_data_json, true);
+                    
+                    if (is_array($map_data) && !empty($map_data)) {
+                        // Los datos están en properties del primer feature
+                        if (isset($map_data[0]['properties'])) {
+                            $form_data = $map_data[0]['properties'];
+                        }
+                    }
+                }
+                
+                // Debug: guardar las claves del primer entry válido
+                if (empty($debug_fields) && is_array($form_data) && !empty($form_data)) {
+                    $debug_fields = array_keys($form_data);
+                }
+                
+                if (isset($form_data[$group_by_field]) && !empty($form_data[$group_by_field])) {
+                    $option_value = $form_data[$group_by_field];
                     if (!in_array($option_value, $group_options)) {
                         $group_options[] = $option_value;
                     }
                 }
+            }
+            
+            // Debug
+            error_log('NM Group options found: ' . print_r($group_options, true));
+            error_log('NM Available fields in entries: ' . print_r($debug_fields, true));
+            
+            // Si no hay opciones, mostrar mensaje con debug
+            if (empty($group_options)) {
+                $debug_msg = '<div style="border: 1px solid orange; padding: 20px; margin: 20px 0; background: #fff9e6; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">';
+                $debug_msg .= '<strong style="font-size: 16px; color: #d97706;">⚠️ Debug: Análisis de Datos</strong><br><br>';
+                $debug_msg .= '<strong>Campo buscado:</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">' . esc_html($group_by_field) . '</code><br>';
+                $debug_msg .= '<strong>Total de entradas:</strong> ' . count($all_entries) . '<br><br>';
+                
+                // Mostrar estructura del primer entry
+                if ($first_entry_debug !== null) {
+                    $debug_msg .= '<details style="margin: 10px 0;"><summary style="cursor: pointer; font-weight: bold;">📦 Ver estructura del primer entry</summary>';
+                    $debug_msg .= '<pre style="background: #1f2937; color: #10b981; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 11px; margin-top: 10px;">';
+                    $debug_msg .= htmlspecialchars(print_r($first_entry_debug, true));
+                    $debug_msg .= '</pre></details>';
+                }
+                
+                if (!empty($debug_fields)) {
+                    $debug_msg .= '<strong>✅ Campos disponibles en las entradas:</strong><br>';
+                    $debug_msg .= '<div style="background: #f9fafb; padding: 10px; border-radius: 4px; margin-top: 8px; max-height: 300px; overflow-y: auto;">';
+                    $debug_msg .= '<code style="display: block; white-space: pre-wrap; font-size: 12px;">' . implode("\n", $debug_fields) . '</code>';
+                    $debug_msg .= '</div>';
+                    
+                    // Verificar si el campo existe con nombre similar
+                    $similar_fields = array_filter($debug_fields, function($field) use ($group_by_field) {
+                        return stripos($field, 'tipo') !== false || stripos($field, 'patrimonio') !== false;
+                    });
+                    
+                    if (!empty($similar_fields)) {
+                        $debug_msg .= '<br><strong>💡 Campos similares encontrados:</strong><br>';
+                        $debug_msg .= '<code style="background: #fef3c7; padding: 4px 8px; border-radius: 3px;">' . implode(', ', $similar_fields) . '</code>';
+                    }
+                } else {
+                    $debug_msg .= '<strong style="color: #dc2626;">❌ No se pudieron extraer los campos de las entradas.</strong><br>';
+                    $debug_msg .= 'Esto indica que <code>map_data</code> no se pudo parsear correctamente o no tiene la estructura esperada.';
+                }
+                
+                $debug_msg .= '</div>';
+                return $debug_msg;
             }
 
             // Generate output
@@ -606,10 +690,28 @@ class NM_Public
                     $entry_data = json_decode($entry->entry_data, true);
                 }
                 
-                if (isset($entry_data[$group_field]) && $entry_data[$group_field] === $category) {
+                // Los datos del formulario están en map_data como JSON
+                $form_data = array();
+                if (isset($entry_data['map_data'])) {
+                    $map_data_json = $entry_data['map_data'];
+                    
+                    // El JSON puede tener slashes escapados si viene de un array serializado
+                    if (is_string($map_data_json)) {
+                        $map_data_json = stripslashes($map_data_json);
+                    }
+                    
+                    $map_data = json_decode($map_data_json, true);
+                    if (is_array($map_data) && !empty($map_data)) {
+                        if (isset($map_data[0]['properties'])) {
+                            $form_data = $map_data[0]['properties'];
+                        }
+                    }
+                }
+                
+                if (isset($form_data[$group_field]) && $form_data[$group_field] === $category) {
                     $filtered_entries[] = array(
                         'entry' => $entry,
-                        'entry_data' => $entry_data
+                        'entry_data' => $form_data
                     );
                 }
             }
