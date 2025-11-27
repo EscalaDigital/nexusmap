@@ -11,6 +11,7 @@ class NM_Gallery
         $this->model = new NM_Model();
         $this->loader->add_action('admin_menu', $this, 'add_gallery_menu');
         $this->loader->add_action('wp_ajax_nm_save_gallery_settings', $this, 'save_gallery_settings');
+        $this->loader->add_action('wp_ajax_nm_get_image_url', $this, 'get_image_url');
     }
 
     public function add_gallery_menu()
@@ -37,6 +38,9 @@ class NM_Gallery
 
         // Obtener campos disponibles del formulario
         $available_fields = $this->get_available_fields($form_data['fields']);
+        
+        // Obtener campos select para agrupación
+        $select_fields = $this->get_select_fields($form_data['fields']);
         
         // Obtener configuración guardada
         $saved_settings = get_option('nm_gallery_settings', $this->get_default_settings());
@@ -69,6 +73,25 @@ class NM_Gallery
         }
         
         return $available_fields;
+    }
+
+    private function get_select_fields($fields)
+    {
+        $select_fields = array();
+        
+        foreach ($fields as $field) {
+            if ($field['type'] === 'select' && isset($field['options'])) {
+                $prefixed_name = 'nm_' . $field['name'];
+                $select_fields[] = array(
+                    'name' => $prefixed_name,
+                    'label' => $field['label'],
+                    'original_name' => $field['name'],
+                    'options' => $field['options']
+                );
+            }
+        }
+        
+        return $select_fields;
     }
 
     private function categorize_field_type($type)
@@ -107,7 +130,10 @@ class NM_Gallery
                 'file' => '',
                 'date' => '',
                 'textarea' => ''
-            )
+            ),
+            'enable_grouping' => false,
+            'group_by_field' => '',
+            'group_images' => array()
         );
     }
 
@@ -128,12 +154,47 @@ class NM_Gallery
             'textarea' => sanitize_text_field($_POST['textarea_field'] ?? '')
         );
 
+        // Obtener configuración de agrupación
+        $enable_grouping = isset($_POST['enable_grouping']) && $_POST['enable_grouping'] === 'true';
+        $group_by_field = sanitize_text_field($_POST['group_by_field'] ?? '');
+        
+        // Procesar imágenes de grupos
+        $group_images = array();
+        if (isset($_POST['group_images']) && is_array($_POST['group_images'])) {
+            foreach ($_POST['group_images'] as $option => $image_id) {
+                $group_images[sanitize_text_field($option)] = intval($image_id);
+            }
+        }
+
         $settings = array(
-            'selected_fields' => $selected_fields
+            'selected_fields' => $selected_fields,
+            'enable_grouping' => $enable_grouping,
+            'group_by_field' => $group_by_field,
+            'group_images' => $group_images
         );
 
         update_option('nm_gallery_settings', $settings);
         
         wp_send_json_success('Configuración guardada correctamente');
+    }
+
+    public function get_image_url()
+    {
+        check_ajax_referer('nm_admin_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permiso denegado');
+        }
+
+        $image_id = intval($_POST['image_id'] ?? 0);
+        
+        if ($image_id) {
+            $image_url = wp_get_attachment_image_url($image_id, 'thumbnail');
+            if ($image_url) {
+                wp_send_json_success($image_url);
+            }
+        }
+        
+        wp_send_json_error('Imagen no encontrada');
     }
 }

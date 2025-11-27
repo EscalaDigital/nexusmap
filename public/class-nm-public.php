@@ -32,6 +32,10 @@ class NM_Public
 
         $this->loader->add_action('wp_ajax_nm_get_conditional_fields',  $this, 'get_conditional_fields');
         $this->loader->add_action('wp_ajax_nopriv_nm_get_conditional_fields', $this, 'get_conditional_fields');
+
+        // AJAX actions for grouped entries
+        $this->loader->add_action('wp_ajax_nm_get_filtered_entries', $this, 'get_filtered_entries');
+        $this->loader->add_action('wp_ajax_nopriv_nm_get_filtered_entries', $this, 'get_filtered_entries');
     }
     /**
      * Register shortcodes
@@ -41,6 +45,7 @@ class NM_Public
         add_shortcode('nm_map', array($this, 'display_main_map'));
         add_shortcode('nm_form', array($this, 'display_custom_form'));
         add_shortcode('nm_entries_list', array($this, 'display_entries_list'));
+        add_shortcode('nm_entries_group', array($this, 'display_entries_group'));
     }
 
 
@@ -74,6 +79,7 @@ class NM_Public
             has_shortcode($post_content, 'nm_form')
             || has_shortcode($post_content, 'nm_map')
             || has_shortcode($post_content, 'nm_entries_list')
+            || has_shortcode($post_content, 'nm_entries_group')
         ) {
             wp_enqueue_script('jquery');
         }
@@ -84,6 +90,27 @@ class NM_Public
             wp_enqueue_script('nm-entries-modal-js', NM_PLUGIN_URL . 'public/js/entries-modal.js', array('jquery'), NM_VERSION, true);
 
             // Localize script for modal AJAX
+            wp_localize_script('nm-entries-modal-js', 'nm_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('nm_public_nonce')
+            ));
+        }
+
+        // Load entries group assets if nm_entries_group shortcode is used
+        if (has_shortcode($post_content, 'nm_entries_group')) {
+            // Enqueue CSS
+            wp_enqueue_style('nm-entries-group-css', NM_PLUGIN_URL . 'public/css/entries-group.css', array(), NM_VERSION);
+            
+            // Enqueue JS
+            wp_enqueue_script('nm-entries-group-js', NM_PLUGIN_URL . 'public/js/entries-group.js', array('jquery'), NM_VERSION, true);
+            wp_enqueue_script('nm-entries-modal-js', NM_PLUGIN_URL . 'public/js/entries-modal.js', array('jquery'), NM_VERSION, true);
+
+            // Localize script for AJAX
+            wp_localize_script('nm-entries-group-js', 'nm_group_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('nm_public_nonce')
+            ));
+            
             wp_localize_script('nm-entries-modal-js', 'nm_ajax', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'    => wp_create_nonce('nm_public_nonce')
@@ -441,6 +468,235 @@ class NM_Public
             return ob_get_clean();
         } catch (Exception $e) {
             return '<div style="border: 1px solid red; padding: 10px;">Error: ' . esc_html($e->getMessage()) . '</div>';
+        }
+    }
+
+    /**
+     * Display grouped entries list
+     */
+    public function display_entries_group($atts)
+    {
+        // Verificar si el modelo existe
+        if (!$this->model) {
+            return '<div style="border: 1px solid red; padding: 10px;">Error: Modelo no encontrado</div>';
+        }
+
+        // Obtener configuración de la galería
+        $gallery_settings = get_option('nm_gallery_settings', array());
+        
+        // Verificar si la agrupación está habilitada
+        if (empty($gallery_settings['enable_grouping']) || empty($gallery_settings['group_by_field'])) {
+            return '<div style="border: 1px solid orange; padding: 10px;">La agrupación no está configurada. Por favor, configura la galería en el panel de administración.</div>';
+        }
+
+        $group_by_field = $gallery_settings['group_by_field'];
+        $group_images = $gallery_settings['group_images'] ?? array();
+        $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
+
+        // Extract attributes and set defaults
+        $atts = shortcode_atts(array(
+            'per_page' => 10
+        ), $atts, 'nm_entries_group');
+
+        $per_page = intval($atts['per_page']);
+        $status = 'approved';
+
+        try {
+            // Obtener todas las entradas aprobadas
+            $all_entries = $this->model->get_entries($status);
+            
+            // Obtener opciones únicas del campo select
+            $group_options = array();
+            foreach ($all_entries as $entry) {
+                $entry_data = maybe_unserialize($entry->entry_data);
+                if (!is_array($entry_data)) {
+                    $entry_data = json_decode($entry->entry_data, true);
+                }
+                
+                if (isset($entry_data[$group_by_field]) && !empty($entry_data[$group_by_field])) {
+                    $option_value = $entry_data[$group_by_field];
+                    if (!in_array($option_value, $group_options)) {
+                        $group_options[] = $option_value;
+                    }
+                }
+            }
+
+            // Generate output
+            ob_start();
+?>
+            <div class="nm-entries-group-container" data-group-field="<?php echo esc_attr($group_by_field); ?>" data-per-page="<?php echo esc_attr($per_page); ?>">
+                <!-- Galería de categorías -->
+                <div class="nm-group-categories">
+                    <?php foreach ($group_options as $option): ?>
+                        <?php
+                            $image_id = isset($group_images[$option]) ? $group_images[$option] : 0;
+                            $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : '';
+                        ?>
+                        <div class="nm-group-category" data-category="<?php echo esc_attr($option); ?>">
+                            <div class="nm-category-image">
+                                <?php if ($image_url): ?>
+                                    <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($option); ?>">
+                                <?php else: ?>
+                                    <div class="nm-category-placeholder">
+                                        <span><?php echo esc_html(substr($option, 0, 1)); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="nm-category-title">
+                                <?php echo esc_html($option); ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Contenedor para la galería filtrada -->
+                <div class="nm-group-entries-container" style="display: none;">
+                    <div class="nm-group-entries-header">
+                        <h3 class="nm-group-current-category"></h3>
+                    </div>
+                    <div class="nm-entries-grid" id="nm-filtered-entries">
+                        <!-- Se llenará dinámicamente con JavaScript -->
+                    </div>
+                    <div class="nm-entries-pagination" id="nm-group-pagination" style="display: none;">
+                        <!-- Paginación dinámica -->
+                    </div>
+                </div>
+            </div>
+<?php
+            return ob_get_clean();
+        } catch (Exception $e) {
+            return '<div style="border: 1px solid red; padding: 10px;">Error: ' . esc_html($e->getMessage()) . '</div>';
+        }
+    }
+
+    /**
+     * Get filtered entries by category (AJAX)
+     */
+    public function get_filtered_entries()
+    {
+        // Verificar nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nm_public_nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+
+        $category = sanitize_text_field($_POST['category'] ?? '');
+        $group_field = sanitize_text_field($_POST['group_field'] ?? '');
+        $page = intval($_POST['page'] ?? 1);
+        $per_page = intval($_POST['per_page'] ?? 10);
+
+        if (empty($category) || empty($group_field)) {
+            wp_send_json_error('Missing parameters');
+            return;
+        }
+
+        // Obtener configuración de la galería
+        $gallery_settings = get_option('nm_gallery_settings', array());
+        $selected_fields = isset($gallery_settings['selected_fields']) ? $gallery_settings['selected_fields'] : array();
+
+        try {
+            // Obtener todas las entradas aprobadas
+            $all_entries = $this->model->get_entries('approved');
+            
+            // Filtrar entradas por categoría
+            $filtered_entries = array();
+            foreach ($all_entries as $entry) {
+                $entry_data = maybe_unserialize($entry->entry_data);
+                if (!is_array($entry_data)) {
+                    $entry_data = json_decode($entry->entry_data, true);
+                }
+                
+                if (isset($entry_data[$group_field]) && $entry_data[$group_field] === $category) {
+                    $filtered_entries[] = array(
+                        'entry' => $entry,
+                        'entry_data' => $entry_data
+                    );
+                }
+            }
+
+            // Aplicar paginación
+            $total_entries = count($filtered_entries);
+            $total_pages = ceil($total_entries / $per_page);
+            $offset = ($page - 1) * $per_page;
+            $paged_entries = array_slice($filtered_entries, $offset, $per_page);
+
+            // Generar HTML de las tarjetas
+            ob_start();
+            
+            if (!empty($paged_entries)) {
+                foreach ($paged_entries as $index => $item) {
+                    $entry = $item['entry'];
+                    $entry_data = $item['entry_data'];
+                    ?>
+                    <div class="nm-entry-card" data-entry-index="<?php echo esc_attr($offset + $index); ?>">
+                        <?php $this->render_gallery_card_content($entry_data, $entry, $selected_fields); ?>
+                    </div>
+                    <?php
+                }
+            } else {
+                echo '<div class="nm-no-entries"><p>No se encontraron entradas en esta categoría.</p></div>';
+            }
+            
+            $cards_html = ob_get_clean();
+
+            // Generar HTML de paginación
+            ob_start();
+            
+            if ($total_pages > 1) {
+                ?>
+                <div class="nm-entries-pagination">
+                    <?php
+                    // Previous page
+                    if ($page > 1): ?>
+                        <a href="#" class="nm-page-link nm-prev" data-page="<?php echo ($page - 1); ?>">← Anterior</a>
+                    <?php endif;
+
+                    // Page numbers
+                    $start_page = max(1, $page - 2);
+                    $end_page = min($total_pages, $page + 2);
+
+                    if ($start_page > 1): ?>
+                        <a href="#" class="nm-page-link" data-page="1">1</a>
+                        <?php if ($start_page > 2): ?>
+                            <span class="nm-page-dots">...</span>
+                        <?php endif;
+                    endif;
+
+                    for ($i = $start_page; $i <= $end_page; $i++):
+                        if ($i == $page): ?>
+                            <span class="nm-page-link nm-current"><?php echo $i; ?></span>
+                        <?php else: ?>
+                            <a href="#" class="nm-page-link" data-page="<?php echo $i; ?>"><?php echo $i; ?></a>
+                        <?php endif;
+                    endfor;
+
+                    if ($end_page < $total_pages): ?>
+                        <?php if ($end_page < $total_pages - 1): ?>
+                            <span class="nm-page-dots">...</span>
+                        <?php endif; ?>
+                        <a href="#" class="nm-page-link" data-page="<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
+                    <?php endif;
+
+                    // Next page
+                    if ($page < $total_pages): ?>
+                        <a href="#" class="nm-page-link nm-next" data-page="<?php echo ($page + 1); ?>">Siguiente →</a>
+                    <?php endif; ?>
+                </div>
+                <?php
+            }
+            
+            $pagination_html = ob_get_clean();
+
+            wp_send_json_success(array(
+                'cards_html' => $cards_html,
+                'pagination_html' => $pagination_html,
+                'total_entries' => $total_entries,
+                'total_pages' => $total_pages,
+                'current_page' => $page
+            ));
+
+        } catch (Exception $e) {
+            wp_send_json_error('Error: ' . $e->getMessage());
         }
     }
 
