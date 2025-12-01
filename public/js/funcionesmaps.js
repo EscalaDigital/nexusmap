@@ -48,11 +48,37 @@ function downloadGeoJson() {
  */
 function toggleSearchInput() {
     var $searchInput = jQuery('.nm-search-input');
-    $searchInput.toggle();
-    if ($searchInput.is(':visible')) {
-        $searchInput.focus();
+    var $searchOverlay = jQuery('.nm-search-overlay');
+    
+    if ($searchInput.hasClass('nm-search-visible')) {
+        // Ocultar con animación
+        $searchInput.removeClass('nm-search-visible');
+        $searchOverlay.removeClass('nm-search-overlay-visible');
+        setTimeout(function() {
+            $searchInput.hide();
+            $searchOverlay.hide();
+        }, 300); // Esperar a que termine la animación
+    } else {
+        // Mostrar con animación
+        $searchInput.show();
+        $searchOverlay.show();
+        setTimeout(function() {
+            $searchInput.addClass('nm-search-visible');
+            $searchOverlay.addClass('nm-search-overlay-visible');
+            $searchInput.focus();
+        }, 10); // Pequeño delay para que la animación funcione
     }
 }
+
+// Event listener para cerrar con tecla ESC
+jQuery(document).on('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+        var $searchInput = jQuery('.nm-search-input');
+        if ($searchInput.hasClass('nm-search-visible')) {
+            toggleSearchInput();
+        }
+    }
+});
 
 /**
  * Realiza una búsqueda de ubicación utilizando OpenStreetMap Nominatim

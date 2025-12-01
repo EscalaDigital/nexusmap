@@ -122,6 +122,15 @@ jQuery(document).ready(function ($) {
             });
             $searchContainer.append($searchButton);
 
+            // Crear overlay para el fondo
+            var $searchOverlay = jQuery('<div>', {
+                class: 'nm-search-overlay'
+            }).hide();
+            
+            $searchOverlay.on('click', function() {
+                toggleSearchInput();
+            });
+
             var $searchInput = jQuery('<input>', {
                 type: 'text',
                 class: 'nm-search-input',
@@ -135,6 +144,7 @@ jQuery(document).ready(function ($) {
                 }
             });
 
+            jQuery('body').append($searchOverlay);
             $searchContainer.append($searchInput);
 
             $topControls.append($searchContainer);
