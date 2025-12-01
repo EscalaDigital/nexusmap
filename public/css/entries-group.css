@@ -16,53 +16,69 @@
 /* Tarjeta de categoría */
 .nm-group-category {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .nm-group-category:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .nm-group-category.active {
-    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
-    border: 2px solid #2563eb;
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
+    border: 3px solid #2563eb;
+    transform: translateY(-5px);
 }
 
 .nm-group-category.inactive {
     opacity: 0.5;
-    filter: grayscale(50%);
+    filter: grayscale(60%);
 }
 
 .nm-group-category.inactive:hover {
     opacity: 0.7;
+    filter: grayscale(40%);
 }
 
 /* Imagen de categoría */
 .nm-category-image {
     width: 100%;
-    height: 200px;
+    height: 220px;
     overflow: hidden;
-    background: #f3f4f6;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+}
+
+.nm-category-image::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+    pointer-events: none;
 }
 
 .nm-category-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
 }
 
 .nm-group-category:hover .nm-category-image img {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 /* Placeholder para categorías sin imagen */
@@ -82,19 +98,44 @@
     text-transform: uppercase;
 }
 
+/* Contenido de categoría */
+.nm-category-content {
+    padding: 20px;
+    background: #fff;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Título de categoría */
 .nm-category-title {
-    padding: 15px;
-    text-align: center;
-    font-weight: 600;
-    font-size: 16px;
+    margin: 0 0 12px 0;
+    font-weight: 700;
+    font-size: 18px;
     color: #1f2937;
-    background: #fff;
+    line-height: 1.3;
 }
 
 .nm-group-category.active .nm-category-title {
-    background: #eff6ff;
     color: #2563eb;
+}
+
+/* Descripción de categoría */
+.nm-category-description {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nm-group-category.active .nm-category-content {
+    background: #eff6ff;
 }
 
 /* Contenedor de entradas filtradas */
@@ -198,21 +239,28 @@
 /* Responsive */
 @media (max-width: 768px) {
     .nm-group-categories {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
     }
 
     .nm-category-image {
-        height: 150px;
+        height: 180px;
     }
 
     .nm-category-placeholder span {
         font-size: 48px;
     }
 
+    .nm-category-content {
+        padding: 16px;
+    }
+
     .nm-category-title {
-        font-size: 14px;
-        padding: 12px;
+        font-size: 16px;
+    }
+
+    .nm-category-description {
+        font-size: 13px;
     }
 
     .nm-group-current-category {
@@ -231,16 +279,30 @@
     }
 
     .nm-group-categories {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .nm-category-image {
-        height: 120px;
+        height: 160px;
     }
 
     .nm-category-placeholder span {
-        font-size: 36px;
+        font-size: 42px;
+    }
+
+    .nm-category-content {
+        padding: 15px;
+    }
+
+    .nm-category-title {
+        font-size: 15px;
+    }
+
+    .nm-category-description {
+        font-size: 13px;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
     }
 }
 

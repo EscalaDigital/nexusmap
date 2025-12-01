@@ -456,32 +456,51 @@ jQuery(document).ready(function($) {
         }
     });
     
-    // Renderizar campos de imagen por cada opción
+    // Renderizar campos de imagen y descripción por cada opción
     function renderGroupImages(options) {
         var html = '';
+        var groupDescriptions = <?php echo json_encode($saved_settings['group_descriptions'] ?? array()); ?>;
         
         options.forEach(function(option) {
             var imageId = groupImagesData[option] || '';
-            var imageUrl = '';
+            var description = groupDescriptions[option] || '';
+            var optionClass = option.replace(/\s+/g, '-');
             
-            html += '<div class="nm-group-image-item" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
-            html += '<div style="display: flex; align-items: center; justify-content: space-between;">';
-            html += '<strong style="flex: 1;">' + option + '</strong>';
-            html += '<div style="display: flex; gap: 10px; align-items: center;">';
-            html += '<div class="group-image-preview-' + option.replace(/\s+/g, '-') + '" style="width: 60px; height: 60px; background: #e0e0e0; border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden;">';
+            html += '<div class="nm-group-image-item" style="margin-bottom: 25px; padding: 20px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
+            
+            // Título de la opción
+            html += '<div style="margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0;">';
+            html += '<strong style="font-size: 15px; color: #1f2937;">' + option + '</strong>';
+            html += '</div>';
+            
+            // Imagen
+            html += '<div style="margin-bottom: 15px;">';
+            html += '<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Imagen</label>';
+            html += '<div style="display: flex; gap: 12px; align-items: center;">';
+            html += '<div class="group-image-preview-' + optionClass + '" style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e5e7eb;">';
             
             if (imageId) {
                 html += '<img src="" data-image-id="' + imageId + '" style="width: 100%; height: 100%; object-fit: cover;" />';
             } else {
-                html += '<span style="color: #999; font-size: 12px;">Sin imagen</span>';
+                html += '<span style="color: #9ca3af; font-size: 11px; text-align: center;">Sin<br>imagen</span>';
             }
             
             html += '</div>';
-            html += '<button type="button" class="button nm-upload-group-image" data-option="' + option + '">Seleccionar Imagen</button>';
-            html += '<button type="button" class="button nm-remove-group-image" data-option="' + option + '" style="' + (imageId ? '' : 'display: none;') + '">Eliminar</button>';
-            html += '<input type="hidden" name="group_images[' + option + ']" class="group-image-input-' + option.replace(/\s+/g, '-') + '" value="' + imageId + '" />';
+            html += '<div style="display: flex; gap: 8px;">';
+            html += '<button type="button" class="button nm-upload-group-image" data-option="' + option + '">📷 Seleccionar Imagen</button>';
+            html += '<button type="button" class="button nm-remove-group-image" data-option="' + option + '" style="' + (imageId ? '' : 'display: none;') + '">🗑️ Eliminar</button>';
+            html += '</div>';
+            html += '<input type="hidden" name="group_images[' + option + ']" class="group-image-input-' + optionClass + '" value="' + imageId + '" />';
             html += '</div>';
             html += '</div>';
+            
+            // Descripción
+            html += '<div style="margin-bottom: 0;">';
+            html += '<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Texto Resumen</label>';
+            html += '<textarea name="group_descriptions[' + option + ']" class="large-text" rows="3" placeholder="Escribe un resumen breve para esta categoría..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;">' + description + '</textarea>';
+            html += '<p style="margin: 5px 0 0 0; color: #6b7280; font-size: 12px;">Este texto se mostrará junto con la imagen en el frontend.</p>';
+            html += '</div>';
+            
             html += '</div>';
         });
         

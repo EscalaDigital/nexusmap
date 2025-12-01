@@ -611,11 +611,13 @@ class NM_Public
             <div class="nm-entries-group-container" data-group-field="<?php echo esc_attr($group_by_field); ?>" data-per-page="<?php echo esc_attr($per_page); ?>">
                 <!-- Galería de categorías -->
                 <div class="nm-group-categories">
-                    <?php foreach ($group_options as $option): ?>
-                        <?php
-                            $image_id = isset($group_images[$option]) ? $group_images[$option] : 0;
-                            $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : '';
-                        ?>
+                    <?php 
+                    $group_descriptions = $gallery_settings['group_descriptions'] ?? array();
+                    foreach ($group_options as $option): 
+                        $image_id = isset($group_images[$option]) ? $group_images[$option] : 0;
+                        $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : '';
+                        $description = isset($group_descriptions[$option]) ? $group_descriptions[$option] : '';
+                    ?>
                         <div class="nm-group-category" data-category="<?php echo esc_attr($option); ?>">
                             <div class="nm-category-image">
                                 <?php if ($image_url): ?>
@@ -626,8 +628,11 @@ class NM_Public
                                     </div>
                                 <?php endif; ?>
                             </div>
-                            <div class="nm-category-title">
-                                <?php echo esc_html($option); ?>
+                            <div class="nm-category-content">
+                                <h3 class="nm-category-title"><?php echo esc_html($option); ?></h3>
+                                <?php if (!empty($description)): ?>
+                                    <p class="nm-category-description"><?php echo esc_html($description); ?></p>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>

@@ -136,7 +136,8 @@ class NM_Gallery
             ),
             'enable_grouping' => false,
             'group_by_field' => '',
-            'group_images' => array()
+            'group_images' => array(),
+            'group_descriptions' => array()
         );
     }
 
@@ -168,12 +169,21 @@ class NM_Gallery
                 $group_images[sanitize_text_field($option)] = intval($image_id);
             }
         }
+        
+        // Procesar descripciones de grupos
+        $group_descriptions = array();
+        if (isset($_POST['group_descriptions']) && is_array($_POST['group_descriptions'])) {
+            foreach ($_POST['group_descriptions'] as $option => $description) {
+                $group_descriptions[sanitize_text_field($option)] = sanitize_textarea_field($description);
+            }
+        }
 
         $settings = array(
             'selected_fields' => $selected_fields,
             'enable_grouping' => $enable_grouping,
             'group_by_field' => $group_by_field,
-            'group_images' => $group_images
+            'group_images' => $group_images,
+            'group_descriptions' => $group_descriptions
         );
 
         update_option('nm_gallery_settings', $settings);
