@@ -11,6 +11,29 @@ var allMarkers = [];
 var clusterGroup = null;
 var clusteringActive = true; // estado interno si clustering habilitado
 
+/**
+ * Cache de etiquetas de campos para mejorar rendimiento
+ */
+var fieldLabels = {};
+
+/**
+ * Obtiene la etiqueta legible para un campo del formulario
+ * @param {string} field - El nombre del campo
+ * @returns {string} - La etiqueta legible del campo
+ */
+function getFieldLabel(field) {
+    // Cachea las etiquetas solo una vez
+    if (Object.keys(fieldLabels).length === 0 && typeof nmFormStructure !== 'undefined') {
+        nmFormStructure.fields.forEach(function (f) {
+            fieldLabels['nm_' + f.name] = f.label;
+        });
+    }
+
+    // Soporta tanto 'field' como 'nm_field'
+    var key = field.startsWith('nm_') ? field : 'nm_' + field;
+    return fieldLabels[key] || field.replace(/^nm_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 jQuery(document).ready(function ($) {
     if (jQuery('#nm-main-map').length) {
 

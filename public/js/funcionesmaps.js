@@ -1324,12 +1324,6 @@ function initImageCarousel() {
     $('#nm-modal-close').on('click', function() {
         $(document).off('keydown.carousel');
     });
-        // Marcar como cargando inicialmente
-        $audio.attr('data-loading', 'true');
-        
-        // Intentar cargar el audio
-        audio.load();
-    });
 }
 
 
