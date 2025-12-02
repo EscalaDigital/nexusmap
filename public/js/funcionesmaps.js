@@ -145,6 +145,10 @@ function performSearch(query) {
 function showModal(properties) {
     /* ----------  Preparación y utilidades ---------- */
 
+    // Obtener configuración del popup (si existe)
+    const popupConfig = typeof nmPopupConfig !== 'undefined' ? nmPopupConfig : {};
+    const specialOptions = typeof nmPopupSpecialOptions !== 'undefined' ? nmPopupSpecialOptions : {};
+
     //Limpiar escapes excesivos
     const cleanValue = (value) => {
         if (typeof value === 'string') {
@@ -178,21 +182,26 @@ function showModal(properties) {
     };
 
     // Render de un campo (normal o condicional)
-      const renderField = (label, value, extraClass = '') => {
+      const renderField = (label, value, extraClass = '', showLabel = true) => {
         // Limpiar el valor antes de procesarlo
         const cleanedValue = cleanValue(value);
         const cleanedLabel = cleanValue(label);
-          // Archivos / URLs
+        
+        // Determinar si mostrar el label
+        const labelHtml = showLabel ? `<strong>${cleanedLabel}:</strong>` : '';
+        const labelBr = showLabel ? '<br>' : '';
+        
+        // Archivos / URLs
         if (isValidURL(cleanedValue) && isFile(cleanedValue)) {
             const ext = getFileExtension(cleanedValue).toLowerCase();
             if (isImage(ext)) {
                 return `<p class="nm-modal-field ${extraClass}">
-                            <strong>${cleanedLabel}:</strong><br>
+                            ${labelHtml}${labelBr}
                             <img src="${cleanedValue}" alt="${cleanedLabel}" style="max-width:100%;height:auto;">
                         </p>`;
             }            if (isAudio(ext)) {
                 return `<p class="nm-modal-field ${extraClass}">
-                            <strong>${cleanedLabel}:</strong><br>
+                            ${labelHtml}${labelBr}
                             <div class="nm-audio-player">
                                 <audio controls preload="metadata" class="nm-audio-element">
                                     <source src="${cleanedValue}" type="audio/${ext}">
@@ -203,20 +212,26 @@ function showModal(properties) {
             }
             if (ext === 'pdf') {
                 return `<p class="nm-modal-field ${extraClass}">
-                            <strong>${cleanedLabel}:</strong>
+                            ${labelHtml}
                             <a href="${cleanedValue}" target="_blank">Ver documento PDF</a>
                         </p>`;
             }
             return `<p class="nm-modal-field ${extraClass}">
-                        <strong>${cleanedLabel}:</strong>
+                        ${labelHtml}
                         <a href="${cleanedValue}" download>Descargar archivo</a>
                     </p>`;
         }
 
         // Texto simple - aplicar limpieza aquí también
-        return `<p class="nm-modal-field ${extraClass}">
-                    <strong>${cleanedLabel}:</strong> ${cleanedValue}
-                </p>`;
+        if (showLabel) {
+            return `<p class="nm-modal-field ${extraClass}">
+                        <strong>${cleanedLabel}:</strong> ${cleanedValue}
+                    </p>`;
+        } else {
+            return `<p class="nm-modal-field ${extraClass}">
+                        ${cleanedValue}
+                    </p>`;
+        }
     };
 
     // Detectar el título y su clave de propiedad para no duplicarlo después
@@ -272,6 +287,7 @@ function showModal(properties) {
 
     let currentSection = null;
     const sectionContent = {};     // { "Nombre sección": [html, html...] }
+    const fieldsToRender = [];     // Array para ordenar campos según configuración
 
     if (nmFormStructure && nmFormStructure.fields) {
       
@@ -337,6 +353,18 @@ function showModal(properties) {
             if (!properties.hasOwnProperty(key)) return;  // no se envió valor
 
             const value = properties[key];
+            
+            // Aplicar configuración del popup
+            const fieldConfig = popupConfig[field.name] || {};
+            const isVisible = fieldConfig.visible !== false; // Por defecto visible
+            const customLabel = fieldConfig.custom_label || field.label;
+            const showLabel = fieldConfig.show_label !== false; // Por defecto mostrar
+            const fieldOrder = fieldConfig.order || 999;
+            
+            // Si el campo está oculto, no renderizarlo
+            if (!isVisible) {
+                return;
+            }
 
             // --- Campo condicional basado en select (segundo script) -------------
             if (field.type === 'conditional-select' && field.select_id) {
@@ -375,9 +403,18 @@ function showModal(properties) {
             }
 
             // --- Campo normal -----------------------------------------------------
-            (sectionContent[currentSection] ||= []).push(
-                renderField(field.label, value)
-            );
+            // Guardar campo para ordenar después
+            fieldsToRender.push({
+                html: renderField(customLabel, value, '', showLabel),
+                order: fieldOrder,
+                section: currentSection
+            });
+        });
+        
+        // Ordenar campos según configuración y añadirlos a sus secciones
+        fieldsToRender.sort((a, b) => a.order - b.order);
+        fieldsToRender.forEach(item => {
+            (sectionContent[item.section] ||= []).push(item.html);
         });
     }
 
@@ -479,14 +516,77 @@ function showModal(properties) {
         if (titleHtml) {
             modalHtml += titleHtml;
         }
-        Object.entries(sectionContent).forEach(([secName, items]) => {
-            if (!items.length) return;
-            modalHtml += `
-                <div class="nm-modal-section">
-                    ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
-                    ${items.join('')}
-                </div>`;
-        });
+        
+        // Si el carrusel está activado, agrupar imágenes
+        if (specialOptions.image_carousel) {
+            const imageHtmlMatches = [];
+            const nonImageContent = [];
+            
+            Object.entries(sectionContent).forEach(([secName, items]) => {
+                if (!items.length) return;
+                
+                const sectionImages = [];
+                const sectionOther = [];
+                
+                items.forEach(html => {
+                    if (/<img /i.test(html)) {
+                        const imgMatch = html.match(/<img [^>]*>/i);
+                        if (imgMatch) sectionImages.push(imgMatch[0]);
+                    } else {
+                        sectionOther.push(html);
+                    }
+                });
+                
+                if (sectionImages.length > 0) {
+                    imageHtmlMatches.push(...sectionImages);
+                }
+                
+                if (sectionOther.length > 0) {
+                    nonImageContent.push({ section: secName, content: sectionOther });
+                }
+            });
+            
+            // Añadir carrusel si hay imágenes
+            if (imageHtmlMatches.length > 0) {
+                modalHtml += `
+                    <div class="nm-image-carousel">
+                        <div class="nm-carousel-wrapper">
+                            ${imageHtmlMatches.map((img, idx) => 
+                                `<div class="nm-carousel-slide ${idx === 0 ? 'active' : ''}">${img}</div>`
+                            ).join('')}
+                        </div>
+                        ${imageHtmlMatches.length > 1 ? `
+                            <button class="nm-carousel-prev" aria-label="Anterior">❮</button>
+                            <button class="nm-carousel-next" aria-label="Siguiente">❯</button>
+                            <div class="nm-carousel-dots">
+                                ${imageHtmlMatches.map((_, idx) => 
+                                    `<span class="nm-dot ${idx === 0 ? 'active' : ''}" data-slide="${idx}"></span>`
+                                ).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // Añadir resto del contenido
+            nonImageContent.forEach(({ section, content }) => {
+                modalHtml += `
+                    <div class="nm-modal-section">
+                        ${section && section !== '' && section !== 'null' ? `<h3 class="nm-modal-header">${section}</h3>` : ''}
+                        ${content.join('')}
+                    </div>`;
+            });
+        } else {
+            // Modo normal sin carrusel
+            Object.entries(sectionContent).forEach(([secName, items]) => {
+                if (!items.length) return;
+                modalHtml += `
+                    <div class="nm-modal-section">
+                        ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
+                        ${items.join('')}
+                    </div>`;
+            });
+        }
     }
     modalHtml += '</div>';
 
@@ -513,6 +613,17 @@ function showModal(properties) {
         initializeAudioPlayers();
         if(isMobile && isAudioGuide){
             initAudioGuideUI();
+        }
+        // Inicializar carrusel si está activado
+        if(specialOptions.image_carousel && jQuery('.nm-image-carousel').length > 0){
+            initImageCarousel();
+        }
+        // Autoplay de audio si está activado
+        if(specialOptions.audio_autoplay){
+            const firstAudio = jQuery('.nm-audio-element')[0];
+            if(firstAudio){
+                firstAudio.play().catch(e => console.log('Autoplay bloqueado por el navegador'));
+            }
         }
     }, 100);    /* ----------  Cierre del modal (click X o exterior) ---------- */
     jQuery('#nm-modal-close').off('click').on('click', closeModal);
@@ -1143,7 +1254,76 @@ function initializeAudioPlayers() {
         // Event listener para progreso de carga
         audio.addEventListener('progress', function() {
         });
+    });
+}
+
+/**
+ * Inicializar carrusel de imágenes
+ */
+function initImageCarousel() {
+    const $ = jQuery;
+    const $carousel = $('.nm-image-carousel');
+    if (!$carousel.length) return;
+    
+    const $slides = $carousel.find('.nm-carousel-slide');
+    const $prev = $carousel.find('.nm-carousel-prev');
+    const $next = $carousel.find('.nm-carousel-next');
+    const $dots = $carousel.find('.nm-dot');
+    
+    let currentSlide = 0;
+    const totalSlides = $slides.length;
+    
+    // Si solo hay una imagen, no necesitamos navegación
+    if (totalSlides <= 1) return;
+    
+    function showSlide(index) {
+        // Normalizar índice
+        if (index >= totalSlides) index = 0;
+        if (index < 0) index = totalSlides - 1;
         
+        currentSlide = index;
+        
+        // Actualizar slides
+        $slides.removeClass('active');
+        $slides.eq(index).addClass('active');
+        
+        // Actualizar dots
+        $dots.removeClass('active');
+        $dots.eq(index).addClass('active');
+    }
+    
+    // Navegación con botones
+    $prev.on('click', function(e) {
+        e.preventDefault();
+        showSlide(currentSlide - 1);
+    });
+    
+    $next.on('click', function(e) {
+        e.preventDefault();
+        showSlide(currentSlide + 1);
+    });
+    
+    // Navegación con dots
+    $dots.on('click', function() {
+        const slideIndex = $(this).data('slide');
+        showSlide(slideIndex);
+    });
+    
+    // Navegación con teclado
+    $(document).on('keydown.carousel', function(e) {
+        if ($carousel.closest('.nm-modal.active').length === 0) return;
+        
+        if (e.key === 'ArrowLeft') {
+            showSlide(currentSlide - 1);
+        } else if (e.key === 'ArrowRight') {
+            showSlide(currentSlide + 1);
+        }
+    });
+    
+    // Limpiar event listener al cerrar modal
+    $('#nm-modal-close').on('click', function() {
+        $(document).off('keydown.carousel');
+    });
         // Marcar como cargando inicialmente
         $audio.attr('data-loading', 'true');
         

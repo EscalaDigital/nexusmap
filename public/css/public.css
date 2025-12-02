@@ -1037,3 +1037,133 @@
         font-size: 7px;
     }
 }
+
+/* ========================================= */
+/* CARRUSEL DE IMÁGENES EN POPUP            */
+/* ========================================= */
+.nm-image-carousel {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: 20px 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f5f5f5;
+}
+
+.nm-carousel-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* Aspect ratio 16:9 */
+    overflow: hidden;
+}
+
+.nm-carousel-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nm-carousel-slide.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+.nm-carousel-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.nm-carousel-prev,
+.nm-carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    font-size: 24px;
+    padding: 12px 16px;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.3s;
+    border-radius: 4px;
+}
+
+.nm-carousel-prev:hover,
+.nm-carousel-next:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.nm-carousel-prev {
+    left: 10px;
+}
+
+.nm-carousel-next {
+    right: 10px;
+}
+
+.nm-carousel-dots {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.nm-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.nm-dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.nm-dot.active {
+    background: white;
+    transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+    .nm-carousel-prev,
+    .nm-carousel-next {
+        font-size: 18px;
+        padding: 8px 12px;
+    }
+    
+    .nm-carousel-prev {
+        left: 5px;
+    }
+    
+    .nm-carousel-next {
+        right: 5px;
+    }
+    
+    .nm-carousel-dots {
+        bottom: 10px;
+        gap: 6px;
+    }
+    
+    .nm-dot {
+        width: 10px;
+        height: 10px;
+    }
+}

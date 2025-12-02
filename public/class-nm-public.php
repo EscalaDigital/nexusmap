@@ -311,6 +311,17 @@ class NM_Public
             'fields' => $form_structure
         ));
 
+        // Pasar configuración del popup al frontend
+        $popup_config = get_option('nm_popup_config', array());
+        $popup_special_options = get_option('nm_popup_special_options', array(
+            'image_carousel' => false,
+            'audio_autoplay' => false,
+            'show_map_in_popup' => false
+        ));
+
+        wp_localize_script('nm-public-js', 'nmPopupConfig', $popup_config);
+        wp_localize_script('nm-public-js', 'nmPopupSpecialOptions', $popup_special_options);
+
         ob_start();
         include NM_PLUGIN_DIR . 'public/views/main-map.php';
         return ob_get_clean();

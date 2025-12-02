@@ -1,0 +1,517 @@
+/**
+ * Estilos para el Personalizador de Popup
+ * Interfaz drag-and-drop para configurar la visualización del popup del mapa
+ */
+
+/* ============================================
+   CONTENEDOR PRINCIPAL
+   ============================================ */
+.nm-popup-customizer {
+    background: #f5f5f5;
+    padding: 20px;
+}
+
+.nm-popup-customizer h1 {
+    color: #23282d;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.nm-popup-customizer-container {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (max-width: 1200px) {
+    .nm-popup-customizer-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   PANEL DE OPCIONES ESPECIALES
+   ============================================ */
+.nm-special-options-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    height: fit-content;
+    position: sticky;
+    top: 32px;
+}
+
+.nm-special-options-panel h2 {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #0073aa;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nm-option-item {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.nm-option-item:last-of-type {
+    border-bottom: none;
+}
+
+.nm-option-item label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.nm-option-item input[type="checkbox"] {
+    margin-top: 3px;
+}
+
+.nm-option-title {
+    font-weight: 600;
+    color: #23282d;
+    font-size: 14px;
+}
+
+.nm-option-item .description {
+    margin-top: 8px;
+    margin-left: 32px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.nm-save-config {
+    width: 100%;
+    height: 44px;
+    font-size: 14px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.nm-save-config .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   PANEL DE CAMPOS
+   ============================================ */
+.nm-fields-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.nm-fields-panel h2 {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #0073aa;
+}
+
+.nm-fields-header {
+    display: grid;
+    grid-template-columns: 40px 2fr 80px 2fr 80px 150px;
+    gap: 15px;
+    padding: 10px 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #555;
+}
+
+.nm-fields-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.nm-fields-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.nm-fields-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.nm-fields-list::-webkit-scrollbar-thumb {
+    background: #0073aa;
+    border-radius: 4px;
+}
+
+.nm-fields-list::-webkit-scrollbar-thumb:hover {
+    background: #005a87;
+}
+
+/* ============================================
+   ITEMS DE CAMPO
+   ============================================ */
+.nm-field-item {
+    display: grid;
+    grid-template-columns: 40px 2fr 80px 2fr 80px 150px;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.nm-field-item:hover {
+    border-color: #0073aa;
+    box-shadow: 0 2px 8px rgba(0,115,170,0.1);
+    transform: translateY(-1px);
+}
+
+.nm-field-item.nm-dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+.nm-field-item.nm-hidden {
+    opacity: 0.5;
+    background: #f9f9f9;
+}
+
+.nm-field-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 20px;
+    cursor: grab;
+}
+
+.nm-field-drag-handle:active {
+    cursor: grabbing;
+}
+
+.nm-field-drag-handle .dashicons {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+}
+
+.nm-field-col-1 {
+    display: flex;
+    flex-direction: column;
+}
+
+.nm-field-col-1 strong {
+    color: #23282d;
+    font-size: 14px;
+}
+
+.nm-field-key {
+    font-size: 12px;
+    color: #999;
+    font-family: monospace;
+}
+
+.nm-custom-label {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.nm-custom-label:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+/* ============================================
+   TOGGLE SWITCH
+   ============================================ */
+.nm-toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.nm-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.nm-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.nm-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.nm-toggle input:checked + .nm-toggle-slider {
+    background-color: #00a32a;
+}
+
+.nm-toggle input:checked + .nm-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* ============================================
+   BADGES DE TIPO
+   ============================================ */
+.nm-field-type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.nm-type-text,
+.nm-type-textarea {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.nm-type-image {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.nm-type-audio {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.nm-type-file {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.nm-type-select,
+.nm-type-radio,
+.nm-type-checkbox {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.nm-type-date,
+.nm-type-number {
+    background: #e0f2f1;
+    color: #00796b;
+}
+
+.nm-type-url {
+    background: #fff9c4;
+    color: #f57f17;
+}
+
+.nm-type-geographic-selector {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+/* ============================================
+   ACCIONES DE CAMPOS
+   ============================================ */
+.nm-fields-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+}
+
+.nm-fields-actions .button {
+    flex: 1;
+}
+
+/* ============================================
+   PANEL DE VISTA PREVIA
+   ============================================ */
+.nm-preview-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-top: 20px;
+}
+
+.nm-preview-panel h2 {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #0073aa;
+}
+
+.nm-popup-preview {
+    background: #f5f5f5;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 40px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nm-modal-preview {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    max-width: 600px;
+    width: 100%;
+    max-height: 500px;
+    overflow: auto;
+}
+
+.nm-modal-close-preview {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f5f5f5;
+}
+
+.nm-modal-content-preview {
+    padding: 30px;
+}
+
+.nm-modal-title {
+    font-size: 24px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #23282d;
+}
+
+.nm-modal-section {
+    margin-bottom: 20px;
+}
+
+.nm-preview-placeholder {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+/* ============================================
+   NOTIFICACIONES
+   ============================================ */
+.nm-notification {
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    padding: 15px 20px;
+    background: #00a32a;
+    color: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 999999;
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nm-notification.error {
+    background: #d63638;
+}
+
+.nm-notification.warning {
+    background: #f0b849;
+}
+
+@keyframes slideIn {
+    from { 
+        transform: translateX(400px); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+}
+
+/* ============================================
+   ESTADO VACÍO
+   ============================================ */
+.nm-no-fields {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.nm-no-fields p {
+    font-size: 16px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .nm-field-item,
+    .nm-fields-header {
+        grid-template-columns: 30px 1fr;
+        gap: 10px;
+    }
+    
+    .nm-field-col-2,
+    .nm-field-col-3,
+    .nm-field-col-4,
+    .nm-field-col-5,
+    .nm-header-col-2,
+    .nm-header-col-3,
+    .nm-header-col-4,
+    .nm-header-col-5 {
+        display: none;
+    }
+    
+    .nm-fields-actions {
+        flex-direction: column;
+    }
+}
