@@ -55,9 +55,15 @@ class NM_Admin
             if ($hook_suffix === 'nexusmap_page_nm-popup-customizer') {
                 wp_enqueue_style('nm-popup-customizer-css', NM_PLUGIN_URL . 'admin/css/popup-customizer.css', array(), NM_VERSION);
                 wp_enqueue_script('nm-popup-customizer-js', NM_PLUGIN_URL . 'admin/js/popup-customizer.js', array('jquery', 'jquery-ui-sortable'), NM_VERSION, true);
+                
+                // Localizar variables para el popup customizer
+                wp_localize_script('nm-popup-customizer-js', 'nmAdmin', array(
+                    'ajax_url' => admin_url('admin-ajax.php'),
+                    'nonce'    => wp_create_nonce('nm_admin_nonce')
+                ));
             }
             
-            // Agregar variables globales para AJAX
+            // Agregar variables globales para AJAX (para otros scripts)
             wp_localize_script('nm-admin-js', 'nmAdmin', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'    => wp_create_nonce('nm_admin_nonce'),

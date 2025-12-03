@@ -148,6 +148,17 @@ function showModal(properties) {
     // Obtener configuración del popup (si existe)
     const popupConfig = typeof nmPopupConfig !== 'undefined' ? nmPopupConfig : {};
     const specialOptions = typeof nmPopupSpecialOptions !== 'undefined' ? nmPopupSpecialOptions : {};
+    
+    // Verificar si hay configuración personalizada activa
+    // Convertir strings a booleanos si es necesario
+    const imageCarousel = specialOptions.image_carousel === true || specialOptions.image_carousel === '1' || specialOptions.image_carousel === 1;
+    const audioAutoplay = specialOptions.audio_autoplay === true || specialOptions.audio_autoplay === '1' || specialOptions.audio_autoplay === 1;
+    const showMapInPopup = specialOptions.show_map_in_popup === true || specialOptions.show_map_in_popup === '1' || specialOptions.show_map_in_popup === 1;
+    
+    const hasCustomConfig = Object.keys(popupConfig).length > 0 || 
+                           imageCarousel || 
+                           audioAutoplay || 
+                           showMapInPopup;
 
     //Limpiar escapes excesivos
     const cleanValue = (value) => {
@@ -356,9 +367,21 @@ function showModal(properties) {
             
             // Aplicar configuración del popup
             const fieldConfig = popupConfig[field.name] || {};
-            const isVisible = fieldConfig.visible !== false; // Por defecto visible
+            
+            // Si hay configuración personalizada, respetar la visibilidad; sino, mostrar por defecto
+            let isVisible = true; // Por defecto visible
+            if (hasCustomConfig && fieldConfig.hasOwnProperty('visible')) {
+                // Convertir a booleano: true, 1, '1' son visible; false, 0, '0', '', null son invisible
+                isVisible = fieldConfig.visible === true || fieldConfig.visible === 1 || fieldConfig.visible === '1';
+            }
+            
             const customLabel = fieldConfig.custom_label || field.label;
-            const showLabel = fieldConfig.show_label !== false; // Por defecto mostrar
+            
+            let showLabel = true; // Por defecto mostrar label
+            if (hasCustomConfig && fieldConfig.hasOwnProperty('show_label')) {
+                showLabel = fieldConfig.show_label === true || fieldConfig.show_label === 1 || fieldConfig.show_label === '1';
+            }
+            
             const fieldOrder = fieldConfig.order || 999;
             
             // Si el campo está oculto, no renderizarlo
@@ -417,6 +440,57 @@ function showModal(properties) {
             (sectionContent[item.section] ||= []).push(item.html);
         });
     }
+    
+    /* ----------  Campos huérfanos (datos antiguos que ya no están en el formulario actual) ---------- */
+    // Solo si NO hay configuración personalizada, mostrar campos que no están en la estructura actual
+    if (!hasCustomConfig) {
+        const processedKeys = new Set();
+        
+        // Marcar campos ya procesados
+        if (nmFormStructure && nmFormStructure.fields) {
+            nmFormStructure.fields.forEach(field => {
+                if (field.name) {
+                    processedKeys.add('nm_' + field.name);
+                }
+                // También marcar geographic-selector levels
+                if (field.type === 'geographic-selector') {
+                    const commonLevels = ['admin1', 'admin2', 'admin3', 'admin4'];
+                    commonLevels.forEach(level => processedKeys.add('nm_' + level));
+                }
+            });
+        }
+        
+        // Marcar el título
+        if (selectedTitleKey) {
+            processedKeys.add(selectedTitleKey);
+        }
+        
+        // Campos especiales que nunca se muestran
+        const excludedKeys = ['nm_layers', 'nm_has_layer', 'nm_text_layers', 'nm_entry_id', 
+                             'nm_conditional_groups', 'nm_conditional_fields'];
+        
+        // Procesar campos huérfanos
+        const orphanFields = [];
+        for (const [key, value] of Object.entries(properties)) {
+            if (!key.startsWith('nm_')) continue;
+            if (processedKeys.has(key)) continue;
+            if (excludedKeys.some(excluded => key.startsWith(excluded))) continue;
+            if (!value || value === '' || value === '{}' || value === '[]') continue;
+            
+            const label = getFieldLabel(key);
+            orphanFields.push({
+                html: renderField(label, value),
+                key: key
+            });
+        }
+        
+        // Si hay campos huérfanos, agregarlos en una sección especial
+        if (orphanFields.length > 0) {
+            const orphanSection = 'Otros datos'; // Puedes cambiar el nombre
+            sectionContent[orphanSection] = orphanFields.map(f => f.html);
+            console.log(`Se encontraron ${orphanFields.length} campos huérfanos (datos antiguos):`, orphanFields.map(f => f.key));
+        }
+    }
 
     /* ----------  Grupos condicionales del PRIMER script ------------- */
 
@@ -442,8 +516,10 @@ function showModal(properties) {
     });
 
     /* ----------  Fallback cuando no existe nmFormStructure ---------- */
+    // IMPORTANTE: Solo usar fallback si NO hay configuración personalizada
+    // Si hay configuración y no hay campos visibles, mostrar popup vacío (respetando la configuración del usuario)
 
-    if (Object.keys(sectionContent).length === 0) {
+    if (Object.keys(sectionContent).length === 0 && !hasCustomConfig) {
         sectionContent[''] = [];  // Cambiamos 'General' por cadena vacía
         for (const [key, value] of Object.entries(properties)) {
             if (!key.startsWith('nm_')) continue;
@@ -466,59 +542,15 @@ function showModal(properties) {
 
     let modalHtml = '<div class="nm-modal-content">';
 
-    if(isMobile && isAudioGuide){
-        // Recopilar imágenes y primer audio
-        const imageHtmlMatches = [];
-        const audioMatches = [];
-        Object.values(sectionContent).forEach(arr=>{
-            arr.forEach(html=>{
-                if(/<img /i.test(html)) imageHtmlMatches.push(html.match(/<img [^>]*>/i)[0]);
-                if(/<audio /i.test(html)) audioMatches.push(html.match(/<audio[\s\S]*?<\/audio>/i)[0]);
-            });
-        });
-        const heroSlides = imageHtmlMatches.length ? imageHtmlMatches.map(img=>`<div class="nm-audio-hero-slide">${img}</div>`).join('') : `<div class="nm-audio-hero-slide" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">Sin imágenes</div>`;
-        const audioTag = audioMatches.length ? audioMatches[0] : '';
-        // Título primero, luego hero con timeline y play
-        modalHtml += `
-            ${titleHtml}
-            <div class="nm-audio-hero">
-                <div class="nm-audio-hero-slider" data-index="0">${heroSlides}</div>
-                <div class="nm-audio-hero-nav">
-                    <button type="button" class="nm-audio-prev" aria-label="Anterior">❮</button>
-                    <button type="button" class="nm-audio-next" aria-label="Siguiente">❯</button>
-                </div>
-                <div class="nm-audio-play-wrapper">
-                    <button type="button" class="nm-audio-play-btn" aria-label="Reproducir / Pausar"><span class="nm-audio-play-icon">▶</span></button>
-                    <div class="nm-audio-timeline">
-                        <span class="nm-audio-current">00:00</span>
-                        <input type="range" min="0" value="0" class="nm-audio-progress" />
-                        <span class="nm-audio-duration">00:00</span>
-                    </div>
-                    <div class="nm-audio-hidden" style="height:0;overflow:hidden;">${audioTag}</div>
-                </div>
-            </div>
-            <div class="nm-modal-sections-wrapper">
-        `;
-        Object.entries(sectionContent).forEach(([secName, items]) => {
-            if (!items.length) return;
-            // Filtrar items que ya formaron parte del hero (imagenes/audio duplicados)
-            const filteredItems = items.filter(it=>!/<img /i.test(it) && !/<audio /i.test(it));
-            if(!filteredItems.length) return;
-            modalHtml += `
-                <div class="nm-modal-section">
-                    ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
-                    ${filteredItems.join('')}
-                </div>`;
-        });
-        modalHtml += '</div>'; // wrapper
-    } else {
-        // Desktop: título al inicio
+    // Si hay configuración personalizada, usarla SIEMPRE (anula el comportamiento por defecto)
+    if(hasCustomConfig){
+        // MODO PERSONALIZADO - Se aplica a TODOS los temas
         if (titleHtml) {
             modalHtml += titleHtml;
         }
         
-        // Si el carrusel está activado, agrupar imágenes
-        if (specialOptions.image_carousel) {
+        // Si el carrusel está activado, agrupar TODAS las imágenes
+        if (imageCarousel) {
             const imageHtmlMatches = [];
             const nonImageContent = [];
             
@@ -577,7 +609,7 @@ function showModal(properties) {
                     </div>`;
             });
         } else {
-            // Modo normal sin carrusel
+            // Sin carrusel, mostrar todo normalmente
             Object.entries(sectionContent).forEach(([secName, items]) => {
                 if (!items.length) return;
                 modalHtml += `
@@ -587,6 +619,68 @@ function showModal(properties) {
                     </div>`;
             });
         }
+    } 
+    // Si NO hay configuración, usar el comportamiento original por defecto
+    else if(isMobile && isAudioGuide){
+        // Recopilar imágenes y primer audio
+        const imageHtmlMatches = [];
+        const audioMatches = [];
+        Object.values(sectionContent).forEach(arr=>{
+            arr.forEach(html=>{
+                if(/<img /i.test(html)) imageHtmlMatches.push(html.match(/<img [^>]*>/i)[0]);
+                if(/<audio /i.test(html)) audioMatches.push(html.match(/<audio[\s\S]*?<\/audio>/i)[0]);
+            });
+        });
+        const heroSlides = imageHtmlMatches.length ? imageHtmlMatches.map(img=>`<div class="nm-audio-hero-slide">${img}</div>`).join('') : `<div class="nm-audio-hero-slide" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">Sin imágenes</div>`;
+        const audioTag = audioMatches.length ? audioMatches[0] : '';
+        // Título primero, luego hero con timeline y play
+        modalHtml += `
+            ${titleHtml}
+            <div class="nm-audio-hero">
+                <div class="nm-audio-hero-slider" data-index="0">${heroSlides}</div>
+                <div class="nm-audio-hero-nav">
+                    <button type="button" class="nm-audio-prev" aria-label="Anterior">❮</button>
+                    <button type="button" class="nm-audio-next" aria-label="Siguiente">❯</button>
+                </div>
+                <div class="nm-audio-play-wrapper">
+                    <button type="button" class="nm-audio-play-btn" aria-label="Reproducir / Pausar"><span class="nm-audio-play-icon">▶</span></button>
+                    <div class="nm-audio-timeline">
+                        <span class="nm-audio-current">00:00</span>
+                        <input type="range" min="0" value="0" class="nm-audio-progress" />
+                        <span class="nm-audio-duration">00:00</span>
+                    </div>
+                    <div class="nm-audio-hidden" style="height:0;overflow:hidden;">${audioTag}</div>
+                </div>
+            </div>
+            <div class="nm-modal-sections-wrapper">
+        `;
+        Object.entries(sectionContent).forEach(([secName, items]) => {
+            if (!items.length) return;
+            // Filtrar items que ya formaron parte del hero (imagenes/audio duplicados)
+            const filteredItems = items.filter(it=>!/<img /i.test(it) && !/<audio /i.test(it));
+            if(!filteredItems.length) return;
+            modalHtml += `
+                <div class="nm-modal-section">
+                    ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
+                    ${filteredItems.join('')}
+                </div>`;
+        });
+        modalHtml += '</div>'; // wrapper
+    } else {
+        // MODO ORIGINAL - Sin configuración personalizada
+        // Comportamiento por defecto de los temas
+        if (titleHtml) {
+            modalHtml += titleHtml;
+        }
+        
+        Object.entries(sectionContent).forEach(([secName, items]) => {
+            if (!items.length) return;
+            modalHtml += `
+                <div class="nm-modal-section">
+                    ${secName && secName !== '' && secName !== 'null' ? `<h3 class="nm-modal-header">${secName}</h3>` : ''}
+                    ${items.join('')}
+                </div>`;
+        });
     }
     modalHtml += '</div>';
 
@@ -615,11 +709,11 @@ function showModal(properties) {
             initAudioGuideUI();
         }
         // Inicializar carrusel si está activado
-        if(specialOptions.image_carousel && jQuery('.nm-image-carousel').length > 0){
+        if(imageCarousel && jQuery('.nm-image-carousel').length > 0){
             initImageCarousel();
         }
         // Autoplay de audio si está activado
-        if(specialOptions.audio_autoplay){
+        if(audioAutoplay){
             const firstAudio = jQuery('.nm-audio-element')[0];
             if(firstAudio){
                 firstAudio.play().catch(e => console.log('Autoplay bloqueado por el navegador'));

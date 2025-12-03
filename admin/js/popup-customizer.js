@@ -267,16 +267,16 @@
             };
         });
         
-        // Preparar opciones especiales
+        // Preparar opciones especiales (convertir explícitamente a booleanos)
         const specialOptions = {
-            image_carousel: $('#nm-image-carousel').is(':checked'),
-            show_map_in_popup: $('#nm-show-map-in-popup').is(':checked'),
-            audio_autoplay: $('#nm-audio-autoplay').is(':checked')
+            image_carousel: $('#nm-image-carousel').is(':checked') ? true : false,
+            show_map_in_popup: $('#nm-show-map-in-popup').is(':checked') ? true : false,
+            audio_autoplay: $('#nm-audio-autoplay').is(':checked') ? true : false
         };
         
         // Enviar vía AJAX
         $.ajax({
-            url: ajaxurl,
+            url: nmAdmin.ajax_url,
             type: 'POST',
             data: {
                 action: 'nm_save_popup_config',
