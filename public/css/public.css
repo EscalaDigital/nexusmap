@@ -247,6 +247,37 @@
 .nm-modal-field:last-child {
     margin-bottom: 20px;
 }
+
+/* Botón para campos de tipo URL */
+.nm-url-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff !important;
+    text-decoration: none !important;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    margin-top: 5px;
+}
+
+.nm-url-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.nm-url-button:active {
+    transform: translateY(0);
+}
+
+.nm-url-icon {
+    font-size: 16px;
+    margin-right: 8px;
+}
+
 /* Botón de cierre mejorado */
 .nm-modal-close {
   position: absolute;

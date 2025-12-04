@@ -193,7 +193,7 @@ function showModal(properties) {
     };
 
     // Render de un campo (normal o condicional)
-      const renderField = (label, value, extraClass = '', showLabel = true) => {
+      const renderField = (label, value, extraClass = '', showLabel = true, fieldType = null) => {
         // Limpiar el valor antes de procesarlo
         const cleanedValue = cleanValue(value);
         const cleanedLabel = cleanValue(label);
@@ -201,6 +201,16 @@ function showModal(properties) {
         // Determinar si mostrar el label
         const labelHtml = showLabel ? `<strong>${cleanedLabel}:</strong>` : '';
         const labelBr = showLabel ? '<br>' : '';
+        
+        // Campo tipo URL - mostrar como botón
+        if (fieldType === 'url' && isValidURL(cleanedValue)) {
+            return `<p class="nm-modal-field ${extraClass}">
+                        ${showLabel ? `<strong>${cleanedLabel}:</strong><br>` : ''}
+                        <a href="${cleanedValue}" target="_blank" rel="noopener noreferrer" class="nm-url-button">
+                            <span class="nm-url-icon">🔗</span> Abrir enlace
+                        </a>
+                    </p>`;
+        }
         
         // Archivos / URLs
         if (isValidURL(cleanedValue) && isFile(cleanedValue)) {
@@ -415,7 +425,7 @@ function showModal(properties) {
             // --- Campo condicional basado en select (segundo script) -------------
             if (field.type === 'conditional-select' && field.select_id) {
                 const selectedValue = value;
-                const baseHtml = renderField(customLabel, value, '', showLabel);
+                const baseHtml = renderField(customLabel, value, '', showLabel, field.type);
 
                 // Los campos dependientes vienen serializados en:
                 // nm_conditional_fields_{select_id}_{selectedValue}
@@ -456,7 +466,7 @@ function showModal(properties) {
             // --- Campo normal -----------------------------------------------------
             // Guardar campo para ordenar después
             fieldsToRender.push({
-                html: renderField(customLabel, value, '', showLabel),
+                html: renderField(customLabel, value, '', showLabel, field.type),
                 order: fieldOrder,
                 section: currentSection
             });
