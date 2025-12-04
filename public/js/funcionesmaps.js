@@ -311,8 +311,26 @@ function showModal(properties) {
             }            // --- Campo geographic-selector (manejo especial) -------------
             if (field.type === 'geographic-selector') {
                 
+                // Aplicar configuración del popup para geographic-selector
+                const fieldConfig = popupConfig[field.name] || {};
+                
+                // Si hay configuración personalizada, respetar la visibilidad
+                let isVisible = true;
+                if (hasCustomConfig && fieldConfig.hasOwnProperty('visible')) {
+                    isVisible = fieldConfig.visible === true || fieldConfig.visible === 1 || fieldConfig.visible === '1';
+                }
+                
+                // Si el campo está oculto, no renderizarlo
+                if (!isVisible) {
+                    return;
+                }
+                
+                // Obtener label personalizado si existe
+                const customLabel = fieldConfig.custom_label || field.label;
+                const fieldOrder = fieldConfig.order || 999;
+                
                 let geoHtml = `<div class="nm-geographic-selector-group">
-                                <h4 class="nm-geographic-title">${cleanValue(field.label)}</h4>`;
+                                <h4 class="nm-geographic-title">${cleanValue(customLabel)}</h4>`;
                 
                 let hasValues = false;
                 
@@ -350,7 +368,12 @@ function showModal(properties) {
                   geoHtml += '</div>';
                   // Solo agregar si tiene valores
                 if (hasValues) {
-                    (sectionContent[currentSection] ||= []).push(geoHtml);
+                    // Guardar campo geográfico para ordenar después
+                    fieldsToRender.push({
+                        html: geoHtml,
+                        order: fieldOrder,
+                        section: currentSection
+                    });
                 }
                 return;
             }
@@ -392,7 +415,7 @@ function showModal(properties) {
             // --- Campo condicional basado en select (segundo script) -------------
             if (field.type === 'conditional-select' && field.select_id) {
                 const selectedValue = value;
-                const baseHtml = renderField(field.label, value);
+                const baseHtml = renderField(customLabel, value, '', showLabel);
 
                 // Los campos dependientes vienen serializados en:
                 // nm_conditional_fields_{select_id}_{selectedValue}
@@ -405,7 +428,7 @@ function showModal(properties) {
                         condHtml = condFields.map(cf => {
                             const cfKey = 'nm_' + cf.name;
                             const cfValue = properties[cfKey];
-                            const cfLabel = `${field.label} - ${cf.label}`;
+                            const cfLabel = `${customLabel} - ${cf.label}`;
                             return renderField(cfLabel, cfValue, 'nm-conditional-field');
                         }).join('');
                     } catch (e) {
@@ -421,7 +444,12 @@ function showModal(properties) {
                         </div>
                     </div>`;
 
-                (sectionContent[currentSection] ||= []).push(groupHtml);
+                // Guardar campo condicional para ordenar después
+                fieldsToRender.push({
+                    html: groupHtml,
+                    order: fieldOrder,
+                    section: currentSection
+                });
                 return;
             }
 
