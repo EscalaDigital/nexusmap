@@ -223,31 +223,55 @@ function showModal(properties) {
         if (isValidURL(cleanedValue) && isFile(cleanedValue)) {
             const ext = getFileExtension(cleanedValue).toLowerCase();
             if (isImage(ext)) {
-                return `<p class="nm-modal-field ${extraClass}">
-                            ${labelHtml}${labelBr}
-                            <img src="${cleanedValue}" alt="${cleanedLabel}" style="max-width:100%;height:auto;">
-                        </p>`;
+                if (showLabel) {
+                    return `<p class="nm-modal-field ${extraClass}">
+                                ${labelHtml}${labelBr}
+                                <img src="${cleanedValue}" alt="${cleanedLabel}" style="max-width:100%;height:auto;">
+                            </p>`;
+                } else {
+                    return `<img src="${cleanedValue}" alt="${cleanedLabel}" class="nm-modal-field ${extraClass}" style="max-width:100%;height:auto;">`;
+                }
             }            if (isAudio(ext)) {
-                return `<p class="nm-modal-field ${extraClass}">
-                            ${labelHtml ? labelHtml + labelBr : ''}
-                            <div class="nm-audio-player">
+                if (showLabel) {
+                    return `<p class="nm-modal-field ${extraClass}">
+                                ${labelHtml}${labelBr}
+                                <div class="nm-audio-player">
+                                    <audio controls preload="metadata" class="nm-audio-element">
+                                        <source src="${cleanedValue}" type="audio/${ext}">
+                                        Tu navegador no soporta la reproducción de audio.
+                                    </audio>
+                                </div>
+                            </p>`;
+                } else {
+                    return `<div class="nm-audio-player nm-modal-field ${extraClass}">
                                 <audio controls preload="metadata" class="nm-audio-element">
                                     <source src="${cleanedValue}" type="audio/${ext}">
                                     Tu navegador no soporta la reproducción de audio.
                                 </audio>
-                            </div>
-                        </p>`;
+                            </div>`;
+                }
             }
             if (ext === 'pdf') {
+                if (showLabel) {
+                    return `<p class="nm-modal-field ${extraClass}">
+                                ${labelHtml} <a href="${cleanedValue}" target="_blank">Ver documento PDF</a>
+                            </p>`;
+                } else {
+                    return `<p class="nm-modal-field ${extraClass}">
+                                <a href="${cleanedValue}" target="_blank">Ver documento PDF</a>
+                            </p>`;
+                }
+            }
+            // Otros archivos descargables
+            if (showLabel) {
                 return `<p class="nm-modal-field ${extraClass}">
-                            ${labelHtml ? labelHtml + ' ' : ''}
-                            <a href="${cleanedValue}" target="_blank">Ver documento PDF</a>
+                            ${labelHtml} <a href="${cleanedValue}" download>Descargar archivo</a>
+                        </p>`;
+            } else {
+                return `<p class="nm-modal-field ${extraClass}">
+                            <a href="${cleanedValue}" download>Descargar archivo</a>
                         </p>`;
             }
-            return `<p class="nm-modal-field ${extraClass}">
-                        ${labelHtml ? labelHtml + ' ' : ''}
-                        <a href="${cleanedValue}" download>Descargar archivo</a>
-                    </p>`;
         }
 
         // Texto simple - aplicar limpieza aquí también
