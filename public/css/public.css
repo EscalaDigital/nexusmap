@@ -249,33 +249,40 @@
 }
 
 /* Botón para campos de tipo URL */
-.nm-url-button {
+a.nm-url-button,
+a.nm-url-button:link,
+a.nm-url-button:visited {
     display: inline-block;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #0073e6 0%, #0052cc 100%) !important;
     color: #fff !important;
     text-decoration: none !important;
     border-radius: 8px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    margin-top: 5px;
+    box-shadow: 0 4px 15px rgba(0, 115, 230, 0.4);
+    margin-top: 8px;
+    border: none !important;
 }
 
-.nm-url-button:hover {
+a.nm-url-button:hover,
+a.nm-url-button:focus {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    box-shadow: 0 6px 20px rgba(0, 115, 230, 0.6);
+    background: linear-gradient(135deg, #005bb5 0%, #003d99 100%) !important;
+    color: #fff !important;
 }
 
-.nm-url-button:active {
+a.nm-url-button:active {
     transform: translateY(0);
+    background: linear-gradient(135deg, #003d99 0%, #002b66 100%) !important;
 }
 
 .nm-url-icon {
-    font-size: 16px;
-    margin-right: 8px;
+    font-size: 18px;
+    margin-right: 10px;
+    vertical-align: middle;
 }
 
 /* Botón de cierre mejorado */
