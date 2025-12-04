@@ -77,7 +77,7 @@
         });
 
         // Opciones especiales
-        $('#nm-image-carousel, #nm-show-map-in-popup, #nm-audio-autoplay').on('change', function() {
+        $('#nm-image-carousel, #nm-show-map-in-popup, #nm-audio-autoplay, #nm-hide-title').on('change', function() {
             updatePreview();
         });
 
@@ -193,7 +193,10 @@
      */
     function updatePreview() {
         const $preview = $('#nm-preview-content');
-        let html = '<h2 class="nm-modal-title">Título de Ejemplo</h2>';
+        
+        // Verificar si se debe ocultar el título
+        const hideTitle = $('#nm-hide-title').is(':checked');
+        let html = hideTitle ? '' : '<h2 class="nm-modal-title">Título de Ejemplo</h2>';
         
         // Filtrar campos visibles y ordenarlos
         const visibleFields = fieldsData
@@ -271,7 +274,8 @@
         const specialOptions = {
             image_carousel: $('#nm-image-carousel').is(':checked') ? true : false,
             show_map_in_popup: $('#nm-show-map-in-popup').is(':checked') ? true : false,
-            audio_autoplay: $('#nm-audio-autoplay').is(':checked') ? true : false
+            audio_autoplay: $('#nm-audio-autoplay').is(':checked') ? true : false,
+            hide_title: $('#nm-hide-title').is(':checked') ? true : false
         };
         
         // Enviar vía AJAX

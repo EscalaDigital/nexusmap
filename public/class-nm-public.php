@@ -318,7 +318,8 @@ class NM_Public
         $popup_special_options = get_option('nm_popup_special_options', array(
             'image_carousel' => false,
             'audio_autoplay' => false,
-            'show_map_in_popup' => false
+            'show_map_in_popup' => false,
+            'hide_title' => false
         ));
 
         wp_localize_script('nm-public-js', 'nmPopupConfig', $popup_config);

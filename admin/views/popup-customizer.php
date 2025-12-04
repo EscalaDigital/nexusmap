@@ -44,6 +44,17 @@
                 </p>
             </div>
 
+            <div class="nm-option-item">
+                <label>
+                    <input type="checkbox" id="nm-hide-title" 
+                           <?php echo isset($special_options['hide_title']) && $special_options['hide_title'] ? 'checked' : ''; ?>>
+                    <span class="nm-option-title">Ocultar Título del Popup</span>
+                </label>
+                <p class="description">
+                    No mostrar el título principal en el popup, solo el contenido de los campos.
+                </p>
+            </div>
+
             <button type="button" class="button button-primary button-large nm-save-config">
                 <span class="dashicons dashicons-saved"></span> Guardar Configuración
             </button>

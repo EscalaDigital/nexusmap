@@ -154,11 +154,13 @@ function showModal(properties) {
     const imageCarousel = specialOptions.image_carousel === true || specialOptions.image_carousel === '1' || specialOptions.image_carousel === 1;
     const audioAutoplay = specialOptions.audio_autoplay === true || specialOptions.audio_autoplay === '1' || specialOptions.audio_autoplay === 1;
     const showMapInPopup = specialOptions.show_map_in_popup === true || specialOptions.show_map_in_popup === '1' || specialOptions.show_map_in_popup === 1;
+    const hideTitle = specialOptions.hide_title === true || specialOptions.hide_title === '1' || specialOptions.hide_title === 1;
     
     const hasCustomConfig = Object.keys(popupConfig).length > 0 || 
                            imageCarousel || 
                            audioAutoplay || 
-                           showMapInPopup;
+                           showMapInPopup ||
+                           hideTitle;
 
     //Limpiar escapes excesivos
     const cleanValue = (value) => {
@@ -303,6 +305,24 @@ function showModal(properties) {
         const heuristic = entries.find(([k, v]) => /(denominaci[óo]n|titulo|t[íi]tulo|nombre)/i.test(k) && (cleanValue(v) || '').toString().trim() !== '');
         if (heuristic) pick(heuristic[0], heuristic[1]);
     })();
+    
+    // Verificar si el título debe ocultarse según configuración del popup
+    if (hasCustomConfig && titleHtml) {
+        // Opción 1: Ocultar título globalmente
+        if (hideTitle) {
+            titleHtml = '';
+        }
+        // Opción 2: El campo específico del título está oculto
+        else if (selectedTitleKey) {
+            const titleFieldName = selectedTitleKey.replace(/^nm_/, '');
+            const titleFieldConfig = popupConfig[titleFieldName] || {};
+            
+            if (titleFieldConfig.hasOwnProperty('visible') && 
+                !(titleFieldConfig.visible === true || titleFieldConfig.visible === 1 || titleFieldConfig.visible === '1')) {
+                titleHtml = '';
+            }
+        }
+    }
 
     /* ----------  Recorremos la estructura del formulario ---------- */
 

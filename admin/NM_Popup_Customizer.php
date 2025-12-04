@@ -103,7 +103,8 @@ class NM_Popup_Customizer
         $special_options = get_option('nm_popup_special_options', array(
             'image_carousel' => false,
             'audio_autoplay' => false,
-            'show_map_in_popup' => false
+            'show_map_in_popup' => false,
+            'hide_title' => false
         ));
 
         // Incluir la vista
