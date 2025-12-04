@@ -221,7 +221,9 @@ class NM_Public
             )); // Localize script for AJAX handling
             wp_localize_script('nm-form-js', 'nmPublic', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('nm_public_nonce')
+                'nonce'    => wp_create_nonce('nm_public_nonce'),
+                'max_upload_size' => wp_max_upload_size(),
+                'max_upload_size_mb' => size_format(wp_max_upload_size())
             ));
         }
     }

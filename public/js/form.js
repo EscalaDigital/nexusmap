@@ -241,7 +241,8 @@ function performSearch(query) {
                     if (this.files.length === 0) return;
 
                     const file = this.files[0];
-                    const maxSize = 5 * 1024 * 1024;                     // 5 MB
+                    const maxSize = nmPublic.max_upload_size || (64 * 1024 * 1024);  // Usar límite de WordPress o 64 MB por defecto
+                    const maxSizeMB = nmPublic.max_upload_size_mb || '64 MB';          // Formato legible
                     const $input = jQuery(this);                    // Detectar el tipo de campo usando el atributo data-type del contenedor
                     const $fieldContainer = $input.closest('.nm-form-field');
                     const fieldType = $fieldContainer.attr('data-type');
@@ -265,7 +266,7 @@ function performSearch(query) {
                     }
 
                     if (file.size > maxSize) {
-                        showMessage('El archivo es demasiado grande. Tamaño máximo: 5 MB.', 'error');
+                        showMessage('El archivo es demasiado grande. Tamaño máximo: ' + maxSizeMB + '.', 'error');
                         hasFileError = true;
                         return false;                                       // break
                     }
