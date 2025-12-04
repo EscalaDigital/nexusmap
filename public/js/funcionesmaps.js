@@ -200,6 +200,11 @@ function showModal(properties) {
         const cleanedValue = cleanValue(value);
         const cleanedLabel = cleanValue(label);
         
+        // Si no hay valor, no renderizar nada
+        if (!cleanedValue || cleanedValue.toString().trim() === '') {
+            return '';
+        }
+        
         // Determinar si mostrar el label
         const labelHtml = showLabel ? `<strong>${cleanedLabel}:</strong>` : '';
         const labelBr = showLabel ? '<br>' : '';
@@ -224,7 +229,7 @@ function showModal(properties) {
                         </p>`;
             }            if (isAudio(ext)) {
                 return `<p class="nm-modal-field ${extraClass}">
-                            ${labelHtml}${labelBr}
+                            ${labelHtml ? labelHtml + labelBr : ''}
                             <div class="nm-audio-player">
                                 <audio controls preload="metadata" class="nm-audio-element">
                                     <source src="${cleanedValue}" type="audio/${ext}">
@@ -235,12 +240,12 @@ function showModal(properties) {
             }
             if (ext === 'pdf') {
                 return `<p class="nm-modal-field ${extraClass}">
-                            ${labelHtml}
+                            ${labelHtml ? labelHtml + ' ' : ''}
                             <a href="${cleanedValue}" target="_blank">Ver documento PDF</a>
                         </p>`;
             }
             return `<p class="nm-modal-field ${extraClass}">
-                        ${labelHtml}
+                        ${labelHtml ? labelHtml + ' ' : ''}
                         <a href="${cleanedValue}" download>Descargar archivo</a>
                     </p>`;
         }
@@ -484,18 +489,23 @@ function showModal(properties) {
             }
 
             // --- Campo normal -----------------------------------------------------
-            // Guardar campo para ordenar después
-            fieldsToRender.push({
-                html: renderField(customLabel, value, '', showLabel, field.type),
-                order: fieldOrder,
-                section: currentSection
-            });
+            // Guardar campo para ordenar después (solo si tiene contenido)
+            const fieldHtml = renderField(customLabel, value, '', showLabel, field.type);
+            if (fieldHtml) {
+                fieldsToRender.push({
+                    html: fieldHtml,
+                    order: fieldOrder,
+                    section: currentSection
+                });
+            }
         });
         
         // Ordenar campos según configuración y añadirlos a sus secciones
         fieldsToRender.sort((a, b) => a.order - b.order);
         fieldsToRender.forEach(item => {
-            (sectionContent[item.section] ||= []).push(item.html);
+            if (item.html) { // Solo agregar si tiene contenido
+                (sectionContent[item.section] ||= []).push(item.html);
+            }
         });
     }
     

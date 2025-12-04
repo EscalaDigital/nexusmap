@@ -37,6 +37,7 @@ class NM {
      */
     private function load_dependencies() {
         require_once NM_PLUGIN_DIR . 'includes/class-nm-loader.php';      // Cargador de hooks
+        require_once NM_PLUGIN_DIR . 'includes/models/class-nm-model.php'; // Modelo de datos
         require_once NM_PLUGIN_DIR . 'admin/class-nm-admin.php';          // Funcionalidad del área de administración
         require_once NM_PLUGIN_DIR . 'public/class-nm-public.php';        // Funcionalidad de la parte pública
         require_once NM_PLUGIN_DIR . 'admin/NM_Chart_Manager.php';        // Gestión de gráficos y visualizaciones

@@ -1,5 +1,6 @@
 <?php
 
+require_once dirname(__FILE__) . '/../includes/models/class-nm-model.php';
 require_once 'NM_Menu_Main.php';
 require_once 'NM_Entries.php';
 require_once 'NM_Map_Settings.php';
