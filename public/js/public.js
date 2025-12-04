@@ -37,7 +37,12 @@ function getFieldLabel(field) {
 jQuery(document).ready(function ($) {
     if (jQuery('#nm-main-map').length) {
 
-        map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);        // Crear el contenedor de controles si aún no existe
+        map = L.map('nm-main-map').setView([nmMapData.lat, nmMapData.lng], nmMapData.zoom);
+        
+        // Agregar atribución personalizada de NexusMap
+        map.attributionControl.setPrefix('Creado con <a href="https://escaladigital.es" target="_blank">NexusMap by Escala Digital</a>');
+        
+        // Crear el contenedor de controles si aún no existe
         if (jQuery('#nm-top-controls').length === 0) {
             jQuery('#nm-main-map').append('<div id="nm-top-controls" class="nm-top-controls"></div>');
         }

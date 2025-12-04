@@ -481,6 +481,9 @@ async function initModalMap(entryData, mapContainer) {
         // Crear nuevo mapa
         modalMap = L.map(mapContainer).setView([40.4168, -3.7038], 6); // Madrid como centro por defecto
         
+        // Agregar atribución personalizada de NexusMap
+        modalMap.attributionControl.setPrefix('Creado con <a href="https://escaladigital.es" target="_blank">NexusMap by Escala Digital</a>');
+        
         // Añadir capa base con manejo de errores
         try {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

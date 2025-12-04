@@ -57,6 +57,9 @@ jQuery(document).ready(function ($) {
         // Cargar el mapa de Leaflet dentro del modal
         setTimeout(function () {  // Usar un timeout para asegurarnos de que el modal se haya mostrado
             map = L.map('map').setView([0, 0], 2);  // Inicializa el mapa con una vista global
+            
+            // Agregar atribución personalizada de NexusMap
+            map.attributionControl.setPrefix('Creado con <a href="https://escaladigital.es" target="_blank">NexusMap by Escala Digital</a>');
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 18,

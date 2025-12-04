@@ -1,5 +1,15 @@
 <div class="wrap">
     <h1>Constructor de Formularios</h1>
+    
+    <!-- Aviso de Copyright -->
+    <div style="background-color: #f0f0f1; border-left: 4px solid #2271b1; padding: 12px 15px; margin: 15px 0; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+        <p style="margin: 0; font-size: 14px;">
+            <strong>NexusMap</strong> - Plugin desarrollado por <strong>Escala Digital (Gabriel Orozco)</strong><br>
+            <span style="color: #646970;">Para su uso comercial o redistribución se requiere autorización expresa.</span><br>
+            <a href="https://escaladigital.es" target="_blank" style="text-decoration: none; color: #2271b1;">🌐 escaladigital.es</a>
+        </p>
+    </div>
+    
     <div id="nm-form-builder">
         <div id="nm-form-elements">
             <h2>Campos Disponibles</h2>

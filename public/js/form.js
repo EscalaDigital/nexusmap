@@ -34,6 +34,9 @@ jQuery(document).ready(function ($) {
 
             // ② Solo entonces iniciamos Leaflet
             var drawMap = L.map($mapCanvas[0]).setView([0, 0], 2);
+            
+            // Agregar atribución personalizada de NexusMap
+            drawMap.attributionControl.setPrefix('Creado con <a href="https://escaladigital.es" target="_blank">NexusMap by Escala Digital</a>');
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
