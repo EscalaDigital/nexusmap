@@ -166,9 +166,14 @@ class NM_Gallery
         $group_images = array();
         if (isset($_POST['group_images']) && is_array($_POST['group_images'])) {
             foreach ($_POST['group_images'] as $option => $image_id) {
-                $group_images[sanitize_text_field($option)] = intval($image_id);
+                $sanitized_option = sanitize_text_field($option);
+                $sanitized_image_id = intval($image_id);
+                if ($sanitized_image_id > 0) {
+                    $group_images[$sanitized_option] = $sanitized_image_id;
+                }
             }
         }
+        error_log('NM Gallery - Saving group_images: ' . print_r($group_images, true));
         
         // Procesar descripciones de grupos
         $group_descriptions = array();
@@ -186,7 +191,11 @@ class NM_Gallery
             'group_descriptions' => $group_descriptions
         );
 
-        update_option('nm_gallery_settings', $settings);
+        error_log('NM Gallery - Complete settings to save: ' . print_r($settings, true));
+        
+        $result = update_option('nm_gallery_settings', $settings);
+        
+        error_log('NM Gallery - Update option result: ' . ($result ? 'success' : 'no change or error'));
         
         wp_send_json_success('Configuración guardada correctamente');
     }

@@ -464,13 +464,14 @@ jQuery(document).ready(function($) {
         options.forEach(function(option) {
             var imageId = groupImagesData[option] || '';
             var description = groupDescriptions[option] || '';
-            var optionClass = option.replace(/\s+/g, '-');
+            var optionClass = option.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
+            var escapedOption = $('<div>').text(option).html(); // Escape HTML
             
             html += '<div class="nm-group-image-item" style="margin-bottom: 25px; padding: 20px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
             
             // Título de la opción
             html += '<div style="margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0;">';
-            html += '<strong style="font-size: 15px; color: #1f2937;">' + option + '</strong>';
+            html += '<strong style="font-size: 15px; color: #1f2937;">' + escapedOption + '</strong>';
             html += '</div>';
             
             // Imagen
@@ -487,18 +488,18 @@ jQuery(document).ready(function($) {
             
             html += '</div>';
             html += '<div style="display: flex; gap: 8px;">';
-            html += '<button type="button" class="button nm-upload-group-image" data-option="' + option + '">📷 Seleccionar Imagen</button>';
-            html += '<button type="button" class="button nm-remove-group-image" data-option="' + option + '" style="' + (imageId ? '' : 'display: none;') + '">🗑️ Eliminar</button>';
+            html += '<button type="button" class="button nm-upload-group-image" data-option="' + option + '" data-option-class="' + optionClass + '">📷 Seleccionar Imagen</button>';
+            html += '<button type="button" class="button nm-remove-group-image" data-option="' + option + '" data-option-class="' + optionClass + '" style="' + (imageId ? '' : 'display: none;') + '">🗑️ Eliminar</button>';
             html += '</div>';
-            html += '<input type="hidden" name="group_images[' + option + ']" class="group-image-input-' + optionClass + '" value="' + imageId + '" />';
+            html += '<input type="hidden" name="group_images[' + option + ']" class="group-image-input-' + optionClass + '" value="' + imageId + '" data-option-name="' + option + '" />';
             html += '</div>';
             html += '</div>';
             
             // Descripción
             html += '<div style="margin-bottom: 0;">';
             html += '<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Texto Resumen</label>';
-            html += '<textarea name="group_descriptions[' + option + ']" class="large-text" rows="3" placeholder="Escribe un resumen breve para esta categoría..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;">' + description + '</textarea>';
-            html += '<p style="margin: 5px 0 0 0; color: #6b7280; font-size: 12px;">Este texto se mostrará junto con la imagen en el frontend.</p>';
+            html += '<textarea name="group_descriptions[' + option + ']" class="large-text" rows="4" placeholder="Escribe un resumen breve para esta categoría..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; resize: vertical;">' + $('<div>').text(description).html() + '</textarea>';
+            html += '<p style="margin: 5px 0 0 0; color: #6b7280; font-size: 12px;">Este texto se mostrará junto con la imagen en el frontend (máximo 5 líneas).</p>';
             html += '</div>';
             
             html += '</div>';
@@ -512,7 +513,7 @@ jQuery(document).ready(function($) {
     
     // Cargar imágenes existentes
     function loadExistingImages() {
-        $('.group-image-preview-' + '[class*="group-image-preview-"]').find('img[data-image-id]').each(function() {
+        $('[class*="group-image-preview-"]').find('img[data-image-id]').each(function() {
             var $img = $(this);
             var imageId = $img.data('image-id');
             
@@ -524,6 +525,7 @@ jQuery(document).ready(function($) {
                 }, function(response) {
                     if (response.success && response.data) {
                         $img.attr('src', response.data);
+                        $img.parent().css('border-color', '#10b981');
                     }
                 });
             }
@@ -536,7 +538,10 @@ jQuery(document).ready(function($) {
         
         var $button = $(this);
         var option = $button.data('option');
-        var optionClass = option.replace(/\s+/g, '-');
+        var optionClass = $button.data('option-class');
+        
+        console.log('Upload clicked for option:', option);
+        console.log('Option class:', optionClass);
         
         // Crear una nueva instancia del media uploader para cada clic
         var currentMediaUploader = wp.media({
@@ -552,19 +557,32 @@ jQuery(document).ready(function($) {
         currentMediaUploader.on('select', function() {
             var attachment = currentMediaUploader.state().get('selection').first().toJSON();
             
+            console.log('Image selected:', attachment.id, attachment.url);
+            console.log('Looking for preview:', '.group-image-preview-' + optionClass);
+            console.log('Looking for input:', '.group-image-input-' + optionClass);
+            
             // Actualizar preview
-            $('.group-image-preview-' + optionClass).html(
+            var $preview = $('.group-image-preview-' + optionClass);
+            $preview.html(
                 '<img src="' + attachment.url + '" style="width: 100%; height: 100%; object-fit: cover;" />'
             );
+            $preview.css('border-color', '#10b981');
+            
+            console.log('Preview updated, found elements:', $preview.length);
             
             // Actualizar input hidden
-            $('.group-image-input-' + optionClass).val(attachment.id);
+            var $input = $('.group-image-input-' + optionClass);
+            $input.val(attachment.id);
+            
+            console.log('Input updated:', $input.length, 'elements, value:', $input.val());
             
             // Actualizar datos
             groupImagesData[option] = attachment.id;
             
             // Mostrar botón de eliminar
             $button.siblings('.nm-remove-group-image').show();
+            
+            console.log('groupImagesData updated:', groupImagesData);
         });
         
         currentMediaUploader.open();
@@ -576,12 +594,17 @@ jQuery(document).ready(function($) {
         
         var $button = $(this);
         var option = $button.data('option');
-        var optionClass = option.replace(/\s+/g, '-');
+        var optionClass = $button.data('option-class');
+        
+        console.log('Remove clicked for option:', option);
+        console.log('Option class:', optionClass);
         
         // Limpiar preview
-        $('.group-image-preview-' + optionClass).html(
-            '<span style="color: #999; font-size: 12px;">Sin imagen</span>'
+        var $preview = $('.group-image-preview-' + optionClass);
+        $preview.html(
+            '<span style="color: #9ca3af; font-size: 11px; text-align: center;">Sin<br>imagen</span>'
         );
+        $preview.css('border-color', '#e5e7eb');
         
         // Limpiar input hidden
         $('.group-image-input-' + optionClass).val('');
@@ -591,6 +614,8 @@ jQuery(document).ready(function($) {
         
         // Ocultar botón de eliminar
         $button.hide();
+        
+        console.log('Image removed, groupImagesData:', groupImagesData);
     });
     
     // Manejar envío del formulario
@@ -615,17 +640,47 @@ jQuery(document).ready(function($) {
     }
     
     function saveSettings() {
+        var $submitBtn = $('#nm-gallery-form button[type="submit"]');
+        var originalText = $submitBtn.text();
+        
+        // Deshabilitar botón y mostrar estado de carga
+        $submitBtn.prop('disabled', true).text('Guardando...');
+        
+        // Log de los inputs antes de serializar
+        console.log('=== DEBUG: Checking inputs before save ===');
+        $('input[name^="group_images"]').each(function() {
+            var $input = $(this);
+            console.log('Input name:', $input.attr('name'), 'Value:', $input.val(), 'Data-option-name:', $input.data('option-name'));
+        });
+        
         var formData = $('#nm-gallery-form').serialize();
         formData += '&action=nm_save_gallery_settings';
         
+        // Log para debug
+        console.log('Saving gallery settings...', formData);
+        console.log('groupImagesData state:', groupImagesData);
+        
         $.post(ajaxurl, formData, function(response) {
+            console.log('Save response:', response);
+            
             if (response.success) {
+                $submitBtn.text('✅ Guardado!').css('background-color', '#10b981');
+                
+                // Mostrar mensaje de éxito
                 alert('✅ Configuración guardada correctamente');
+                
+                // Restaurar botón después de 2 segundos
+                setTimeout(function() {
+                    $submitBtn.prop('disabled', false).text(originalText).css('background-color', '');
+                }, 2000);
             } else {
                 alert('❌ Error al guardar: ' + (response.data || 'Error desconocido'));
+                $submitBtn.prop('disabled', false).text(originalText);
             }
-        }).fail(function() {
+        }).fail(function(xhr, status, error) {
+            console.error('Ajax error:', status, error);
             alert('❌ Error de conexión al guardar la configuración');
+            $submitBtn.prop('disabled', false).text(originalText);
         });
     }
     
