@@ -338,20 +338,77 @@
   .nm-audio-progress::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:0; height:0; }
   .nm-audio-progress::-webkit-slider-runnable-track { background:linear-gradient(90deg,var(--nm-color-primary),var(--nm-color-sec2)); height:6px; }
 
-  .nm-modal-sections-wrapper { padding:24px 20px 60px; display:flex; flex-direction:column; gap:32px; }
-  .nm-modal-section { background:linear-gradient(145deg,#ffffff,#f0faff); border:2px solid var(--nm-color-primary); border-radius:22px; padding:22px 20px; box-shadow:0 8px 22px -8px rgba(0,0,0,.25); color:#123146; backdrop-filter:saturate(160%); }
-  .nm-modal-section:not(:first-child) { border-top:3px solid var(--nm-color-sec2); }
-  .nm-modal-section h3.nm-modal-header { margin:0 0 16px; padding:0; font-size:18px; color:var(--nm-color-primary); border:none; border-left:8px solid var(--nm-color-sec2); padding-left:12px; background:linear-gradient(90deg,rgba(68,149,209,.15),rgba(142,193,82,.15)); border-radius:0 30px 30px 0; }
-  .nm-modal-field { background:transparent !important; border:none !important; color:#17384d; margin:6px 0 10px; padding:0; font-size:14px; }
-  .nm-modal-field strong { color:var(--nm-color-primary); margin-bottom:4px; font-size:11px; letter-spacing:1px; opacity:.95; display:block; text-transform:uppercase; }
-  .nm-modal-field a { color:var(--nm-color-primary); font-weight:600; text-decoration:none; position:relative; }
-  .nm-modal-field a::after { content:""; position:absolute; left:0; bottom:-2px; width:100%; height:2px; background:linear-gradient(90deg,var(--nm-color-primary),var(--nm-color-sec1)); transform:scaleX(.4); transform-origin:left; transition:.35s; }
-  .nm-modal-field a:hover::after { transform:scaleX(1); }
-  .nm-modal-section img { box-shadow:0 6px 18px -6px rgba(0,0,0,.3); border:3px solid #fff; }
-  .nm-modal-field img { border-radius:12px; box-shadow:0 4px 16px -4px rgba(0,0,0,.5); }
+  /* Contenedor de secciones - usa el mismo padding que desktop pero adaptado */
+  .nm-modal-sections-wrapper { 
+    padding: 24px 20px 60px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+  }
+  
+  /* Secciones del modal - mismo estilo que desktop */
+  .nm-modal-section { 
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Headers de sección - mismo estilo que desktop */
+  .nm-modal-section h3.nm-modal-header { 
+    margin: 0 0 15px;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--nm-color-primary);
+    border: none;
+  }
+  
+  /* Campos del modal - mismo estilo que desktop */
+  .nm-modal-field { 
+    background: transparent !important;
+    border: none !important;
+    color: #333;
+    margin: 12px 0;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  
+  .nm-modal-field strong { 
+    color: var(--nm-color-primary);
+    font-weight: 600;
+    display: inline-block;
+    margin-right: 5px;
+  }
+  
+  .nm-modal-field a { 
+    color: var(--nm-color-primary);
+    text-decoration: underline;
+  }
+  
+  .nm-modal-field a:hover { 
+    color: var(--nm-color-sec1);
+  }
+  
+  /* Imágenes dentro del modal */
+  .nm-modal-section img,
+  .nm-modal-field img { 
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin: 10px 0;
+  }
 
-  /* Ocultar estilos base de p wrapper */
-  .nm-modal-content p { background:none; padding:0; border:none; }
+  /* Resetear estilos base de p wrapper */
+  .nm-modal-content p { 
+    background: none !important;
+    padding: 0 !important;
+    border: none !important;
+    margin: 12px 0;
+  }
 }
 
 /* Indicador mini etiqueta de sección en desktop para coherencia */
