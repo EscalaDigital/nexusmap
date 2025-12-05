@@ -41,10 +41,14 @@
                     case 'range':
                     ?>
                         <div class="nm-form-field" data-type="<?php echo esc_attr($field['type']); ?>">
-                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>">
+                                <?php echo esc_html($field['label']); ?>
+                                <?php if (!empty($field['required'])): ?><span class="required">*</span><?php endif; ?>
+                            </label>
                             <input type="<?php echo esc_attr($field['type']); ?>"
                                 id="<?php echo esc_attr($field_id); ?>"
-                                name="<?php echo esc_attr($field_name); ?>">
+                                name="<?php echo esc_attr($field_name); ?>"
+                                <?php if (!empty($field['required'])): ?>required<?php endif; ?>>
                         </div>
                     <?php
                         break;
@@ -52,19 +56,27 @@
                     case 'textarea':
                     ?>
                         <div class="nm-form-field" data-type="textarea">
-                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>">
+                                <?php echo esc_html($field['label']); ?>
+                                <?php if (!empty($field['required'])): ?><span class="required">*</span><?php endif; ?>
+                            </label>
                             <textarea id="<?php echo esc_attr($field_id); ?>"
-                                name="<?php echo esc_attr($field_name); ?>"></textarea>
+                                name="<?php echo esc_attr($field_name); ?>"
+                                <?php if (!empty($field['required'])): ?>required<?php endif; ?>></textarea>
                         </div>
                     <?php
                         break;                    case 'image':
                     ?>
                         <div class="nm-form-field" data-type="image">
-                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>">
+                                <?php echo esc_html($field['label']); ?>
+                                <?php if (!empty($field['required'])): ?><span class="required">*</span><?php endif; ?>
+                            </label>
                             <input type="file"
                                 id="<?php echo esc_attr($field_id); ?>"
                                 name="<?php echo esc_attr($field_name); ?>"
-                                accept=".jpg,.jpeg,.png,.gif,.webp">
+                                accept=".jpg,.jpeg,.png,.gif,.webp"
+                                <?php if (!empty($field['required'])): ?>required<?php endif; ?>>
                         </div>
                     <?php
                         break;
@@ -72,11 +84,15 @@
                     case 'file':
                     ?>
                         <div class="nm-form-field" data-type="file">
-                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>">
+                                <?php echo esc_html($field['label']); ?>
+                                <?php if (!empty($field['required'])): ?><span class="required">*</span><?php endif; ?>
+                            </label>
                             <input type="file"
                                 id="<?php echo esc_attr($field_id); ?>"
                                 name="<?php echo esc_attr($field_name); ?>"
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.rtf">
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.rtf"
+                                <?php if (!empty($field['required'])): ?>required<?php endif; ?>>
                         </div>
                     <?php
                         break;
@@ -112,12 +128,16 @@
                     case 'select':
                     ?>
                         <div class="nm-form-field" data-type="select">
-                            <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+                            <label for="<?php echo esc_attr($field_id); ?>">
+                                <?php echo esc_html($field['label']); ?>
+                                <?php if (!empty($field['required'])): ?><span class="required">*</span><?php endif; ?>
+                            </label>
                             <?php
                             if (isset($field['options']) && is_array($field['options'])) {
                             ?>
                                 <select id="<?php echo esc_attr($field_id); ?>"
-                                    name="<?php echo esc_attr($field_name); ?>">
+                                    name="<?php echo esc_attr($field_name); ?>"
+                                    <?php if (!empty($field['required'])): ?>required<?php endif; ?>>
                                     <?php
                                     foreach ($field['options'] as $option) {
                                     ?>

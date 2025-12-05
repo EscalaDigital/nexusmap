@@ -21,6 +21,7 @@ class NM_Public
         $this->loader->add_action('wp_ajax_nm_get_map_points', $this, 'get_map_points');
         $this->loader->add_action('wp_ajax_nopriv_nm_get_map_points', $this, 'get_map_points');
         $this->loader->add_action('wp_ajax_nm_submit_form', $this, 'submit_form');
+        $this->loader->add_action('wp_ajax_nopriv_nm_submit_form', $this, 'submit_form');
 
         // Registrar la acción AJAX para descargar el GeoJSON
         $this->loader->add_action('wp_ajax_nm_download_geojson', $this, 'download_geojson');
@@ -1198,6 +1199,20 @@ class NM_Public
         /* ───────── Seguridad ───────── */
         check_ajax_referer('nm_public_nonce', 'nonce');
 
+        // Rate Limiting: Verificar envíos recientes por IP
+        $user_ip = $this->get_client_ip();
+        $transient_key = 'nm_form_submit_' . md5($user_ip);
+        $recent_submissions = get_transient($transient_key);
+        
+        if ($recent_submissions !== false && $recent_submissions >= 3) {
+            wp_send_json_error('Ha excedido el límite de envíos. Por favor, intente nuevamente en unos minutos.');
+            wp_die();
+        }
+        
+        // Incrementar contador de envíos
+        $count = $recent_submissions !== false ? intval($recent_submissions) + 1 : 1;
+        set_transient($transient_key, $count, 5 * MINUTE_IN_SECONDS);
+
         //Sanitizar y limpiar datos
         $sanitize_form_data = function ($data) use (&$sanitize_form_data) {
             if (is_array($data)) {
@@ -1243,6 +1258,13 @@ class NM_Public
                 ($field['type'] === 'file' || $field['type'] === 'image') && isset($_FILES[$html_name])
                 && $_FILES[$html_name]['error'] === UPLOAD_ERR_OK
             ) {
+                // Validar tamaño del archivo
+                $max_size = ($field['type'] === 'image') ? 5 : 10; // 5MB para imágenes, 10MB para documentos
+                if (!$this->validate_file_size($_FILES[$html_name]['size'], $max_size)) {
+                    $file_type_name = ($field['type'] === 'image') ? 'imagen' : 'documento';
+                    wp_send_json_error('El archivo "' . esc_html($orig_name) . '" excede el tamaño máximo permitido de ' . $max_size . 'MB.');
+                    wp_die();
+                }
 
                 // Definir tipos de archivo permitidos según el tipo de campo
                 if ($field['type'] === 'image') {
@@ -1252,6 +1274,7 @@ class NM_Public
                         'gif'          => 'image/gif',
                         'webp'         => 'image/webp',
                     );
+                    $allowed_mime_values = array('image/jpeg', 'image/png', 'image/gif', 'image/webp');
                 } else { // file (documentos)
                     $allowed = array(
                         'pdf'  => 'application/pdf',
@@ -1262,6 +1285,15 @@ class NM_Public
                         'txt'  => 'text/plain',
                         'rtf'  => 'application/rtf',
                     );
+                    $allowed_mime_values = array(
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'text/plain',
+                        'application/rtf'
+                    );
                 }
 
                 $up = wp_handle_upload($_FILES[$html_name], array(
@@ -1269,6 +1301,15 @@ class NM_Public
                     'mimes'     => $allowed,
                 ));
                 if ($up && ! isset($up['error'])) {
+                    // Validar el tipo MIME real del archivo subido
+                    if (!$this->validate_file_mime($up['file'], $allowed_mime_values)) {
+                        // Eliminar el archivo subido si no pasa la validación
+                        @unlink($up['file']);
+                        $file_type_name = ($field['type'] === 'image') ? 'imagen' : 'documento';
+                        $allowed_formats = ($field['type'] === 'image') ? 'JPG, PNG, GIF, WebP' : 'PDF, DOC, DOCX, XLS, XLSX, TXT, RTF';
+                        wp_send_json_error('El archivo "' . esc_html($orig_name) . '" no es un tipo de archivo válido. Formatos permitidos: ' . $allowed_formats);
+                        wp_die();
+                    }
                     $form_fields[$store_key] = esc_url_raw(
                         str_replace('http://', 'https://', $up['url'])
                     );
@@ -1293,6 +1334,12 @@ class NM_Public
 
                     // Simplificar: solo procesar si hay un archivo cargado
                     if (isset($_FILES[$file_field_name]) && $_FILES[$file_field_name]['error'] === UPLOAD_ERR_OK) {
+                        // Validar tamaño del archivo de audio (máximo 10MB)
+                        if (!$this->validate_file_size($_FILES[$file_field_name]['size'], 10)) {
+                            wp_send_json_error('El archivo de audio "' . esc_html($orig_name) . '" excede el tamaño máximo permitido de 10MB.');
+                            wp_die();
+                        }
+                        
                         $audio_allowed = array(
                             'mp3'  => 'audio/mpeg',
                             'wav'  => 'audio/wav',
@@ -1301,6 +1348,7 @@ class NM_Public
                             'm4a'  => 'audio/mp4',
                             'aac'  => 'audio/aac'
                         );
+                        $audio_mime_values = array('audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac');
 
                         $audio_up = wp_handle_upload($_FILES[$file_field_name], array(
                             'test_form' => false,
@@ -1308,6 +1356,12 @@ class NM_Public
                         ));
 
                         if ($audio_up && ! isset($audio_up['error'])) {
+                            // Validar el tipo MIME real del archivo de audio
+                            if (!$this->validate_file_mime($audio_up['file'], $audio_mime_values)) {
+                                @unlink($audio_up['file']);
+                                wp_send_json_error('El archivo "' . esc_html($orig_name) . '" no es un tipo de audio válido. Formatos permitidos: MP3, WAV, OGG, FLAC, M4A, AAC');
+                                wp_die();
+                            }
                             $form_fields[$store_key] = esc_url_raw(
                                 str_replace('http://', 'https://', $audio_up['url'])
                             );
@@ -1359,7 +1413,8 @@ class NM_Public
             }
 
             $store_key = 'nm_' . $inkey;            /* file suelto */
-            if (isset($_FILES[$inkey]) && $_FILES[$inkey]['error'] === UPLOAD_ERR_OK) {                // Detectar si es un archivo de audio basado en el nombre del campo o tipo MIME
+            if (isset($_FILES[$inkey]) && $_FILES[$inkey]['error'] === UPLOAD_ERR_OK) {
+                // Detectar si es un archivo de audio basado en el nombre del campo o tipo MIME
                 $is_audio_file = false;
                 $file_mime = $_FILES[$inkey]['type'];
                 $audio_mimes = array('audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac');
@@ -1379,6 +1434,12 @@ class NM_Public
                 }
 
                 if ($is_audio_file) {
+                    // Validar tamaño del archivo de audio
+                    if (!$this->validate_file_size($_FILES[$inkey]['size'], 10)) {
+                        wp_send_json_error('El archivo de audio "' . esc_html($inkey) . '" excede el tamaño máximo permitido de 10MB.');
+                        wp_die();
+                    }
+                    
                     // Procesar como archivo de audio
                     $audio_allowed = array(
                         'mp3'  => 'audio/mpeg',
@@ -1388,6 +1449,7 @@ class NM_Public
                         'm4a'  => 'audio/mp4',
                         'aac'  => 'audio/aac'
                     );
+                    $audio_mime_values = array('audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/aac');
 
                     $audio_up = wp_handle_upload($_FILES[$inkey], array(
                         'test_form' => false,
@@ -1395,6 +1457,12 @@ class NM_Public
                     ));
 
                     if ($audio_up && ! isset($audio_up['error'])) {
+                        // Validar el tipo MIME real del archivo
+                        if (!$this->validate_file_mime($audio_up['file'], $audio_mime_values)) {
+                            @unlink($audio_up['file']);
+                            wp_send_json_error('El archivo "' . esc_html($inkey) . '" no es un tipo de audio válido.');
+                            wp_die();
+                        }
                         $form_fields[$store_key] = esc_url_raw(
                             str_replace('http://', 'https://', $audio_up['url'])
                         );
@@ -1403,6 +1471,12 @@ class NM_Public
                         wp_die();
                     }
                 } else {
+                    // Validar tamaño del archivo (5MB para imágenes)
+                    if (!$this->validate_file_size($_FILES[$inkey]['size'], 5)) {
+                        wp_send_json_error('El archivo "' . esc_html($inkey) . '" excede el tamaño máximo permitido de 5MB.');
+                        wp_die();
+                    }
+                    
                     // Procesar como archivo normal (imagen/documento)
                     $up = wp_handle_upload($_FILES[$inkey], array(
                         'test_form' => false,
@@ -1415,6 +1489,13 @@ class NM_Public
                     ));
 
                     if ($up && ! isset($up['error'])) {
+                        // Validar el tipo MIME real del archivo
+                        $allowed_mimes = array('image/jpeg', 'image/png', 'image/gif', 'application/pdf');
+                        if (!$this->validate_file_mime($up['file'], $allowed_mimes)) {
+                            @unlink($up['file']);
+                            wp_send_json_error('El archivo "' . esc_html($inkey) . '" no es un tipo de archivo válido.');
+                            wp_die();
+                        }
                         $form_fields[$store_key] = esc_url_raw(
                             str_replace('http://', 'https://', $up['url'])
                         );
@@ -1436,12 +1517,28 @@ class NM_Public
             wp_die();
         }
 
-        $map_raw = stripslashes($_POST['map_data']);
+        $map_raw = wp_unslash($_POST['map_data']);
         $map_arr = json_decode($map_raw, true);
 
         if ($map_arr === null && json_last_error() !== JSON_ERROR_NONE) {
             wp_send_json_error('Datos JSON inválidos para map_data.');
             wp_die();
+        }
+        
+        // Validar estructura básica de GeoJSON
+        if (!isset($map_arr['type']) || $map_arr['type'] !== 'Feature') {
+            wp_send_json_error('Estructura de mapa inválida.');
+            wp_die();
+        }
+        
+        if (!isset($map_arr['geometry']) || !is_array($map_arr['geometry'])) {
+            wp_send_json_error('Geometría de mapa inválida.');
+            wp_die();
+        }
+        
+        // Validar y sanitizar las coordenadas
+        if (isset($map_arr['geometry']['coordinates'])) {
+            $map_arr['geometry']['coordinates'] = $this->sanitize_coordinates($map_arr['geometry']['coordinates']);
         }
 
         // Lista de campos a excluir
@@ -1491,6 +1588,94 @@ class NM_Public
         );
 
         wp_send_json_success('Formulario enviado exitosamente.');
+    }
+
+    /**
+     * Sanitizar coordenadas para prevenir valores inválidos
+     */
+    private function sanitize_coordinates($coords) {
+        if (!is_array($coords)) {
+            return array();
+        }
+        
+        $sanitized = array();
+        foreach ($coords as $coord) {
+            if (is_array($coord)) {
+                $sanitized[] = $this->sanitize_coordinates($coord);
+            } elseif (is_numeric($coord)) {
+                // Limitar coordenadas a rangos válidos
+                $num = floatval($coord);
+                if ($num >= -180 && $num <= 180) {
+                    $sanitized[] = $num;
+                }
+            }
+        }
+        return $sanitized;
+    }
+    
+    /**
+     * Sanitizar recursivamente propiedades para prevenir XSS
+     */
+    private function sanitize_properties_recursive($data) {
+        if (is_array($data)) {
+            $sanitized = array();
+            foreach ($data as $key => $value) {
+                $clean_key = sanitize_key($key);
+                $sanitized[$clean_key] = $this->sanitize_properties_recursive($value);
+            }
+            return $sanitized;
+        } elseif (is_string($data)) {
+            // Permitir URLs, pero sanitizarlas
+            if (filter_var($data, FILTER_VALIDATE_URL)) {
+                return esc_url_raw($data);
+            }
+            // Sanitizar texto normal
+            return sanitize_text_field($data);
+        }
+        return $data;
+    }
+
+    /**
+     * Obtener la IP real del cliente
+     */
+    private function get_client_ip() {
+        $ip = '';
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Tomar solo la primera IP en caso de proxies
+            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ip = trim($ips[0]);
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        // Validar que sea una IP válida
+        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
+    }
+
+    /**
+     * Validar el tipo MIME real de un archivo
+     */
+    private function validate_file_mime($file_path, $allowed_mimes) {
+        if (!file_exists($file_path)) {
+            return false;
+        }
+        
+        // Verificar el tipo MIME real del archivo
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $file_path);
+        finfo_close($finfo);
+        
+        // Verificar si el MIME está en la lista permitida
+        return in_array($mime_type, $allowed_mimes, true);
+    }
+
+    /**
+     * Validar el tamaño del archivo
+     */
+    private function validate_file_size($file_size, $max_size_mb = 5) {
+        $max_size_bytes = $max_size_mb * 1024 * 1024;
+        return $file_size <= $max_size_bytes;
     }
 
 

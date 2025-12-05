@@ -377,9 +377,17 @@ function performSearch(query) {
                 formData.append('nonce', nmPublic.nonce);
                 formData.append('map_data', JSON.stringify(feature));
 
-                const $btn = jQuery(this).find('button[type="submit"]');
+                const $form = jQuery(this);
+                const $btn = $form.find('button[type="submit"]');
                 const btnTxtOrig = $btn.text();
+                
+                // Prevenir envío múltiple
+                if ($btn.prop('disabled')) {
+                    return;
+                }
+                
                 $btn.prop('disabled', true).text('Enviando…');
+                $form.css('opacity', '0.6');
 
                 jQuery.ajax({
                     url: nmPublic.ajax_url,
@@ -410,7 +418,10 @@ function performSearch(query) {
                         showMessage(msg, 'error');
                         console.error('AJAX Error →', jqXHR.status, textStatus);
                     },
-                    complete: () => $btn.prop('disabled', false).text(btnTxtOrig)
+                    complete: () => {
+                        $btn.prop('disabled', false).text(btnTxtOrig);
+                        $form.css('opacity', '1');
+                    }
                 });
             });
 

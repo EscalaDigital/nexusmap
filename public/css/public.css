@@ -1,3 +1,24 @@
+/* ========================================= */
+/* CAMPOS REQUERIDOS                          */
+/* ========================================= */
+.nm-form-field label .required {
+    color: #d63638;
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+.nm-form-field input:required:invalid,
+.nm-form-field textarea:required:invalid,
+.nm-form-field select:required:invalid {
+    border-color: #d63638;
+}
+
+.nm-form-field input:required:valid,
+.nm-form-field textarea:required:valid,
+.nm-form-field select:required:valid {
+    border-color: #00a32a;
+}
+
 #nm-main-map {
     border: 1px solid #ccc;
     position: relative !important;
