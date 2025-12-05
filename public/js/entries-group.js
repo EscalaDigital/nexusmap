@@ -120,7 +120,17 @@
 
                     // Mostrar contenedor de entradas si estaba oculto
                     if (!$entriesContainer.is(':visible')) {
-                        $entriesContainer.fadeIn(400);
+                        $entriesContainer.fadeIn(400, function() {
+                            // Hacer scroll hasta el contenedor después de mostrarlo
+                            $('html, body').animate({
+                                scrollTop: $entriesContainer.offset().top - 100
+                            }, 300);
+                        });
+                    } else {
+                        // Si ya está visible, hacer scroll inmediatamente
+                        $('html, body').animate({
+                            scrollTop: $entriesContainer.offset().top - 100
+                        }, 300);
                     }
 
                     // Reiniciar modal handlers si existen
