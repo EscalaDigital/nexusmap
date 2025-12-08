@@ -234,6 +234,23 @@ jQuery(document).ready(function ($) {
             }).addTo(map);
         }
 
+        // Función para construir URL de GetLegendGraphic del WMS sin etiquetas
+        function getWmsLegendGraphicUrl(baseUrl, layerName) {
+            // Limpiar la URL base de parámetros existentes si los tiene
+            var url = baseUrl.split('?')[0];
+            var params = [
+                'SERVICE=WMS',
+                'VERSION=1.1.1',
+                'REQUEST=GetLegendGraphic',
+                'FORMAT=image/png',
+                'LAYER=' + encodeURIComponent(layerName),
+                'LEGEND_OPTIONS=hideLabels:true;fontAntiAliasing:true',
+                'WIDTH=20',
+                'HEIGHT=20'
+            ];
+            return url + '?' + params.join('&');
+        }
+
         // Agregar las capas overlay
         if (Array.isArray(nmMapData.overlay_layers) && nmMapData.overlay_layers.length > 0) {
             nmMapData.overlay_layers.forEach(function (layer) {
@@ -276,7 +293,26 @@ jQuery(document).ready(function ($) {
                     if (layer.active) {
                         overlay.addTo(map);
                     }
+                    
+                    // Si se debe mostrar en leyenda, obtener la imagen de leyenda del WMS sin etiquetas
+                    if (layer.show_in_legend) {
+                        overlay._legendGraphicUrl = getWmsLegendGraphicUrl(layer.url, layer.wms_layer_name);
+                    }
                 }
+                
+                // Guardar referencia a los datos de la capa para la leyenda
+                overlay._nmLayerData = layer;
+                
+                // Añadir listeners para actualizar la leyenda cuando la capa se añade/elimina
+                if (layer.show_in_legend && typeof window.updateLegend === 'function') {
+                    overlay.on('add', function() {
+                        window.updateLegend();
+                    });
+                    overlay.on('remove', function() {
+                        window.updateLegend();
+                    });
+                }
+                
                 overlays[layer.name] = overlay;
 
             });
@@ -1182,6 +1218,7 @@ jQuery(document).ready(function ($) {
                 // Función para actualizar el contenido de la leyenda
                 window.updateLegend = function () {
                     var content = '<h4 style="margin: 0 0 10px 0">Leyenda</h4>';
+                    var hasContent = false;
 
                     if (response.layer_settings && response.layer_settings.length > 0) {
                         // Primero verificamos si hay capas de texto
@@ -1199,6 +1236,7 @@ jQuery(document).ready(function ($) {
                                     content += '</div>';
                                 });
                                 content += '</div>';
+                                hasContent = true;
                             }
                         });
 
@@ -1218,8 +1256,58 @@ jQuery(document).ready(function ($) {
                             });
 
                             content += '</div>';
+                            hasContent = true;
                         }
-                    } else {
+                    }
+                    
+                    // Añadir capas overlay a la leyenda
+                    if (typeof overlays !== 'undefined' && overlays) {
+                        var hasOverlayLegend = false;
+                        var overlayContent = '';
+                        
+                        Object.keys(overlays).forEach(function(layerName) {
+                            var overlayLayer = overlays[layerName];
+                            // Verificar si la capa tiene datos de configuración y está activa en el mapa
+                            if (overlayLayer._nmLayerData && 
+                                overlayLayer._nmLayerData.show_in_legend && 
+                                map.hasLayer(overlayLayer)) {
+                                
+                                var layerData = overlayLayer._nmLayerData;
+                                
+                                // Si es WMS, mostrar imagen de símbolo de leyenda del servidor
+                                if (layerData.type === 'wms' && overlayLayer._legendGraphicUrl) {
+                                    overlayContent += '<div class="legend-item">';
+                                    overlayContent += '<img src="' + overlayLayer._legendGraphicUrl + '" ';
+                                    overlayContent += 'alt="" ';
+                                    overlayContent += 'class="legend-color legend-wms-symbol" ';
+                                    overlayContent += 'onerror="this.style.display=\'none\'; this.nextElementSibling.style.marginLeft=\'0\'" />';
+                                    overlayContent += '<span class="legend-label">' + layerData.name + '</span>';
+                                    overlayContent += '</div>';
+                                    hasOverlayLegend = true;
+                                } else if (layerData.type === 'geojson' || !overlayLayer._legendGraphicUrl) {
+                                    // Para GeoJSON o WMS sin leyenda gráfica, usar el color configurado
+                                    var legendColor = layerData.legend_color || layerData.color || '#0000ff';
+                                    var legendStyle = 'background-color: ' + legendColor + ';';
+                                    
+                                    overlayContent += '<div class="legend-item">';
+                                    overlayContent += '<div class="legend-color" style="' + legendStyle + '"></div>';
+                                    overlayContent += '<span class="legend-label">' + layerData.name + '</span>';
+                                    overlayContent += '</div>';
+                                    hasOverlayLegend = true;
+                                }
+                            }
+                        });
+                        
+                        if (hasOverlayLegend) {
+                            content += '<div class="legend-group">';
+                            content += '<strong>Capas Overlay</strong>';
+                            content += overlayContent;
+                            content += '</div>';
+                            hasContent = true;
+                        }
+                    }
+                    
+                    if (!hasContent) {
                         content += '<p>No hay capas configuradas</p>';
                     }
 

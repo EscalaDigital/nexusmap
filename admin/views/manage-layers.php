@@ -895,6 +895,29 @@ if (! empty($base_layers)) : ?>
                         value="1">
                 </td>
             </tr>
+            <tr>
+                <th scope="row"><label for="show_in_legend"><?php esc_html_e('Mostrar en Leyenda', 'nexusmap'); ?></label></th>
+                <td>
+                    <input
+                        type="checkbox"
+                        name="show_in_legend"
+                        id="show_in_legend"
+                        value="1">
+                    <p class="description"><?php esc_html_e('Mostrar esta capa en la leyenda del mapa (solo visible cuando la capa esté activa)', 'nexusmap'); ?></p>
+                </td>
+            </tr>
+            <tr id="legend_color_row" style="display: none;">
+                <th scope="row"><label for="legend_color"><?php esc_html_e('Color en Leyenda', 'nexusmap'); ?></label></th>
+                <td>
+                    <input
+                        type="color"
+                        name="legend_color"
+                        id="legend_color"
+                        value="#0000ff"
+                        class="regular-text">
+                    <p class="description"><?php esc_html_e('Color que representará esta capa en la leyenda (no aplicable para WMS con estilo original)', 'nexusmap'); ?></p>
+                </td>
+            </tr>
             <!-- Puedes agregar más campos para opciones adicionales -->
         </table>
         <p class="submit">
@@ -926,9 +949,32 @@ if (! empty($base_layers)) : ?>
     // Manejar el checkbox de usar estilo original
     document.getElementById('use_original_style').addEventListener('change', function() {
         var styleOptions = document.querySelectorAll('.style-option');
+        var legendColorRow = document.getElementById('legend_color_row');
+        var showInLegend = document.getElementById('show_in_legend');
+        
         styleOptions.forEach(function(row) {
             row.style.display = this.checked ? 'none' : '';
         }.bind(this));
+        
+        // Si usa estilo original y está marcado mostrar en leyenda, ocultar el campo de color personalizado
+        if (this.checked && showInLegend.checked) {
+            legendColorRow.style.display = 'none';
+        } else if (!this.checked && showInLegend.checked) {
+            legendColorRow.style.display = '';
+        }
+    });
+
+    // Manejar el checkbox de mostrar en leyenda
+    document.getElementById('show_in_legend').addEventListener('change', function() {
+        var legendColorRow = document.getElementById('legend_color_row');
+        var useOriginalStyle = document.getElementById('use_original_style');
+        
+        // Solo mostrar el color de leyenda si está marcado y NO usa estilo original
+        if (this.checked && !useOriginalStyle.checked) {
+            legendColorRow.style.display = '';
+        } else {
+            legendColorRow.style.display = 'none';
+        }
     });
 
     // Ejecutar al cargar la página para establecer el estado inicial

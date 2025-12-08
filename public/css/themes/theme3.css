@@ -111,6 +111,9 @@
 .legend-item .legend-label { color:var(--nm-color-text-dark); font-weight:500; }
 .legend-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
 .legend-color { width:20px; height:20px; display:inline-block; border:1px solid #ccc; border-radius:3px; margin-right:8px; box-shadow:none; }
+
+/* Estilos para leyenda WMS */
+.legend-wms-symbol { width:20px !important; height:20px !important; display:inline-block; border:1px solid #ccc; border-radius:3px; margin-right:8px; object-fit:contain; background:white; padding:1px; vertical-align:middle; }
 .legend-panel::-webkit-scrollbar { width:10px; }
 .legend-panel::-webkit-scrollbar-track { background:rgba(0,0,0,.05); }
 .legend-panel::-webkit-scrollbar-thumb { background:var(--nm-color-primary); border-radius:6px; }

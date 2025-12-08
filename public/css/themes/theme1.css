@@ -700,6 +700,19 @@
   opacity: 1;
 }
 
+/* Estilos para leyenda WMS */
+.legend-wms-symbol {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  margin-right: 8px;
+  object-fit: contain;
+  background: white;
+  padding: 1px;
+  vertical-align: middle;
+}
 
 /* Ajustes para pantallas pequeñas */
 @media screen and (max-width: 768px) {

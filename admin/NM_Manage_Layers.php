@@ -124,7 +124,9 @@ class NM_Manage_Layers
         'border_width' => (int) $_POST['overlay_border_width'],
         'bg_opacity' => (float) $_POST['overlay_bg_opacity'],
         'opacity' => (float) $_POST['overlay_opacity'],
-        'active' => isset($_POST['overlay_active']) ? true : false
+        'active' => isset($_POST['overlay_active']) ? true : false,
+        'show_in_legend' => isset($_POST['show_in_legend']) ? true : false,
+        'legend_color' => isset($_POST['legend_color']) ? sanitize_hex_color($_POST['legend_color']) : '#0000ff'
     );
 
         update_option('nm_overlay_layers', $overlay_layers);
