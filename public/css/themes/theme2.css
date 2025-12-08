@@ -6,7 +6,8 @@
     border: 1px solid #ccc; /* Borde gris claro */
     border-radius: 8px; /* Esquinas redondeadas */
     padding: 10px; /* Espaciado interno */
-    max-width: 300px; /* Ancho máximo */
+    min-width: 250px; /* Ancho mínimo */
+    max-width: 400px; /* Ancho máximo aumentado */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
     overflow: auto; /* Scroll automático si el contenido excede el tamaño */
   }
@@ -47,6 +48,9 @@
     font-size: 14px; /* Tamaño de fuente */
     color: #333; /* Color del texto */
     margin-left: 8px;
+    white-space: normal; /* Permitir salto de línea */
+    word-wrap: break-word; /* Romper palabras largas */
+    flex: 1; /* Ocupar el espacio disponible */
   }
   
   /* Estilo para el checkbox */
