@@ -332,12 +332,13 @@ jQuery(document).ready(function ($) {
                         nmMapData.filter_settings.forEach(filter => {
                                 const isConditional = filter.is_conditional === true;
                                 const conditionalClass = isConditional ? 'nm-conditional-filter' : '';
-                                const initiallyCollapsed = isConditional;
-                                const initialToggleIcon = initiallyCollapsed ? '▶' : '▼';
-                                const optionsDisplay = initiallyCollapsed ? 'style="display:none;"' : '';
+                                // TODOS los filtros inician colapsados
+                                const initiallyCollapsed = true;
+                                const initialToggleIcon = '▶';
+                                const optionsDisplay = 'style="display:none;"';
 
                                 filterContent += `
-<div class="nm-filter-group ${conditionalClass} ${initiallyCollapsed ? 'collapsed' : ''}" data-field="${filter.field}" ${isConditional ? 'data-parent-field="'+filter.parent_field+'" data-parent-option="'+filter.parent_option+'"' : ''}>
+<div class="nm-filter-group ${conditionalClass} collapsed" data-field="${filter.field}" ${isConditional ? 'data-parent-field="'+filter.parent_field+'" data-parent-option="'+filter.parent_option+'"' : ''}>
     <div class="nm-filter-header">
         <span class="nm-filter-label">${isConditional ? '🔗 ' : ''}${filter.button_text} ${isConditional ? '<small class="nm-conditional-info">(Subtipo)</small>' : ''}</span>
         <span class="nm-filter-toggle" data-field="${filter.field}">${initialToggleIcon}</span>
