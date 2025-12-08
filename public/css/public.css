@@ -1125,15 +1125,20 @@ a.nm-url-button:active {
     width: 100%;
     height: 100%;
     opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s;
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 }
 
 .nm-carousel-slide.active {
     opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0s;
     z-index: 1;
+    pointer-events: auto;
 }
 
 .nm-carousel-slide img {
