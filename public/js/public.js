@@ -259,12 +259,19 @@ jQuery(document).ready(function ($) {
                         overlay.addTo(map);
                     }
                 } else if (layer.type === 'wms') {
-                    overlay = L.tileLayer.wms(layer.url, {
+                    // Configuración base de WMS
+                    var wmsOptions = {
                         layers: layer.wms_layer_name,
                         format: 'image/png',
-                        transparent: true,
-                        opacity: layer.opacity || 1
-                    });
+                        transparent: true
+                    };
+                    
+                    // Solo aplicar opacidad personalizada si no se usa el estilo original
+                    if (!layer.use_original_style) {
+                        wmsOptions.opacity = layer.opacity || 1;
+                    }
+                    
+                    overlay = L.tileLayer.wms(layer.url, wmsOptions);
 
                     if (layer.active) {
                         overlay.addTo(map);

@@ -799,7 +799,18 @@ if (! empty($base_layers)) : ?>
                 <th scope="row"><label for="wms_layer_name"><?php esc_html_e('Nombre de Capa WMS', 'nexusmap'); ?></label></th>
                 <td><input name="wms_layer_name" type="text" id="wms_layer_name" class="regular-text"></td>
             </tr>
-            <tr>
+            <tr id="use_original_style_row" style="display: none;">
+                <th scope="row"><label for="use_original_style"><?php esc_html_e('Usar Estilo Original', 'nexusmap'); ?></label></th>
+                <td>
+                    <input
+                        type="checkbox"
+                        name="use_original_style"
+                        id="use_original_style"
+                        value="1">
+                    <p class="description"><?php esc_html_e('Mantener el estilo predefinido del servidor WMS (sin aplicar personalizaciones de color y opacidad)', 'nexusmap'); ?></p>
+                </td>
+            </tr>
+            <tr class="style-option">
                 <th scope="row"><label for="overlay_color"><?php esc_html_e('Color de Relleno', 'nexusmap'); ?></label></th>
                 <td>
                     <input
@@ -810,7 +821,7 @@ if (! empty($base_layers)) : ?>
                         class="regular-text">
                 </td>
             </tr>
-            <tr>
+            <tr class="style-option">
                 <th scope="row"><label for="overlay_border_color"><?php esc_html_e('Color del Borde', 'nexusmap'); ?></label></th>
                 <td>
                     <input
@@ -821,7 +832,7 @@ if (! empty($base_layers)) : ?>
                         class="regular-text">
                 </td>
             </tr>
-            <tr>
+            <tr class="style-option">
                 <th scope="row"><label for="overlay_border_width"><?php esc_html_e('Grosor del Borde', 'nexusmap'); ?></label></th>
                 <td>
                     <input
@@ -836,7 +847,7 @@ if (! empty($base_layers)) : ?>
                     <span class="description"><?php esc_html_e('px', 'nexusmap'); ?></span>
                 </td>
             </tr>
-            <tr>
+            <tr class="style-option">
                 <th scope="row"><label for="overlay_bg_opacity"><?php esc_html_e('Opacidad del Fondo', 'nexusmap'); ?></label></th>
                 <td>
                     <input
@@ -849,7 +860,7 @@ if (! empty($base_layers)) : ?>
                         value="0.5">
                     <span class="value-display">0.5</span>                </td>
             </tr>
-            <tr>
+            <tr class="style-option">
                 <th scope="row"><label for="overlay_opacity"><?php esc_html_e('Opacidad', 'nexusmap'); ?></label></th>
                 <td>
                     <input
@@ -862,7 +873,7 @@ if (! empty($base_layers)) : ?>
                         value="0.5">
                 </td>
             </tr>
-            <tr>
+            <tr class="style-option">
                 <th scope="row"><label for="overlay_fill"><?php esc_html_e('Mostrar Relleno', 'nexusmap'); ?></label></th>
                 <td>
                     <input
@@ -896,21 +907,42 @@ if (! empty($base_layers)) : ?>
     // Mostrar u ocultar el campo de WMS Layer Name según el tipo seleccionado
     document.getElementById('overlay_type').addEventListener('change', function() {
         var wmsRow = document.getElementById('wms_layer_name_row');
+        var useOriginalStyleRow = document.getElementById('use_original_style_row');
+        var styleOptions = document.querySelectorAll('.style-option');
+        
         if (this.value === 'wms') {
             wmsRow.style.display = '';
+            useOriginalStyleRow.style.display = '';
         } else {
             wmsRow.style.display = 'none';
+            useOriginalStyleRow.style.display = 'none';
+            // Mostrar todas las opciones de estilo para GeoJSON
+            styleOptions.forEach(function(row) {
+                row.style.display = '';
+            });
         }
+    });
+
+    // Manejar el checkbox de usar estilo original
+    document.getElementById('use_original_style').addEventListener('change', function() {
+        var styleOptions = document.querySelectorAll('.style-option');
+        styleOptions.forEach(function(row) {
+            row.style.display = this.checked ? 'none' : '';
+        }.bind(this));
     });
 
     // Ejecutar al cargar la página para establecer el estado inicial
     document.addEventListener('DOMContentLoaded', function() {
         var overlayType = document.getElementById('overlay_type').value;
         var wmsRow = document.getElementById('wms_layer_name_row');
+        var useOriginalStyleRow = document.getElementById('use_original_style_row');
+        
         if (overlayType === 'wms') {
             wmsRow.style.display = '';
+            useOriginalStyleRow.style.display = '';
         } else {
             wmsRow.style.display = 'none';
+            useOriginalStyleRow.style.display = 'none';
         }
     });
     document.getElementById('overlay_bg_opacity').addEventListener('input', function() {

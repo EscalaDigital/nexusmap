@@ -117,6 +117,7 @@ class NM_Manage_Layers
         'type' => sanitize_text_field($_POST['overlay_type']),
         'url'  => nm_sanitize_tile_url($_POST['overlay_url']),
         'wms_layer_name' => isset($_POST['wms_layer_name']) ? sanitize_text_field($_POST['wms_layer_name']) : '',
+        'use_original_style' => isset($_POST['use_original_style']) ? true : false,
         'color' => sanitize_hex_color($_POST['overlay_color']),
         'border_color' => sanitize_hex_color($_POST['overlay_border_color']),
         'fill' => isset($_POST['overlay_fill']) ? true : false,
