@@ -591,7 +591,15 @@ jQuery(document).ready(function ($) {
             if (Object.keys(activeFilters).length > 0) {
                 nmMapData.filter_settings.forEach(cfg => {
                     if (!activeFilters[cfg.field] || activeFilters[cfg.field].size === 0) return;
-                    if (cfg.is_conditional) {
+                    if (cfg.is_geographic) {
+                        // Filtro geográfico - crear grupo independiente
+                        const g = cfg.field;
+                        if (!groupStructures[g]) groupStructures[g] = { mainValues: null, subFilters: [] };
+                        groupStructures[g].mainValues = activeFilters[cfg.field];
+                        groupStructures[g].geoLevelIndex = cfg.geo_level_index;
+                        groupStructures[g].geoCustomFieldName = cfg.geo_custom_field_name;
+                        groupStructures[g].isGeographic = true;
+                    } else if (cfg.is_conditional) {
                         const g = cfg.parent_field;
                         if (!groupStructures[g]) groupStructures[g] = { mainValues: null, subFilters: [] };
                         groupStructures[g].subFilters.push({ prop: 'nm_' + cfg.field_name, values: activeFilters[cfg.field] });
@@ -685,8 +693,23 @@ jQuery(document).ready(function ($) {
                     let groupMatched = false;
                     // Campo principal
                     if (group.mainValues && group.mainValues.size > 0) {
-                        const fieldProp = 'nm_' + gName;
-                        let val = feature.properties[fieldProp];
+                        let fieldProp;
+                        let val;
+                        // Verificar si es un filtro geográfico
+                        if (group.isGeographic) {
+                            // Intentar con nombre personalizado primero
+                            if (group.geoCustomFieldName) {
+                                val = feature.properties[group.geoCustomFieldName] || feature.properties['nm_' + group.geoCustomFieldName];
+                            }
+                            // Fallback a nm_geo_level_X
+                            if (val === undefined || val === null) {
+                                fieldProp = 'nm_geo_level_' + group.geoLevelIndex;
+                                val = feature.properties[fieldProp];
+                            }
+                        } else {
+                            fieldProp = 'nm_' + gName;
+                            val = feature.properties[fieldProp];
+                        }
                         if (Array.isArray(val)) {
                             for (const v of val) { if (group.mainValues.has(String(v))) { groupMatched = true; break; } }
                         } else if (val !== undefined && val !== null) {
@@ -752,13 +775,34 @@ jQuery(document).ready(function ($) {
                         ? (option.value || option.label || Object.values(option)[0] || '')
                         : option;
 
-                    const fieldName = filter.is_conditional
-                        ? 'nm_' + filter.field_name
-                        : 'nm_' + filter.field;
+                    // Determinar el nombre del campo según el tipo de filtro
+                    let fieldName;
+                    if (filter.is_geographic) {
+                        // Para filtros geográficos, usar el nombre personalizado si está disponible
+                        if (filter.geo_custom_field_name) {
+                            fieldName = filter.geo_custom_field_name;
+                            // También intentar con prefijo nm_
+                            if (!fieldName.startsWith('nm_')) {
+                                // Buscar primero sin prefijo, luego con prefijo
+                            }
+                        } else {
+                            fieldName = 'nm_geo_level_' + filter.geo_level_index;
+                        }
+                    } else if (filter.is_conditional) {
+                        fieldName = 'nm_' + filter.field_name;
+                    } else {
+                        fieldName = 'nm_' + filter.field;
+                    }
 
                     const features = getUniqueFeatures(allMarkers);
                     features.forEach(feature => {
                         let fieldValue = feature.properties[fieldName];
+                        
+                        // Para campos geográficos, intentar con y sin prefijo nm_
+                        if (filter.is_geographic && (fieldValue === undefined || fieldValue === null)) {
+                            fieldValue = feature.properties['nm_' + fieldName] || feature.properties['nm_geo_level_' + filter.geo_level_index];
+                        }
+                        
                         if (Array.isArray(fieldValue)) {
                             if (fieldValue.some(v => String(v) === String(optionValue))) count++;
                         } else if (fieldValue !== undefined && fieldValue !== null) {

@@ -98,11 +98,27 @@ class NM_Model {
     if ($result === null) {
         error_log("Warning: No form data found for form_type $form_type.");
         return null;
-    }    $form_data = maybe_unserialize($result->form_data);    // Si hay campos en el formulario, buscar campos condicionales
+    }    $form_data = maybe_unserialize($result->form_data);    // Si hay campos en el formulario, buscar campos condicionales y procesar campos geográficos
     if (isset($form_data['fields']) && is_array($form_data['fields'])) {
         foreach ($form_data['fields'] as &$field) {
-            // Solo procesar conditional-select, ignorar el resto
-            if (isset($field['type']) && $field['type'] === 'conditional-select' && isset($field['select_id'])) {
+            // Procesar campos geográficos para asegurar que config esté deserializado
+            if (isset($field['type']) && $field['type'] === 'geographic-selector') {
+                // Si config es un string JSON, deserializarlo
+                if (isset($field['config']) && is_string($field['config'])) {
+                    $decoded_config = json_decode($field['config'], true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_config)) {
+                        $field['config'] = $decoded_config;
+                    } else {
+                        // Intentar con maybe_unserialize por si acaso
+                        $unserialized_config = maybe_unserialize($field['config']);
+                        if (is_array($unserialized_config)) {
+                            $field['config'] = $unserialized_config;
+                        }
+                    }
+                }
+            }
+            // Solo procesar conditional-select
+            elseif (isset($field['type']) && $field['type'] === 'conditional-select' && isset($field['select_id'])) {
                 // Para cada opción del select condicional, buscar sus campos asociados
                 foreach ($field['options'] as &$option) {
                     $conditional_fields = $wpdb->get_var($wpdb->prepare(

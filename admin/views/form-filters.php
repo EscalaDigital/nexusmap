@@ -182,9 +182,31 @@
         <h1>Gestor de Filtros del Mapa</h1>
         <p>Configura los filtros interactivos que aparecerán en tu mapa para mejorar la experiencia del usuario</p>
     </div>
+    
+    <?php 
+    // Contar campos geográficos
+    $geo_count = 0;
+    if (!empty($this->valid_fields)) {
+        foreach ($this->valid_fields as $field) {
+            if (isset($field['is_geographic']) && $field['is_geographic']) {
+                $geo_count++;
+            }
+        }
+    }
+    ?>
 
     <?php if (!empty($this->valid_fields)): ?>
         <div class="nm-filters-content">
+            <?php if ($geo_count > 0): ?>
+                <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                    <p style="margin: 0; color: #0c4a6e;">
+                        <strong>🌍 <?php echo $geo_count; ?> filtro(s) geográfico(s) detectado(s)</strong>
+                        <br>
+                        <small>Los valores se actualizan automáticamente basándose en las entradas aprobadas de los usuarios.</small>
+                    </p>
+                </div>
+            <?php endif; ?>
+            
             <form id="nm-filter-settings" method="post">
                 <?php
                 $saved_settings = get_option('nm_filter_settings', array());
@@ -205,8 +227,9 @@
                             $field_key = isset($field['unique_name']) ? $field['unique_name'] : $field['name'];
                             $is_active = isset($saved_settings[$field_key]['active']) && $saved_settings[$field_key]['active'];
                             $is_conditional = isset($field['is_conditional']) && $field['is_conditional'];
+                            $is_geographic = isset($field['is_geographic']) && $field['is_geographic'];
                         ?>
-                            <tr class="<?php echo $is_conditional ? 'conditional-field-row' : ''; ?>">
+                            <tr class="<?php echo $is_conditional ? 'conditional-field-row' : ''; ?> <?php echo $is_geographic ? 'geographic-field-row' : ''; ?>">
                                 <td>
                                     <?php if ($is_conditional): ?>
                                         <div class="conditional-field-info">
@@ -215,6 +238,19 @@
                                                 <small style="color: #666; display: block; margin-top: 2px;">
                                                     📋 Campo condicional de: <strong><?php echo esc_html($field['parent_label']); ?></strong>
                                                     <br>🎯 Opción: <strong><?php echo esc_html($field['parent_option_label']); ?></strong>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    <?php elseif ($is_geographic): ?>
+                                        <div class="geographic-field-info">
+                                            <strong><?php echo esc_html($field['label']); ?></strong>
+                                            <div class="geographic-field-meta">
+                                                <small style="color: #666; display: block; margin-top: 2px;">
+                                                    🌍 Campo geográfico
+                                                    <br>📊 Valores encontrados: <strong style="<?php echo empty($field['options']) ? 'color: #dc2626;' : ''; ?>"><?php echo count($field['options']); ?></strong>
+                                                    <?php if (empty($field['options'])): ?>
+                                                        <br><span style="color: #dc2626;">⚠️ No hay entradas aprobadas con este campo aún</span>
+                                                    <?php endif; ?>
                                                 </small>
                                             </div>
                                         </div>
@@ -227,6 +263,9 @@
                                         <?php echo esc_html($field['type']); ?>
                                         <?php if ($is_conditional): ?>
                                             <span style="margin-left: 4px; font-size: 10px;">🔗</span>
+                                        <?php endif; ?>
+                                        <?php if ($is_geographic): ?>
+                                            <span style="margin-left: 4px; font-size: 10px;">🌍</span>
                                         <?php endif; ?>
                                     </span>
                                 </td>
@@ -270,6 +309,23 @@
                                             <p>
                                                 <small style="color: #666; font-style: italic;">
                                                     ⚠️ Este filtro solo estará disponible cuando se seleccione la opción correspondiente en el campo padre.
+                                                </small>
+                                            </p>
+                                        <?php endif; ?>
+                                        <?php if ($is_geographic): ?>
+                                            <input type="hidden" name="filters[<?php echo esc_attr($field_key); ?>][is_geographic]" value="true">
+                                            <input type="hidden" name="filters[<?php echo esc_attr($field_key); ?>][geo_level_index]" value="<?php echo esc_attr($field['geo_level_index']); ?>">
+                                            <?php if (isset($field['geo_custom_field_name'])): ?>
+                                                <input type="hidden" name="filters[<?php echo esc_attr($field_key); ?>][geo_custom_field_name]" value="<?php echo esc_attr($field['geo_custom_field_name']); ?>">
+                                            <?php endif; ?>
+                                            <p>
+                                                <small style="color: #0066cc; font-style: italic;">
+                                                    🌍 Filtro geográfico dinámico: Los valores se actualizan automáticamente según las entradas de los usuarios.
+                                                    <?php if (!empty($field['options'])): ?>
+                                                        <br><strong>Valores actuales:</strong> <?php echo esc_html(implode(', ', array_slice($field['options'], 0, 5))); ?><?php echo count($field['options']) > 5 ? '...' : ''; ?>
+                                                    <?php else: ?>
+                                                        <br><span style="color: #dc2626;">⚠️ Aún no hay entradas aprobadas. Los valores aparecerán cuando los usuarios completen el formulario.</span>
+                                                    <?php endif; ?>
                                                 </small>
                                             </p>
                                         <?php endif; ?>

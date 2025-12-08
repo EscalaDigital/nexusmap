@@ -34,13 +34,26 @@ class NM_Form_Filters {
     $form_data = $this->model->get_form(0);
     $valid_fields = array();
     $this->conditional_field_map = array();
+    
+    // Debug: verificar que hay datos del formulario
+    $has_geo_fields = false;
 
         if (isset($form_data['fields']) && is_array($form_data['fields'])) {
             foreach ($form_data['fields'] as $field) {
+                // Debug para campos geográficos
+                if (isset($field['type']) && $field['type'] === 'geographic-selector') {
+                    $has_geo_fields = true;
+                }
                 // Incluir campos de nivel superior que son filtrables
                 if (in_array($field['type'], ['select', 'radio', 'checkbox'])) {
                     // Campos normales directamente filtrables
                     $valid_fields[] = $field;
+                } elseif ($field['type'] === 'geographic-selector') {
+                    // Campos de selector geográfico - extraer niveles configurados
+                    $geo_fields = $this->process_geographic_selector_field($field);
+                    if (!empty($geo_fields)) {
+                        $valid_fields = array_merge($valid_fields, $geo_fields);
+                    }
                 } elseif ($field['type'] === 'conditional-select') {
                     // El propio conditional-select debe ser filtrable (como un select normal)
                     $valid_fields[] = $field;
@@ -99,6 +112,130 @@ class NM_Form_Filters {
 
         $this->valid_fields = $valid_fields;
         include_once 'views/form-filters.php';
+    }
+
+    /**
+     * Procesar campo de selector geográfico y crear filtros por nivel
+     */
+    private function process_geographic_selector_field($field) {
+        $geo_fields = array();
+        
+        // Intentar obtener la configuración de diferentes fuentes
+        $config = null;
+        
+        if (isset($field['config']) && is_array($field['config'])) {
+            $config = $field['config'];
+        } elseif (isset($field['config']) && is_string($field['config'])) {
+            // Puede estar serializada o como JSON
+            $config = json_decode($field['config'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $config = maybe_unserialize($field['config']);
+            }
+        }
+        
+        if (empty($config) || empty($config['levels'])) {
+            // No hay configuración válida, no podemos crear filtros
+            return $geo_fields;
+        }
+
+        $levels = $config['levels'];
+        $field_names = isset($config['field_names']) ? $config['field_names'] : array();
+        
+        // Obtener valores únicos de las entradas aprobadas para cada nivel
+        $unique_values = $this->get_unique_geographic_values($field['name'], $levels, $field_names);
+        
+        foreach ($levels as $index => $level) {
+            $level_key = 'geo_level_' . $index;
+            $level_name = isset($field_names[$index]) && !empty($field_names[$index]) 
+                ? $field_names[$index] 
+                : $level;
+            
+            // Crear el filtro incluso si no hay valores aún (mostrar con 0 valores)
+            $custom_field_name = isset($field_names[$index]) && !empty($field_names[$index])
+                ? strtolower(str_replace(' ', '_', $field_names[$index]))
+                : strtolower($level);
+            
+            $geo_fields[] = array(
+                'name' => $level_key,
+                'label' => $field['label'] . ' - ' . $level_name,
+                'type' => 'geographic-selector',
+                'parent_geo_field' => $field['name'],
+                'geo_level' => $level,
+                'geo_level_index' => $index,
+                'geo_custom_field_name' => $custom_field_name,
+                'options' => isset($unique_values[$level_key]) ? $unique_values[$level_key] : array(),
+                'is_geographic' => true
+            );
+        }
+        
+        return $geo_fields;
+    }
+
+    /**
+     * Obtener valores únicos de campos geográficos de las entradas aprobadas
+     */
+    private function get_unique_geographic_values($field_name, $levels, $field_names = array()) {
+        $entries = $this->model->get_entries('approved');
+        $unique_values = array();
+        
+        // Inicializar arrays para cada nivel
+        foreach ($levels as $index => $level) {
+            $unique_values['geo_level_' . $index] = array();
+        }
+        
+        foreach ($entries as $entry) {
+            $entry_data = maybe_unserialize($entry->entry_data);
+            if (!is_array($entry_data)) {
+                $entry_data = json_decode($entry->entry_data, true);
+            }
+            
+            // Buscar en map_data
+            if (isset($entry_data['map_data'])) {
+                $map_data_json = $entry_data['map_data'];
+                if (is_string($map_data_json)) {
+                    $map_data_json = stripslashes($map_data_json);
+                }
+                $map_data = json_decode($map_data_json, true);
+                
+                if (is_array($map_data) && !empty($map_data)) {
+                    if (isset($map_data[0]['properties'])) {
+                        $properties = $map_data[0]['properties'];
+                        
+                        // Extraer valores de cada nivel geográfico usando nombres personalizados usando nombres personalizados
+                        foreach ($levels as $index => $level) {
+                            // Obtener el nombre del campo personalizado o usar el nivel como fallback
+                            $custom_field_name = isset($field_names[$index]) && !empty($field_names[$index])
+                                ? strtolower(str_replace(' ', '_', $field_names[$index]))
+                                : strtolower($level);
+                            
+                            // Buscar con el nombre personalizado primero, luego con nm_ prefijo
+                            $field_key = null;
+                            if (isset($properties[$custom_field_name])) {
+                                $field_key = $custom_field_name;
+                            } elseif (isset($properties['nm_' . $custom_field_name])) {
+                                $field_key = 'nm_' . $custom_field_name;
+                            } elseif (isset($properties['nm_geo_level_' . $index])) {
+                                $field_key = 'nm_geo_level_' . $index;
+                            }
+                            
+                            if ($field_key && !empty($properties[$field_key])) {
+                                $value = $properties[$field_key];
+                                if (!in_array($value, $unique_values['geo_level_' . $index])) {
+                                    $unique_values['geo_level_' . $index][] = $value;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Ordenar valores alfabéticamente
+        foreach ($unique_values as $key => $values) {
+            sort($unique_values[$key]);
+        }
+        
+        return $unique_values;
     }
 
     /**
@@ -208,6 +345,14 @@ class NM_Form_Filters {
                     $filter_config['parent_field'] = $meta['parent_field'];
                     $filter_config['parent_option'] = $meta['parent_option'];
                     $filter_config['field_name'] = $meta['field_name'];
+                }
+                // Marcar si es un campo geográfico
+                if (isset($values['is_geographic']) && $values['is_geographic'] === 'true') {
+                    $filter_config['is_geographic'] = true;
+                    $filter_config['geo_level_index'] = isset($values['geo_level_index']) ? intval($values['geo_level_index']) : 0;
+                    if (isset($values['geo_custom_field_name'])) {
+                        $filter_config['geo_custom_field_name'] = sanitize_text_field($values['geo_custom_field_name']);
+                    }
                 }
                 $saved_settings[$key] = $filter_config;
             }

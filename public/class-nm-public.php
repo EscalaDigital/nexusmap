@@ -1692,8 +1692,29 @@ class NM_Public
                 if ($settings['active']) {
                     $field_found = false;
                     
+                    // Verificar si es un campo geográfico
+                    if (isset($settings['is_geographic']) && $settings['is_geographic']) {
+                        // Campo geográfico - extraer valores únicos de las entradas
+                        $geo_level_index = isset($settings['geo_level_index']) ? intval($settings['geo_level_index']) : 0;
+                        $custom_field_name = isset($settings['geo_custom_field_name']) ? $settings['geo_custom_field_name'] : null;
+                        $unique_values = $this->get_unique_geographic_values_for_filter($geo_level_index, $custom_field_name);
+                        
+                        if (!empty($unique_values)) {
+                            $formatted_filters[] = array(
+                                'field' => $field_key,
+                                'button_text' => $settings['button_text'],
+                                'options' => $unique_values,
+                                'style' => $settings['style'],
+                                'is_conditional' => false,
+                                'is_geographic' => true,
+                                'geo_level_index' => $geo_level_index,
+                                'geo_custom_field_name' => $custom_field_name
+                            );
+                            $field_found = true;
+                        }
+                    }
                     // Verificar si es un campo condicional
-                    if (isset($settings['is_conditional']) && $settings['is_conditional']) {
+                    elseif (isset($settings['is_conditional']) && $settings['is_conditional']) {
                         // Es un campo condicional, buscar en los campos anidados
                         foreach ($form_data['fields'] as $field) {
                             if ($field['type'] === 'conditional-select' && $field['name'] === $settings['parent_field']) {
@@ -1768,6 +1789,58 @@ class NM_Public
         }
 
         return $formatted_filters;
+    }
+
+    /**
+     * Obtener valores únicos de un nivel geográfico específico de todas las entradas aprobadas
+     */
+    private function get_unique_geographic_values_for_filter($level_index, $custom_field_name = null) {
+        $entries = $this->model->get_entries('approved');
+        $unique_values = array();
+        
+        foreach ($entries as $entry) {
+            $entry_data = maybe_unserialize($entry->entry_data);
+            if (!is_array($entry_data)) {
+                $entry_data = json_decode($entry->entry_data, true);
+            }
+            
+            // Buscar en map_data
+            if (isset($entry_data['map_data'])) {
+                $map_data_json = $entry_data['map_data'];
+                if (is_string($map_data_json)) {
+                    $map_data_json = stripslashes($map_data_json);
+                }
+                $map_data = json_decode($map_data_json, true);
+                
+                if (is_array($map_data) && !empty($map_data)) {
+                    if (isset($map_data[0]['properties'])) {
+                        $properties = $map_data[0]['properties'];
+                        
+                        // Intentar con el nombre personalizado primero
+                        $field_key = null;
+                        if ($custom_field_name && isset($properties[$custom_field_name])) {
+                            $field_key = $custom_field_name;
+                        } elseif ($custom_field_name && isset($properties['nm_' . $custom_field_name])) {
+                            $field_key = 'nm_' . $custom_field_name;
+                        } elseif (isset($properties['nm_geo_level_' . $level_index])) {
+                            $field_key = 'nm_geo_level_' . $level_index;
+                        }
+                        
+                        if ($field_key && !empty($properties[$field_key])) {
+                            $value = $properties[$field_key];
+                            if (!in_array($value, $unique_values)) {
+                                $unique_values[] = $value;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Ordenar valores alfabéticamente
+        sort($unique_values);
+        
+        return $unique_values;
     }
 
 
