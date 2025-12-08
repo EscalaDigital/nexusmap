@@ -894,9 +894,11 @@ class NM_Public
                                 $feature['properties']['layers'] = array();
                             }
 
-                            // Agregar todas las propiedades del entry_data al properties
+                            // IMPORTANTE: No sobrescribir las propiedades que ya están en el feature
+                            // porque el map_data ya contiene todos los datos del formulario
+                            // Solo agregar lo que no esté ya presente
                             foreach ($entry_data as $key => $value) {
-                                if ($key !== 'map_data') {
+                                if ($key !== 'map_data' && !isset($feature['properties'][$key])) {
                                     $feature['properties'][$key] = $value;
                                 }
                             }
@@ -1816,12 +1818,13 @@ class NM_Public
                     if (isset($map_data[0]['properties'])) {
                         $properties = $map_data[0]['properties'];
                         
-                        // Intentar con el nombre personalizado primero
+                        // IMPORTANTE: El formulario guarda con prefijo nm_
+                        // Intentar con nm_ + nombre personalizado primero
                         $field_key = null;
-                        if ($custom_field_name && isset($properties[$custom_field_name])) {
-                            $field_key = $custom_field_name;
-                        } elseif ($custom_field_name && isset($properties['nm_' . $custom_field_name])) {
+                        if ($custom_field_name && isset($properties['nm_' . $custom_field_name])) {
                             $field_key = 'nm_' . $custom_field_name;
+                        } elseif ($custom_field_name && isset($properties[$custom_field_name])) {
+                            $field_key = $custom_field_name;
                         } elseif (isset($properties['nm_geo_level_' . $level_index])) {
                             $field_key = 'nm_geo_level_' . $level_index;
                         }

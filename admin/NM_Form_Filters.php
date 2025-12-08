@@ -201,19 +201,20 @@ class NM_Form_Filters {
                     if (isset($map_data[0]['properties'])) {
                         $properties = $map_data[0]['properties'];
                         
-                        // Extraer valores de cada nivel geográfico usando nombres personalizados usando nombres personalizados
+                        // Extraer valores de cada nivel geográfico usando nombres personalizados
                         foreach ($levels as $index => $level) {
                             // Obtener el nombre del campo personalizado o usar el nivel como fallback
                             $custom_field_name = isset($field_names[$index]) && !empty($field_names[$index])
                                 ? strtolower(str_replace(' ', '_', $field_names[$index]))
                                 : strtolower($level);
                             
-                            // Buscar con el nombre personalizado primero, luego con nm_ prefijo
+                            // IMPORTANTE: El formulario guarda SIEMPRE con prefijo nm_
+                            // Buscar con nm_ primero (es lo más común)
                             $field_key = null;
-                            if (isset($properties[$custom_field_name])) {
-                                $field_key = $custom_field_name;
-                            } elseif (isset($properties['nm_' . $custom_field_name])) {
+                            if (isset($properties['nm_' . $custom_field_name])) {
                                 $field_key = 'nm_' . $custom_field_name;
+                            } elseif (isset($properties[$custom_field_name])) {
+                                $field_key = $custom_field_name;
                             } elseif (isset($properties['nm_geo_level_' . $index])) {
                                 $field_key = 'nm_geo_level_' . $index;
                             }

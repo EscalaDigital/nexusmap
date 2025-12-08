@@ -589,16 +589,19 @@ jQuery(document).ready(function ($) {
             // Construir grupos: OR dentro del grupo (padre + subfiltros), AND entre grupos distintos
             const groupStructures = {}; // groupName => { mainValues:Set|null, subFilters:[{prop, values:Set}] }
             if (Object.keys(activeFilters).length > 0) {
+                console.log('Active filters:', activeFilters);
                 nmMapData.filter_settings.forEach(cfg => {
                     if (!activeFilters[cfg.field] || activeFilters[cfg.field].size === 0) return;
                     if (cfg.is_geographic) {
                         // Filtro geográfico - crear grupo independiente
+                        console.log('Processing geographic filter:', cfg);
                         const g = cfg.field;
                         if (!groupStructures[g]) groupStructures[g] = { mainValues: null, subFilters: [] };
                         groupStructures[g].mainValues = activeFilters[cfg.field];
                         groupStructures[g].geoLevelIndex = cfg.geo_level_index;
                         groupStructures[g].geoCustomFieldName = cfg.geo_custom_field_name;
                         groupStructures[g].isGeographic = true;
+                        console.log('Geographic group structure:', groupStructures[g]);
                     } else if (cfg.is_conditional) {
                         const g = cfg.parent_field;
                         if (!groupStructures[g]) groupStructures[g] = { mainValues: null, subFilters: [] };
@@ -622,8 +625,30 @@ jQuery(document).ready(function ($) {
 
                         // Evaluar campo principal
                         if (group.mainValues && group.mainValues.size > 0) {
-                            const fieldProp = 'nm_' + gName;
-                            let val = marker.feature.properties[fieldProp];
+                            let val;
+                            // Para filtros geográficos, SIEMPRE usar prefijo nm_
+                            if (group.isGeographic) {
+                                if (debugTotalCount === 1) {
+                                    console.log('Geographic filter check - properties:', marker.feature.properties);
+                                    console.log('Looking for field:', 'nm_' + group.geoCustomFieldName);
+                                }
+                                if (group.geoCustomFieldName) {
+                                    // El formulario SIEMPRE guarda con prefijo nm_
+                                    val = marker.feature.properties['nm_' + group.geoCustomFieldName];
+                                }
+                                // Fallback
+                                if (val === undefined || val === null) {
+                                    val = marker.feature.properties['nm_geo_level_' + group.geoLevelIndex];
+                                }
+                                if (debugTotalCount === 1) {
+                                    console.log('Value found:', val);
+                                    console.log('Filter values:', Array.from(group.mainValues));
+                                }
+                            } else {
+                                const fieldProp = 'nm_' + gName;
+                                val = marker.feature.properties[fieldProp];
+                            }
+                            
                             if (Array.isArray(val)) {
                                 for (const v of val) { if (group.mainValues.has(String(v))) { groupMatched = true; break; } }
                             } else if (val !== undefined && val !== null) {
@@ -697,9 +722,9 @@ jQuery(document).ready(function ($) {
                         let val;
                         // Verificar si es un filtro geográfico
                         if (group.isGeographic) {
-                            // Intentar con nombre personalizado primero
+                            // SIEMPRE usar prefijo nm_ (así se guarda en el formulario)
                             if (group.geoCustomFieldName) {
-                                val = feature.properties[group.geoCustomFieldName] || feature.properties['nm_' + group.geoCustomFieldName];
+                                val = feature.properties['nm_' + group.geoCustomFieldName];
                             }
                             // Fallback a nm_geo_level_X
                             if (val === undefined || val === null) {
@@ -778,13 +803,10 @@ jQuery(document).ready(function ($) {
                     // Determinar el nombre del campo según el tipo de filtro
                     let fieldName;
                     if (filter.is_geographic) {
-                        // Para filtros geográficos, usar el nombre personalizado si está disponible
+                        // Para filtros geográficos, SIEMPRE agregar prefijo nm_
                         if (filter.geo_custom_field_name) {
-                            fieldName = filter.geo_custom_field_name;
-                            // También intentar con prefijo nm_
-                            if (!fieldName.startsWith('nm_')) {
-                                // Buscar primero sin prefijo, luego con prefijo
-                            }
+                            // El formulario agrega el prefijo nm_ a todos los campos
+                            fieldName = 'nm_' + filter.geo_custom_field_name;
                         } else {
                             fieldName = 'nm_geo_level_' + filter.geo_level_index;
                         }
@@ -797,11 +819,6 @@ jQuery(document).ready(function ($) {
                     const features = getUniqueFeatures(allMarkers);
                     features.forEach(feature => {
                         let fieldValue = feature.properties[fieldName];
-                        
-                        // Para campos geográficos, intentar con y sin prefijo nm_
-                        if (filter.is_geographic && (fieldValue === undefined || fieldValue === null)) {
-                            fieldValue = feature.properties['nm_' + fieldName] || feature.properties['nm_geo_level_' + filter.geo_level_index];
-                        }
                         
                         if (Array.isArray(fieldValue)) {
                             if (fieldValue.some(v => String(v) === String(optionValue))) count++;
