@@ -127,6 +127,7 @@
 .theme-1 { background: linear-gradient(45deg, #3b82f6, #1d4ed8); }
 .theme-2 { background: linear-gradient(45deg, #10b981, #047857); }
 .theme-3 { background: linear-gradient(45deg, #1e3a8a, #9333ea); }
+.theme-4 { background: linear-gradient(45deg, #22577A, #1a4460); }
 
 @media (max-width: 768px) {
     .nm-admin-header {
@@ -167,6 +168,9 @@
                             </option>
                             <option value="3" <?php selected($current_theme, '3'); ?>>
                                 <span class="theme-preview theme-3"></span>🎧 Audioguía (Móvil)
+                            </option>
+                            <option value="4" <?php selected($current_theme, '4'); ?>>
+                                <span class="theme-preview theme-4"></span>🌊 Tema 4 - Azul Océano
                             </option>
                         </select>
                     </td>
