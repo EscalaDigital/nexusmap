@@ -157,6 +157,35 @@
     line-height: 1.4;
 }
 
+.drag-handle {
+    cursor: move;
+    padding: 8px;
+    color: #999;
+    font-size: 18px;
+    transition: color 0.2s;
+}
+
+.drag-handle:hover {
+    color: #667eea;
+}
+
+.filters-table-body {
+    position: relative;
+}
+
+.filters-table-body tr {
+    transition: background-color 0.2s;
+}
+
+.filters-table-body tr.dragging {
+    opacity: 0.5;
+    background: #f0f4f8;
+}
+
+.filters-table-body tr.drag-over {
+    border-top: 3px solid #667eea;
+}
+
 @media (max-width: 768px) {
     .nm-admin-header {
         padding: 20px;
@@ -197,6 +226,12 @@
 
     <?php if (!empty($this->valid_fields)): ?>
         <div class="nm-filters-content">
+            <div style="background: #f0f4f8; border-left: 4px solid #667eea; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                <p style="margin: 0; color: #374151;">
+                    <strong>💡 Consejo:</strong> Puedes <strong>arrastrar y soltar</strong> las filas usando el ícono <span style="color: #667eea; font-weight: bold;">⣿</span> para cambiar el orden en que aparecen los filtros en el mapa.
+                </p>
+            </div>
+            
             <?php if ($geo_count > 0): ?>
                 <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
                     <p style="margin: 0; color: #0c4a6e;">
@@ -214,22 +249,40 @@
                 <table class="nm-filters-table">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">Orden</th>
                             <th>Campo</th>
                             <th>Tipo</th>
                             <th>Estado</th>
                             <th>Configuración</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="filters-table-body">
                         <?php
-                        foreach ($this->valid_fields as $field):
+                        // Ordenar los campos según el orden guardado
+                        $ordered_fields = $this->valid_fields;
+                        usort($ordered_fields, function($a, $b) use ($saved_settings) {
+                            $key_a = isset($a['unique_name']) ? $a['unique_name'] : $a['name'];
+                            $key_b = isset($b['unique_name']) ? $b['unique_name'] : $b['name'];
+                            $order_a = isset($saved_settings[$key_a]['order']) ? intval($saved_settings[$key_a]['order']) : 999;
+                            $order_b = isset($saved_settings[$key_b]['order']) ? intval($saved_settings[$key_b]['order']) : 999;
+                            return $order_a - $order_b;
+                        });
+                        
+                        $order_index = 0;
+                        foreach ($ordered_fields as $field):
+                            $order_index;
                             // Usar unique_name para campos condicionales, o name para campos normales
                             $field_key = isset($field['unique_name']) ? $field['unique_name'] : $field['name'];
                             $is_active = isset($saved_settings[$field_key]['active']) && $saved_settings[$field_key]['active'];
                             $is_conditional = isset($field['is_conditional']) && $field['is_conditional'];
                             $is_geographic = isset($field['is_geographic']) && $field['is_geographic'];
+                            $current_order = isset($saved_settings[$field_key]['order']) ? intval($saved_settings[$field_key]['order']) : $order_index;
                         ?>
-                            <tr class="<?php echo $is_conditional ? 'conditional-field-row' : ''; ?> <?php echo $is_geographic ? 'geographic-field-row' : ''; ?>">
+                            <tr class="<?php echo $is_conditional ? 'conditional-field-row' : ''; ?> <?php echo $is_geographic ? 'geographic-field-row' : ''; ?>" draggable="true" data-field-key="<?php echo esc_attr($field_key); ?>">
+                                <td style="text-align: center;">
+                                    <span class="drag-handle" title="Arrastra para reordenar">⣿</span>
+                                    <input type="hidden" name="filters[<?php echo esc_attr($field_key); ?>][order]" value="<?php echo esc_attr($current_order); ?>" class="filter-order-input">
+                                </td>
                                 <td>
                                     <?php if ($is_conditional): ?>
                                         <div class="conditional-field-info">
@@ -346,6 +399,68 @@
 
         <script>
         jQuery(document).ready(function($) {
+            // Variables para drag and drop
+            let draggedRow = null;
+            let draggedIndex = null;
+
+            // Configurar drag and drop
+            const tbody = document.querySelector('.filters-table-body');
+            const rows = tbody.querySelectorAll('tr[draggable="true"]');
+            
+            rows.forEach((row, index) => {
+                row.addEventListener('dragstart', function(e) {
+                    draggedRow = this;
+                    draggedIndex = index;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.innerHTML);
+                });
+
+                row.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    
+                    // Remover todas las clases drag-over
+                    rows.forEach(r => r.classList.remove('drag-over'));
+                    
+                    // Actualizar los valores de orden
+                    updateOrderValues();
+                });
+
+                row.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    if (draggedRow !== this) {
+                        this.classList.add('drag-over');
+                    }
+                });
+
+                row.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+
+                row.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    
+                    if (draggedRow !== this) {
+                        // Insertar el elemento arrastrado antes del elemento actual
+                        tbody.insertBefore(draggedRow, this);
+                    }
+                });
+            });
+
+            // Función para actualizar los valores de orden después del drag
+            function updateOrderValues() {
+                const allRows = tbody.querySelectorAll('tr[draggable="true"]');
+                allRows.forEach((row, index) => {
+                    const orderInput = row.querySelector('.filter-order-input');
+                    if (orderInput) {
+                        orderInput.value = index + 1;
+                    }
+                });
+            }
+
             // Mostrar/ocultar configuración y actualizar badge
             $('input[name*="[active]"]').change(function() {
                 var $row = $(this).closest('tr');

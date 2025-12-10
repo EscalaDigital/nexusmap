@@ -1790,6 +1790,13 @@ class NM_Public
             }
         }
 
+        // Ordenar los filtros según el campo 'order'
+        usort($formatted_filters, function($a, $b) use ($filter_settings) {
+            $order_a = isset($filter_settings[$a['field']]['order']) ? intval($filter_settings[$a['field']]['order']) : 999;
+            $order_b = isset($filter_settings[$b['field']]['order']) ? intval($filter_settings[$b['field']]['order']) : 999;
+            return $order_a - $order_b;
+        });
+
         return $formatted_filters;
     }
 

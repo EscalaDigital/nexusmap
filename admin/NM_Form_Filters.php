@@ -335,6 +335,7 @@ class NM_Form_Filters {
                 $filter_config = array(
                     'active' => true,
                     'button_text' => sanitize_text_field($values['button_text']),
+                    'order' => isset($values['order']) ? intval($values['order']) : 999,
                     'style' => array(
                         'background' => $bg,
                         'color' => $fg
