@@ -358,6 +358,38 @@
                                                        value="<?php echo isset($saved_settings[$field_key]['style']['color']) ? esc_attr($saved_settings[$field_key]['style']['color']) : '#000000'; ?>">
                                             </label>
                                         </p>
+                                        <?php if (!empty($field['options']) && is_array($field['options'])): ?>
+                                        <div style="margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #667eea;">
+                                            <p style="margin: 0 0 10px 0; font-weight: 600; color: #374151;">
+                                                🎯 Valores predeterminados (pre-activados):
+                                            </p>
+                                            <small style="color: #6b7280; display: block; margin-bottom: 10px;">
+                                                Selecciona los valores que deseas que aparezcan activados automáticamente al cargar el mapa.
+                                            </small>
+                                            <div style="max-height: 200px; overflow-y: auto; padding: 5px;">
+                                                <?php 
+                                                $default_values = isset($saved_settings[$field_key]['default_values']) && is_array($saved_settings[$field_key]['default_values']) 
+                                                    ? $saved_settings[$field_key]['default_values'] 
+                                                    : array();
+                                                foreach ($field['options'] as $option): 
+                                                    $option_value = is_array($option) ? ($option['value'] ?? $option['label'] ?? $option) : $option;
+                                                    $option_label = is_array($option) ? ($option['label'] ?? $option['value'] ?? $option) : $option;
+                                                    $is_default_checked = in_array($option_value, $default_values);
+                                                ?>
+                                                <label style="display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer; border-radius: 4px; transition: background 0.2s;" 
+                                                       onmouseover="this.style.background='#e0e7ff'" 
+                                                       onmouseout="this.style.background='transparent'">
+                                                    <input type="checkbox" 
+                                                           name="filters[<?php echo esc_attr($field_key); ?>][default_values][]" 
+                                                           value="<?php echo esc_attr($option_value); ?>"
+                                                           <?php checked($is_default_checked); ?>
+                                                           style="transform: scale(1.1);">
+                                                    <span style="color: #374151;"><?php echo esc_html($option_label); ?></span>
+                                                </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
                                         <?php if ($is_conditional): ?>
                                             <p>
                                                 <small style="color: #666; font-style: italic;">

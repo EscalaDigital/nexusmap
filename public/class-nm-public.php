@@ -1702,7 +1702,7 @@ class NM_Public
                         $unique_values = $this->get_unique_geographic_values_for_filter($geo_level_index, $custom_field_name);
                         
                         if (!empty($unique_values)) {
-                            $formatted_filters[] = array(
+                            $filter_data = array(
                                 'field' => $field_key,
                                 'button_text' => $settings['button_text'],
                                 'options' => $unique_values,
@@ -1712,6 +1712,11 @@ class NM_Public
                                 'geo_level_index' => $geo_level_index,
                                 'geo_custom_field_name' => $custom_field_name
                             );
+                            // Añadir valores predeterminados si existen
+                            if (isset($settings['default_values']) && is_array($settings['default_values'])) {
+                                $filter_data['default_values'] = $settings['default_values'];
+                            }
+                            $formatted_filters[] = $filter_data;
                             $field_found = true;
                         }
                     }
@@ -1774,13 +1779,18 @@ class NM_Public
                                     }
                                 }
                                 
-                                $formatted_filters[] = array(
+                                $filter_data = array(
                                     'field' => $field_key,
                                     'button_text' => $settings['button_text'],
                                     'options' => $processed_options,
                                     'style' => $settings['style'],
                                     'is_conditional' => false
                                 );
+                                // Añadir valores predeterminados si existen
+                                if (isset($settings['default_values']) && is_array($settings['default_values'])) {
+                                    $filter_data['default_values'] = $settings['default_values'];
+                                }
+                                $formatted_filters[] = $filter_data;
                                 $field_found = true;
                                 break;
                             }

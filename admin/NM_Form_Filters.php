@@ -356,6 +356,10 @@ class NM_Form_Filters {
                         $filter_config['geo_custom_field_name'] = sanitize_text_field($values['geo_custom_field_name']);
                     }
                 }
+                // Guardar valores predeterminados (pre-activados)
+                if (isset($values['default_values']) && is_array($values['default_values'])) {
+                    $filter_config['default_values'] = array_map('sanitize_text_field', $values['default_values']);
+                }
                 $saved_settings[$key] = $filter_config;
             }
         }

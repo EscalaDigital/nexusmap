@@ -326,7 +326,7 @@ jQuery(document).ready(function ($) {
         function createFilterPanel() {
             // Verificar si hay configuración de filtros
             if (!nmMapData.filter_settings || nmMapData.filter_settings.length === 0) {
-                return;
+                return null;
             }
 
             // Crear el contenedor de filtros
@@ -414,6 +414,28 @@ jQuery(document).ready(function ($) {
             // Agregar el panel al mapa
             jQuery('#nm-main-map').append($filterPanel);
 
+            // Inicializar filtros activos
+            const activeFilters = {};
+            
+            // Aplicar valores predeterminados (pre-activados)
+            nmMapData.filter_settings.forEach(filter => {
+                if (filter.default_values && Array.isArray(filter.default_values) && filter.default_values.length > 0) {
+                    // Inicializar el Set para este campo si no existe
+                    if (!activeFilters[filter.field]) {
+                        activeFilters[filter.field] = new Set();
+                    }
+                    
+                    // Activar cada valor predeterminado
+                    filter.default_values.forEach(defaultValue => {
+                        const strValue = String(defaultValue);
+                        activeFilters[filter.field].add(strValue);
+                        
+                        // Marcar el botón como activo visualmente
+                        $filterPanel.find(`.nm-filter-button[data-field="${filter.field}"][data-value="${defaultValue}"]`).addClass('active');
+                    });
+                }
+            });
+
             // Eventos
             $filterButton.on('click', function (e) {
                 e.preventDefault();
@@ -463,8 +485,9 @@ jQuery(document).ready(function ($) {
                 $filterPanel.find('.nm-filter-options').slideUp(200);
                 $filterPanel.find('.nm-filter-toggle').text('▶');
                 $filterPanel.find('.nm-filter-group').addClass('collapsed');
-            });            // Manejar clicks en los filtros
-            const activeFilters = {};
+            });
+
+            // Manejar clicks en los filtros
             $filterPanel.on('click', '.nm-filter-button', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -472,8 +495,6 @@ jQuery(document).ready(function ($) {
                 const $button = jQuery(this);
                 const field = $button.data('field');
                 const value = String($button.data('value')); // Convertir siempre a string
-
-                
 
                 $button.toggleClass('active');
 
@@ -587,12 +608,22 @@ jQuery(document).ready(function ($) {
             $topControls.append($filterContainer);
             
             
-            // Llamar a updateFilterCounts después de cargar los puntos
-            setTimeout(() => {
-                if (typeof updateFilterCounts === 'function') {
-                    updateFilterCounts();
+            // Retornar función para inicializar filtros después de cargar puntos
+            return {
+                initDefaultFilters: function() {
+                    // Aplicar filtros predeterminados después de cargar los marcadores
+                    if (Object.keys(activeFilters).length > 0) {
+                        updateVisiblePoints(activeFilters);
+                        updateActiveFiltersDisplay(activeFilters);
+                        updateFilterBadges();
+                    }
+                },
+                updateFilterCounts: function() {
+                    if (typeof updateFilterCounts === 'function') {
+                        updateFilterCounts();
+                    }
                 }
-            }, 1000);
+            };
         }
 
 
@@ -880,7 +911,7 @@ jQuery(document).ready(function ($) {
         }
 
         // Llamar a la función después de inicializar el mapa
-        createFilterPanel();
+        const filterManager = createFilterPanel();
         
         // Agregar el botón de leyenda después de los filtros (o como único botón si no hay filtros)
         $topControls.append($legendButton);
@@ -1321,6 +1352,11 @@ jQuery(document).ready(function ($) {
                     }
                     if (typeof updateFilterBadges === 'function') {
                         updateFilterBadges();
+                    }
+                    
+                    // Inicializar filtros predeterminados
+                    if (filterManager && typeof filterManager.initDefaultFilters === 'function') {
+                        filterManager.initDefaultFilters();
                     }
                     
                     // Actualizar contador total inicial
