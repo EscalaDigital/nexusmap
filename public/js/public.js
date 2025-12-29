@@ -645,7 +645,10 @@ jQuery(document).ready(function ($) {
                     // Solo limpiar si realmente hay overlays (capas configuradas)
                     for (const overlayName of overlayKeys) {
                         const layerGroup = overlays[overlayName];
-                        if (layerGroup && typeof layerGroup.clearLayers === 'function') {
+                        // IMPORTANTE: Solo limpiar LayerGroups/FeatureGroups, NO capas WMS/TileLayer
+                        // Las capas WMS son L.TileLayer.WMS y NO deben ser afectadas por los filtros
+                        if (layerGroup && typeof layerGroup.clearLayers === 'function' && 
+                            (layerGroup instanceof L.LayerGroup || layerGroup instanceof L.FeatureGroup)) {
                             layerGroup.clearLayers();
                         }
                     }
