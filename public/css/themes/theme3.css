@@ -316,35 +316,40 @@
 /* Versión móvil fullscreen  */
 /* ========================= */
 @media (max-width: 768px) {
-  /* Modal que aparece desde la parte superior del mapa y se mueve con scroll */
+  /* Modal dentro del contenedor del mapa con scroll interno */
   .nm-modal { 
     position: absolute !important; 
-    top: 0; 
-    left: 0; 
-    right: 0; 
+    top: 0 !important; 
+    left: 0 !important; 
+    right: 0 !important; 
+    bottom: 0 !important;
     width: 100% !important; 
     height: 100% !important; 
-    min-height: 100vh;
+    max-height: 100% !important;
     transform: translateY(100%); 
     transition: transform .35s ease; 
     background: var(--nm-color-bg-dark); 
     border: none; 
     box-shadow: none; 
-    z-index: 99999 !important;
+    z-index: 999999 !important;
+    overflow: hidden;
   }
   .nm-modal.active { 
     transform: translateY(0); 
   }
   .nm-modal-content { 
     padding: 0 !important; 
-    overflow-y: auto; 
-    height: 100%; 
-    min-height: 100vh;
+    overflow-y: auto !important; 
+    overflow-x: hidden;
+    height: 100% !important; 
+    max-height: 100% !important;
     display: flex; 
     flex-direction: column; 
-   background: linear-gradient(180deg,#C0D9E1 0%, #1E5887 100%); 
+    background: linear-gradient(180deg,#C0D9E1 0%, #1E5887 100%); 
     color: #1d3c4f; 
-    position: relative; 
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
   }
   /* Título por encima del hero y del overlay sticky */
   .nm-modal-title {
