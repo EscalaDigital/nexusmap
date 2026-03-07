@@ -14,8 +14,7 @@ function nm_clean_base_layers_predefined_field() {
                             in_array($layer['predefined_key'], [
                                 'openstreetmap', 'cartodbpositron', 'cartodbdarkmatter', 
                                 'cartodvoyager', 'opentopomap', 'esriworldimagery', 
-                                'esriworldterrain', 'esriworldstreetmap', 'stamentoner', 
-                                'stamenterrain', 'stamenwatercolor'
+                                'esriworldterrain', 'esriworldstreetmap'
                             ]));
             
             if (!$has_valid_key) {
@@ -543,9 +542,9 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
                             'preview' => '🏙️'
                         ),
                         'cartodvoyager' => array(
-                            'name' => 'CartoDB Voyager',
+                            'name' => 'CARTO Voyager',
                             'url' => 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                            'attribution' => '© OpenStreetMap contributors, © CartoDB',
+                            'attribution' => '© OpenStreetMap contributors, © CARTO',
                             'preview' => '🧭'
                         )
                     )
@@ -554,22 +553,16 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
                     'title' => 'Mapas Minimalistas',
                     'layers' => array(
                         'cartodbpositron' => array(
-                            'name' => 'CartoDB Positron',
+                            'name' => 'CARTO Positron',
                             'url' => 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                            'attribution' => '© OpenStreetMap contributors, © CartoDB',
+                            'attribution' => '© OpenStreetMap contributors, © CARTO',
                             'preview' => '🔆'
                         ),
                         'cartodbdarkmatter' => array(
-                            'name' => 'CartoDB Dark Matter',
+                            'name' => 'CARTO Dark Matter',
                             'url' => 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                            'attribution' => '© OpenStreetMap contributors, © CartoDB',
+                            'attribution' => '© OpenStreetMap contributors, © CARTO',
                             'preview' => '🌑'
-                        ),
-                        'stamentoner' => array(
-                            'name' => 'Stamen Toner',
-                            'url' => 'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
-                            'attribution' => '© Stamen Design, © OpenStreetMap contributors',
-                            'preview' => '�'
                         )
                     )
                 ),
@@ -587,12 +580,6 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
                             'url' => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
                             'attribution' => '© Esri',
                             'preview' => '�️'
-                        ),
-                        'stamenterrain' => array(
-                            'name' => 'Stamen Terrain',
-                            'url' => 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png',
-                            'attribution' => '© Stamen Design, © OpenStreetMap contributors',
-                            'preview' => '�'
                         )
                     )
                 ),
@@ -604,17 +591,6 @@ if (isset($_GET['page']) && $_GET['page'] === 'nm_manage_layers' && isset($_GET[
                             'url' => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                             'attribution' => '© Esri',
                             'preview' => '🛰️'
-                        )
-                    )
-                ),
-                'artistic' => array(
-                    'title' => 'Mapas Artísticos',
-                    'layers' => array(
-                        'stamenwatercolor' => array(
-                            'name' => 'Stamen Watercolor',
-                            'url' => 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.png',
-                            'attribution' => '© Stamen Design, © OpenStreetMap contributors',
-                            'preview' => '🎨'
                         )
                     )
                 )
